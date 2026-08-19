@@ -1,0 +1,4 @@
+# dsh-quick-workspace bundle patch: one host row.
+- insert:
+    - id: quick-workspace
+      name: dsh-quick-workspace

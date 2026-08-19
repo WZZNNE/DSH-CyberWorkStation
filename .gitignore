@@ -1,0 +1,31 @@
+# 依赖与构建产物
+node_modules/
+*.tsbuildinfo
+
+# setup.cmd 克隆的上游本体(1.5GB,永不入库)
+deepseek-harness/
+
+# 运行时状态与日志(本地生成,不入库)
+launcher/logs/
+launcher/dsh.log
+launcher/skins/launcher/active.txt
+launcher/skins/frontend/active.txt
+
+# 市场下载的社区皮肤(含第三方版权美术资产,用户本机按需从 npm 拉取转换)
+launcher/skins/frontend/*.css
+!launcher/skins/frontend/cyberpunk-2077.css
+
+# 用户/AI 自制启动器皮肤(本机数据):只有套件自带的两款入库
+launcher/skins/launcher/*.css
+!launcher/skins/launcher/cyberpunk-2077.css
+!launcher/skins/launcher/default.css
+
+# 未被 UI 引用的素材中间产物(bg-city/gen-banner/gen-icons-t/gen-logo-t 被引用,须入库)
+launcher/public/assets/gen-bgfront.png
+launcher/public/assets/gen-icons.png
+launcher/public/assets/gen-logo.png
+
+# 系统文件
+Thumbs.db
+Desktop.ini
+.DS_Store

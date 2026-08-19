@@ -1,0 +1,7 @@
+# dsh-safe-guard bundle patch: one host row. Installing this package into a
+# profile (dsh plugin --profile <name> add <path>) appends it to
+# dsh.profile.bundles and applies this layer; the row name resolves from the
+# profile's node_modules.
+- insert:
+    - id: safe-guard
+      name: dsh-safe-guard

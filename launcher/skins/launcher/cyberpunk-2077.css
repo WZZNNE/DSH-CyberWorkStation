@@ -1,0 +1,224 @@
+/* 启动器皮肤:cyberpunk-2077 v4.1 —— 2077 × 边缘行者
+ * 性能约定:动画只用 transform/opacity/filter(合成器线程);背景大图走固定伪元素层;
+ * backdrop-filter 仅 nav/hero/toast 三处。电流/闪电/冲击波特效见 .launch-big。 */
+:root {
+  --lc-font: 'Rajdhani', 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  --lc-bg: #05070d;
+  --lc-nav-bg: rgba(7, 11, 17, .6);
+  --lc-card-bg: rgba(10, 16, 24, .78);
+  --lc-input-bg: rgba(4, 7, 11, .78);
+  --lc-btn-bg: rgba(13, 20, 28, .82);
+  --lc-hover: rgba(0, 240, 255, .08);
+  --lc-active-bg: rgba(252, 238, 10, .10);
+  --lc-border: rgba(0, 240, 255, .24);
+  --lc-border-dim: rgba(0, 240, 255, .10);
+  --lc-text: #a9dde3;
+  --lc-text-dim: #567f89;
+  --lc-title: #eefcff;
+  --lc-accent: #fcee0a;
+  --lc-accent-dim: #8a8206;
+  --lc-accent-bg: rgba(252, 238, 10, .12);
+  --lc-ok: #00f0ff;
+  --lc-warn: #ff9800;
+  --lc-danger: #ff2d78;
+  --lc-danger-dim: #6b1030;
+  --lc-radius: 2px;
+  --lc-card-glow: 0 0 18px rgba(0, 240, 255, .10), inset 0 0 26px rgba(0, 240, 255, .04);
+  --lc-btn-glow: 0 0 12px rgba(252, 238, 10, .4);
+  --lc-log-text: #00f0ff;
+  --lc-heat-0: rgba(4, 7, 11, .8);
+  --lc-heat-1: #123a4a; --lc-heat-2: #0a6e80; --lc-heat-3: #00b7cc; --lc-heat-4: #00f0ff;
+  --lc-heat-glow: 0 0 8px rgba(0, 240, 255, .7);
+  --lc-toast-anim: lc-crt-pop .5s cubic-bezier(.16, 1, .3, 1);
+  --lc-hero-bg: url('/assets/gen-banner.png');
+  --lc-hero-veil: linear-gradient(90deg, rgba(3, 5, 8, .2), rgba(3, 5, 8, .8) 62%);
+  --lc-hero-title: #ffffff;
+  --lc-ease: cubic-bezier(.16, 1, .3, 1);
+}
+/* ══ 背景:固定伪元素层(避免 background-attachment:fixed 的滚动重绘) ══ */
+body { background: #05070d }
+html::after {
+  content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background: linear-gradient(rgba(5, 7, 13, .7), rgba(5, 7, 13, .85)), url('/assets/bg-city.jpg') center / cover no-repeat;
+  will-change: transform;
+}
+body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .16) 0 1px, transparent 1px 3px) }
+body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9998;
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(0, 0, 0, .58) 100%) }
+/* 巡回光带:transform 动画(合成器) */
+.frame::after { content: ''; position: fixed; left: 0; right: 0; top: 0; height: 4px; z-index: 9997; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, .75), rgba(252, 238, 10, .9), rgba(255, 45, 120, .75), transparent);
+  box-shadow: 0 0 18px rgba(0, 240, 255, .5); opacity: 0; transform: translateY(-10px);
+  animation: lc-sweep 8s linear infinite; will-change: transform, opacity }
+@keyframes lc-sweep { 0% { transform: translateY(-1vh); opacity: .7 } 46% { opacity: .7 } 50% { transform: translateY(101vh); opacity: 0 } 100% { transform: translateY(101vh); opacity: 0 } }
+/* ══ 毛玻璃:仅三处 ══ */
+.nav { backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3); border-right: 1px solid rgba(0, 240, 255, .2) }
+.hero, .toast { backdrop-filter: blur(10px) saturate(1.2); -webkit-backdrop-filter: blur(10px) saturate(1.2) }
+/* ══ 军工 HUD 卡片 ══ */
+.card, .ucard, .qcard {
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+  border-left: 2px solid var(--lc-accent); position: relative;
+}
+.card::before, .ucard::before { content: ''; position: absolute; top: 6px; right: 6px; width: 14px; height: 14px; pointer-events: none;
+  border-top: 2px solid var(--lc-ok); border-right: 2px solid var(--lc-ok); opacity: .8 }
+.card::after, .ucard::after { content: ''; position: absolute; bottom: 6px; left: 6px; width: 14px; height: 14px; pointer-events: none;
+  border-bottom: 2px solid var(--lc-danger); border-left: 2px solid var(--lc-danger); opacity: .55 }
+.card:hover, .qcard:hover { animation: lc-jolt .22s steps(2) 1 }
+@keyframes lc-jolt { 25% { transform: translate(1px, -1px) } 75% { transform: translate(-1px, 0) } }
+/* ══ 品牌 ══ */
+.brand { text-shadow: 0 0 10px rgba(252, 238, 10, .6); animation: lc-flicker 7s infinite }
+.brand-logo { width: 38px; height: 38px; flex: none; object-fit: contain; border-radius: 0;
+  filter: drop-shadow(0 0 7px rgba(252, 238, 10, .55)) }
+@keyframes lc-flicker { 0%, 92%, 100% { opacity: 1 } 93% { opacity: .5 } 94% { opacity: 1 } 96.5% { opacity: .7 } 97.5% { opacity: 1 } }
+/* ══ 导航 sprite(透明霓虹) ══ */
+.nav-glyph { color: transparent !important; overflow: hidden;
+  background-image: url('/assets/gen-icons-t.png'); background-size: 300% 300%;
+  filter: drop-shadow(0 0 5px rgba(0, 240, 255, .65)) }
+.nav-glyph[data-i="dash"] { background-position: 0% 0% }
+.nav-glyph[data-i="plugins"] { background-position: 50% 0% }
+.nav-glyph[data-i="skills"] { background-position: 100% 0% }
+.nav-glyph[data-i="sessions"] { background-position: 0% 50% }
+.nav-glyph[data-i="storage"] { background-position: 50% 50% }
+.nav-glyph[data-i="update"] { background-position: 100% 50% }
+.nav-glyph[data-i="tokens"] { background-position: 0% 100% }
+.nav-glyph[data-i="skins"] { background-position: 50% 100% }
+.nav-glyph[data-i="logs"] { background-position: 100% 100% }
+.nav-btn { transition: color .2s var(--lc-ease), background .2s var(--lc-ease) }
+.nav-btn:hover .nav-glyph { filter: drop-shadow(0 0 8px rgba(0, 240, 255, .95)) brightness(1.4) }
+.nav-btn.active { clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+  text-shadow: 0 0 8px rgba(252, 238, 10, .55); border-left: 2px solid var(--lc-danger) }
+.nav-btn.active .nav-glyph { filter: drop-shadow(0 0 7px rgba(252, 238, 10, .95)) brightness(1.35) sepia(1) hue-rotate(12deg) saturate(5) }
+.nav-foot::before { content: '● REC '; color: var(--lc-danger); margin-right: 4px; animation: lc-rec 1.6s steps(2) infinite }
+.nav-foot::after { content: ' // システム'; color: var(--lc-text-dim) }
+@keyframes lc-rec { 50% { opacity: .15 } }
+/* ══ 标题:微 glitch(残影弱化,无撕裂,不再像 bug) ══ */
+h1 { text-transform: uppercase; letter-spacing: 2px; position: relative;
+  text-shadow: 0 0 12px rgba(0, 240, 255, .35); animation: lc-glitch 10s infinite }
+h1 .h-sub { color: var(--lc-danger); text-shadow: 0 0 8px rgba(255, 45, 120, .5) }
+h1::before { content: '▮ '; color: var(--lc-accent); animation: lc-rec 1.1s steps(2) infinite }
+@keyframes lc-glitch {
+  0%, 95%, 100% { text-shadow: 0 0 12px rgba(0, 240, 255, .35); transform: none }
+  96% { text-shadow: -1px 0 rgba(255, 45, 120, .8), 1px 0 rgba(0, 240, 255, .8); transform: translateX(1px) }
+  97% { text-shadow: 1px 0 rgba(255, 45, 120, .8), -1px 0 rgba(0, 240, 255, .8); transform: translateX(-1px) }
+  98% { text-shadow: 0 0 12px rgba(0, 240, 255, .35); transform: none }
+}
+h1::after { content: ''; display: block; margin-top: 6px; height: 2px; width: 220px;
+  background: linear-gradient(90deg, var(--lc-accent), rgba(0, 240, 255, .7) 45%, rgba(255, 45, 120, .8) 75%, transparent) }
+/* ══ hero ══ */
+.hero { min-height: 214px; border: 1px solid rgba(0, 240, 255, .3);
+  clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px)) }
+.hero-title { text-shadow: 0 2px 18px rgba(0, 0, 0, .8), 0 0 22px rgba(0, 240, 255, .25); animation: lc-glitch 6.5s infinite, lc-title-in 1s cubic-bezier(.16,1,.3,1) 1 }
+@keyframes lc-title-in { 0% { opacity: 0; letter-spacing: 14px; filter: blur(6px) brightness(2.5) } 100% { opacity: 1; letter-spacing: 2px; filter: none } }
+.hero-kicker { color: var(--lc-ok) }
+.hero-kicker::before { content: '◢ '; color: var(--lc-danger) }
+.hero-kicker::after { content: '  ナイトシティ'; color: rgba(255, 45, 120, .8); letter-spacing: 2px }
+.hero-sub { color: rgba(255, 255, 255, .78) }
+.hero::before { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 7px; z-index: 1; opacity: .85;
+  background: repeating-linear-gradient(-45deg, var(--lc-accent) 0 12px, #0a0a08 12px 24px) }
+/* ══ 按钮:2077 实心黄 ══ */
+.btn { position: relative; overflow: hidden; text-transform: uppercase; letter-spacing: .5px;
+  transition: color .2s var(--lc-ease), background .2s var(--lc-ease), border-color .2s var(--lc-ease), box-shadow .25s var(--lc-ease);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)) }
+.btn::after { content: ''; position: absolute; top: 0; left: -80%; width: 60%; height: 100%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, .25), transparent);
+  transition: left .45s var(--lc-ease); will-change: left }
+.btn:hover::after { left: 120% }
+.btn.primary { background: var(--lc-accent); color: #0a0a08; font-weight: 800; border-color: var(--lc-accent);
+  text-shadow: none; box-shadow: 0 0 14px rgba(252, 238, 10, .35) }
+.btn.primary:hover { color: #000; background: #fff65e; box-shadow: 0 0 22px rgba(252, 238, 10, .6) }
+.btn.danger { color: var(--lc-danger); border-color: var(--lc-danger-dim) }
+.btn.danger:hover { border-color: var(--lc-danger); box-shadow: 0 0 12px rgba(255, 45, 120, .4) }
+/* ══ 一键启动:电流环绕 + 锯齿闪电 + 点击冲击波 ══ */
+.launch-wrap { position: relative; display: inline-block }
+.btn.launch-big { border: 2px solid #0a0a08; outline: 2px solid var(--lc-accent); outline-offset: 2px;
+  box-shadow: 0 0 24px rgba(252, 238, 10, .35) }
+/* 电流:conic 高亮弧沿边框旋转(mask 成环,transform 合成器动画,hover 才启动) */
+.launch-wrap::before { content: ''; position: absolute; inset: -6px; z-index: 0; pointer-events: none; border-radius: 4px;
+  padding: 3px; opacity: 0;
+  background: conic-gradient(from 0deg, transparent 0 70%, rgba(0, 240, 255, .9) 78%, #fff 82%, rgba(252, 238, 10, .9) 86%, transparent 94%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  transition: opacity .15s; will-change: transform }
+.launch-wrap:hover::before { opacity: 1; animation: lc-arc 1.1s linear infinite }
+@keyframes lc-arc { to { transform: rotate(360deg) } }
+/* 闪电:两道锯齿(clip-path)随机闪烁 */
+.launch-wrap::after { content: ''; position: absolute; left: -14px; top: 50%; width: 16px; height: 26px; z-index: 2; pointer-events: none;
+  background: linear-gradient(#fff, var(--lc-ok)); opacity: 0; transform: translateY(-50%);
+  clip-path: polygon(62% 0, 28% 44%, 52% 44%, 20% 100%, 34% 56%, 12% 56%, 40% 0);
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, .9)) }
+.launch-wrap:hover::after { animation: lc-bolt .5s steps(2) infinite }
+.btn.launch-big .bolt-r { position: absolute; right: -14px; top: 50%; width: 16px; height: 26px; pointer-events: none;
+  background: linear-gradient(#fff, var(--lc-accent)); opacity: 0; transform: translateY(-50%) scaleX(-1);
+  clip-path: polygon(62% 0, 28% 44%, 52% 44%, 20% 100%, 34% 56%, 12% 56%, 40% 0);
+  filter: drop-shadow(0 0 6px rgba(252, 238, 10, .9)) }
+.launch-wrap:hover .bolt-r { animation: lc-bolt .5s steps(2) .25s infinite }
+@keyframes lc-bolt { 0%, 100% { opacity: 0 } 50% { opacity: 1 } }
+/* 点击反馈:压缩 + 白闪 + 冲击波扩散(.zap 由 JS 加,动画结束移除) */
+.btn.launch-big:active { transform: scale(.955); filter: brightness(1.9) saturate(.6) }
+.launch-wrap .shock { position: absolute; inset: -4px; border: 2px solid var(--lc-accent); border-radius: 4px;
+  opacity: 0; pointer-events: none; transform: scale(1); will-change: transform, opacity }
+.launch-wrap.zap .shock { animation: lc-shock .55s var(--lc-ease) 1 }
+@keyframes lc-shock { 0% { opacity: .95; transform: scale(1); border-color: #fff }
+  60% { border-color: var(--lc-ok) } 100% { opacity: 0; transform: scale(1.5); border-color: var(--lc-danger) } }
+.launch-bar { position: relative; padding-top: 18px }
+.launch-bar::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; opacity: .6;
+  background: repeating-linear-gradient(-45deg, var(--lc-accent) 0 10px, transparent 10px 20px) }
+/* ══ 状态数字 ══ */
+.stat-value.ok { text-shadow: 0 0 14px rgba(0, 240, 255, .75) }
+.stat-value.off { color: var(--lc-danger); text-shadow: 0 0 14px rgba(255, 45, 120, .7); animation: lc-rec 2s steps(2) infinite }
+/* ══ CRT 两段展开(transform/opacity/filter,合成器) ══ */
+.view.active { animation: lc-crt-open .55s var(--lc-ease); transform-origin: 50% 12% }
+@keyframes lc-crt-open {
+  0% { opacity: 0; transform: scaleY(.015) scaleX(.55); filter: brightness(3.2) saturate(.2) }
+  38% { opacity: 1; transform: scaleY(.015) scaleX(1.015); filter: brightness(2.6) saturate(.4) }
+  62% { transform: scaleY(1.05) scaleX(1); filter: brightness(1.35) saturate(.9) }
+  80% { transform: scaleY(.985) }
+  100% { transform: none; filter: none }
+}
+.view.active .card, .view.active .ucard, .view.active .qcard {
+  animation: lc-crt-card .5s var(--lc-ease) backwards; transform-origin: 50% 0 }
+.view.active :is(.card, .ucard, .qcard):nth-child(2) { animation-delay: .06s }
+.view.active :is(.card, .ucard, .qcard):nth-child(3) { animation-delay: .12s }
+.view.active :is(.card, .ucard, .qcard):nth-child(4) { animation-delay: .18s }
+.view.active :is(.card, .ucard, .qcard):nth-child(n+5) { animation-delay: .24s }
+@keyframes lc-crt-card {
+  0% { opacity: 0; transform: scaleY(.04); filter: brightness(2.8) }
+  45% { opacity: 1; transform: scaleY(.04); filter: brightness(2) }
+  75% { transform: scaleY(1.06); filter: brightness(1.2) }
+  100% { transform: none; filter: none }
+}
+@keyframes lc-crt-pop {
+  0% { opacity: 0; transform: scaleY(.05) scaleX(.7) translateX(24px); filter: brightness(3) hue-rotate(60deg) }
+  45% { opacity: 1; transform: scaleY(.05) scaleX(1) translateX(0); filter: brightness(2.2) }
+  70% { transform: scaleY(1.12) } 85% { transform: scaleY(.96) }
+  100% { transform: none; filter: none }
+}
+.toast { transform-origin: 100% 50%; border-left: 3px solid var(--lc-danger); border-top: 1px solid var(--lc-accent);
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%) }
+/* ══ 控制台(内嵌终端) ══ */
+.console-box { border-left: 2px solid var(--lc-ok); color: #00f0ff; text-shadow: 0 0 4px rgba(0, 240, 255, .25);
+  background: rgba(3, 6, 8, .9) }
+/* ══ 表格 / 分段 / 快捷卡 ══ */
+.tbl th { color: var(--lc-ok); border-bottom: 1px solid rgba(0, 240, 255, .35) }
+.tbl tr:hover td { background: rgba(252, 238, 10, .05); box-shadow: inset 2px 0 0 var(--lc-accent) }
+.seg-btn { transition: color .2s var(--lc-ease), background .2s var(--lc-ease) }
+.seg-btn.active { color: var(--lc-accent); text-shadow: 0 0 8px rgba(252, 238, 10, .5) }
+.q-ico { color: var(--lc-danger); text-shadow: 0 0 8px rgba(255, 45, 120, .5) }
+.qcard:hover { box-shadow: 0 0 16px rgba(252, 238, 10, .18); border-left-color: var(--lc-danger) }
+/* ══ 滚动条 / 选区 ══ */
+::-webkit-scrollbar { width: 8px; height: 8px }
+::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, .25) }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 45, 120, .6) }
+::-webkit-scrollbar-track { background: transparent }
+::selection { background: rgba(255, 45, 120, .35); color: #eefcff }
+
+/* ══ OFFLINE→RUNNING 上线翻转特效:glitch 弹入 + 扫光 + 辉光爆发 ══ */
+.stat-value.ok.state-flip { animation: lc-online .9s cubic-bezier(.16, 1, .3, 1) 1 }
+@keyframes lc-online {
+  0%   { opacity: 0; transform: translateX(-8px) scaleY(.2); filter: brightness(3); text-shadow: -4px 0 #ff2d78, 4px 0 #00f0ff }
+  25%  { opacity: 1; transform: scaleY(1.15); text-shadow: 3px 0 #ff2d78, -3px 0 #00f0ff, 0 0 30px rgba(0,240,255,.9) }
+  40%  { transform: translateX(2px) scaleY(.95); filter: brightness(1.8) }
+  55%  { transform: none; text-shadow: -2px 0 #ff2d78, 2px 0 #00f0ff, 0 0 26px rgba(0,240,255,.8) }
+  100% { filter: none; text-shadow: 0 0 14px rgba(0, 240, 255, .75) }
+}

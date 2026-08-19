@@ -1,0 +1,11 @@
+{
+  "name": "dsh-price-hint",
+  "version": "0.1.0",
+  "description": "Hover price hints on the dsh model picker: shows input/output USD per 1M tokens (from the cost-meter price table) as a native tooltip on every model entry.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": { ".": { "default": "./lib/index.js" }, "./client": { "default": "./lib/client.js" }, "./package.json": "./package.json" },
+  "files": ["lib", "cordis.patch.yml"],
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" }, "client": { "platform": "web" } },
+  "license": "MIT"
+}

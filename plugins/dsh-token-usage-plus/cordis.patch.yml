@@ -1,0 +1,4 @@
+# cordis.patch.yml —— 挂载 node 半（patch 层追加一行；行名=包名，Node 解析已安装代码）
+- insert:
+    - id: dsh-token-usage-plus
+      name: dsh-token-usage-plus

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#05070d"/><stop offset=".45" stop-color="#0a1020"/>
+      <stop offset=".72" stop-color="#141033"/><stop offset="1" stop-color="#26123f"/>
+    </linearGradient>
+    <linearGradient id="bldA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0e1626"/><stop offset="1" stop-color="#070b14"/>
+    </linearGradient>
+    <linearGradient id="bldB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#131c30"/><stop offset="1" stop-color="#090d18"/>
+    </linearGradient>
+    <radialGradient id="glowC" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#00f0ff" stop-opacity=".5"/><stop offset="1" stop-color="#00f0ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowM" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#ff2d78" stop-opacity=".4"/><stop offset="1" stop-color="#ff2d78" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowY" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#fcee0a" stop-opacity=".35"/><stop offset="1" stop-color="#fcee0a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="grid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#00f0ff" stop-opacity=".0"/><stop offset="1" stop-color="#00f0ff" stop-opacity=".28"/>
+    </linearGradient>
+    <pattern id="win" width="14" height="22" patternUnits="userSpaceOnUse">
+      <rect width="14" height="22" fill="none"/>
+      <rect x="3" y="4" width="4" height="6" fill="#39c6d8" opacity=".24"/>
+      <rect x="9" y="12" width="3" height="5" fill="#e8c53a" opacity=".16"/>
+    </pattern>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#sky)"/>
+  <ellipse cx="1500" cy="330" rx="560" ry="360" fill="url(#glowM)"/>
+  <ellipse cx="420" cy="420" rx="640" ry="420" fill="url(#glowC)"/>
+  <ellipse cx="980" cy="760" rx="900" ry="300" fill="url(#glowY)"/>
+  <!-- 远景天际线 -->
+  <g opacity=".65">
+    <rect x="60" y="470" width="120" height="330" fill="url(#bldA)"/><rect x="230" y="380" width="90" height="420" fill="url(#bldB)"/>
+    <rect x="360" y="500" width="140" height="300" fill="url(#bldA)"/><rect x="540" y="330" width="80" height="470" fill="url(#bldB)"/>
+    <rect x="660" y="450" width="150" height="350" fill="url(#bldA)"/><rect x="860" y="280" width="110" height="520" fill="url(#bldB)"/>
+    <rect x="1010" y="420" width="90" height="380" fill="url(#bldA)"/><rect x="1140" y="350" width="130" height="450" fill="url(#bldB)"/>
+    <rect x="1320" y="470" width="100" height="330" fill="url(#bldA)"/><rect x="1460" y="300" width="140" height="500" fill="url(#bldB)"/>
+    <rect x="1650" y="430" width="110" height="370" fill="url(#bldA)"/><rect x="1800" y="520" width="80" height="280" fill="url(#bldB)"/>
+  </g>
+  <!-- 中景大楼(带窗) -->
+  <g>
+    <rect x="140" y="560" width="180" height="520" fill="url(#bldB)"/><rect x="140" y="560" width="180" height="520" fill="url(#win)"/>
+    <rect x="480" y="470" width="150" height="610" fill="url(#bldA)"/><rect x="480" y="470" width="150" height="610" fill="url(#win)"/>
+    <rect x="760" y="600" width="220" height="480" fill="url(#bldB)"/><rect x="760" y="600" width="220" height="480" fill="url(#win)"/>
+    <rect x="1080" y="520" width="170" height="560" fill="url(#bldA)"/><rect x="1080" y="520" width="170" height="560" fill="url(#win)"/>
+    <rect x="1380" y="440" width="200" height="640" fill="url(#bldB)"/><rect x="1380" y="440" width="200" height="640" fill="url(#win)"/>
+    <rect x="1680" y="580" width="160" height="500" fill="url(#bldA)"/><rect x="1680" y="580" width="160" height="500" fill="url(#win)"/>
+  </g>
+  <!-- 霓虹天线与灯 -->
+  <g>
+    <line x1="555" y1="470" x2="555" y2="400" stroke="#00f0ff" stroke-width="2" opacity=".8"/><circle cx="555" cy="396" r="4" fill="#00f0ff"/>
+    <line x1="1480" y1="440" x2="1480" y2="360" stroke="#ff2d78" stroke-width="2" opacity=".8"/><circle cx="1480" cy="356" r="4" fill="#ff2d78"/>
+    <circle cx="915" cy="280" r="3" fill="#fcee0a"/><circle cx="230" cy="560" r="3" fill="#00f0ff"/>
+    <rect x="500" y="520" width="110" height="4" fill="#00f0ff" opacity=".7"/>
+    <rect x="1395" y="500" width="170" height="4" fill="#ff2d78" opacity=".6"/>
+    <rect x="790" y="650" width="160" height="3" fill="#fcee0a" opacity=".5"/>
+  </g>
+  <!-- 透视网格地面 -->
+  <g stroke="url(#grid)" stroke-width="1.4">
+    <line x1="960" y1="820" x2="-500" y2="1080"/><line x1="960" y1="820" x2="-80" y2="1080"/>
+    <line x1="960" y1="820" x2="340" y2="1080"/><line x1="960" y1="820" x2="700" y2="1080"/>
+    <line x1="960" y1="820" x2="960" y2="1080"/><line x1="960" y1="820" x2="1220" y2="1080"/>
+    <line x1="960" y1="820" x2="1580" y2="1080"/><line x1="960" y1="820" x2="2000" y2="1080"/>
+    <line x1="960" y1="820" x2="2420" y2="1080"/>
+    <line x1="0" y1="860" x2="1920" y2="860" opacity=".7"/><line x1="0" y1="905" x2="1920" y2="905"/>
+    <line x1="0" y1="960" x2="1920" y2="960"/><line x1="0" y1="1025" x2="1920" y2="1025"/>
+  </g>
+  <rect width="1920" height="1080" fill="#05070d" opacity=".18"/>
+</svg>

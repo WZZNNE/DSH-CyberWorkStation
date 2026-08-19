@@ -1,0 +1,18 @@
+{
+  "name": "dsh-skin-loader",
+  "version": "0.1.0",
+  "description": "Load a user frontend skin ($DSH_HOME/frontend-skin.css) into the dsh Web UI as a token-override style tag. Managed by DSH Launcher.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": { "default": "./lib/index.js" },
+    "./client": { "default": "./lib/client.js" },
+    "./package.json": "./package.json"
+  },
+  "files": ["lib", "cordis.patch.yml"],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": { "platform": "web" }
+  },
+  "license": "MIT"
+}

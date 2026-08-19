@@ -1,0 +1,12 @@
+{
+  "name": "dsh-control-deck",
+  "version": "0.1.0",
+  "description": "Control Deck for DeepSeek Harness: multi-entry leveled system-prompt injection, regex rewrite of user messages, keyword lorebook injection (SillyTavern-style), sampling overrides (temperature/maxTokens/stop/reasoningEffort), and tool disable switches. Configured live from DSH Launcher via ~/.dsh/control-deck.json (hot reload).",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": { ".": { "default": "./lib/index.js" }, "./package.json": "./package.json" },
+  "files": ["lib", "cordis.patch.yml"],
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } },
+  "scripts": { "test": "node --test tests/" },
+  "license": "MIT"
+}

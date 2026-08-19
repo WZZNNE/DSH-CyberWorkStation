@@ -1,0 +1,83 @@
+/* 启动器皮肤:default —— 明/暗/跟随系统 三态(html[data-theme] 由界面设置控制) */
+
+/* 暗黑(默认基准) */
+:root {
+  --lc-font: 'Segoe UI', system-ui, sans-serif;
+  --lc-bg: #14161a;
+  --lc-nav-bg: #191c21;
+  --lc-card-bg: #1c2027;
+  --lc-input-bg: #14161a;
+  --lc-btn-bg: #232830;
+  --lc-hover: #232830;
+  --lc-active-bg: #20262e;
+  --lc-border: #2c333d;
+  --lc-border-dim: #232830;
+  --lc-text: #ccd3dc;
+  --lc-text-dim: #7d8794;
+  --lc-title: #eef2f6;
+  --lc-accent: #4c9dff;
+  --lc-accent-dim: #2b568a;
+  --lc-accent-bg: rgba(76, 157, 255, .12);
+  --lc-ok: #3ecf8e;
+  --lc-warn: #f0a24c;
+  --lc-danger: #e5534b;
+  --lc-danger-dim: #7a3230;
+  --lc-radius: 8px;
+}
+
+/* 明亮变量组(复用:显式 light 与 auto+系统亮色两处) */
+:root[data-theme="light"] {
+  --lc-bg: #f2f4f7;
+  --lc-nav-bg: #ffffff;
+  --lc-card-bg: #ffffff;
+  --lc-input-bg: #f2f4f7;
+  --lc-btn-bg: #e9edf2;
+  --lc-hover: #e9edf2;
+  --lc-active-bg: #e2ecfb;
+  --lc-border: #d4dae2;
+  --lc-border-dim: #e4e8ee;
+  --lc-text: #333c47;
+  --lc-text-dim: #7d8794;
+  --lc-title: #10161d;
+  --lc-accent: #1f6fd6;
+  --lc-accent-dim: #9dc4f1;
+  --lc-accent-bg: rgba(31, 111, 214, .1);
+  --lc-ok: #14915f;
+  --lc-warn: #b46a17;
+  --lc-danger: #ce3a32;
+  --lc-danger-dim: #eeb1ad;
+}
+@media (prefers-color-scheme: light) {
+  :root[data-theme="auto"] {
+    --lc-bg: #f2f4f7;
+    --lc-nav-bg: #ffffff;
+    --lc-card-bg: #ffffff;
+    --lc-input-bg: #f2f4f7;
+    --lc-btn-bg: #e9edf2;
+    --lc-hover: #e9edf2;
+    --lc-active-bg: #e2ecfb;
+    --lc-border: #d4dae2;
+    --lc-border-dim: #e4e8ee;
+    --lc-text: #333c47;
+    --lc-text-dim: #7d8794;
+    --lc-title: #10161d;
+    --lc-accent: #1f6fd6;
+    --lc-accent-dim: #9dc4f1;
+    --lc-accent-bg: rgba(31, 111, 214, .1);
+    --lc-ok: #14915f;
+    --lc-warn: #b46a17;
+    --lc-danger: #ce3a32;
+    --lc-danger-dim: #eeb1ad;
+  }
+}
+
+/* hero 与 logo 适配(明/暗都协调) */
+:root { --lc-hero-bg: linear-gradient(120deg, #1b2a4a, #0d1322); --lc-hero-title: #ffffff }
+:root[data-theme="light"] { --lc-hero-bg: linear-gradient(120deg, #dbe7fb, #f2f6fd); --lc-hero-title: #10161d; --lc-hero-veil: linear-gradient(90deg, rgba(255,255,255,.2), transparent 55%) }
+@media (prefers-color-scheme: light) { :root[data-theme="auto"] { --lc-hero-bg: linear-gradient(120deg, #dbe7fb, #f2f6fd); --lc-hero-title: #10161d; --lc-hero-veil: linear-gradient(90deg, rgba(255,255,255,.2), transparent 55%) } }
+.brand-logo { background: #10161d; border-radius: 6px; padding: 2px }
+.hero-sub, .hero-kicker { color: var(--lc-text-dim) }
+
+/* OFFLINE→RUNNING 上线反馈(轻量) */
+.stat-value.ok.state-flip { animation: lc-online-lite .6s ease 1 }
+@keyframes lc-online-lite { 0% { opacity: 0; transform: scale(.7) } 55% { transform: scale(1.12) } 100% { opacity: 1; transform: none } }

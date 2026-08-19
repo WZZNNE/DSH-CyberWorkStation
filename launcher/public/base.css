@@ -1,0 +1,114 @@
+/* DSH Launcher 结构样式:布局/组件骨架。全部颜色走 --lc-* 变量,由皮肤定义。 */
+* { box-sizing: border-box; margin: 0; padding: 0 }
+body { font-family: var(--lc-font, 'Segoe UI', system-ui, sans-serif); background: var(--lc-bg); color: var(--lc-text); font-size: 14px }
+.frame { display: flex; min-height: 100vh }
+.nav { width: 236px; flex: none; padding: 16px 10px; background: var(--lc-nav-bg); border-right: 1px solid var(--lc-border); display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh }
+.brand { display: flex; align-items: center; gap: 8px; font-size: 15.5px; font-weight: 800; letter-spacing: .5px; padding: 6px 4px 16px; color: var(--lc-title); white-space: nowrap; overflow: hidden; min-width: 0 }
+.brand-accent { flex: none }
+.brand-glyph { color: var(--lc-accent) }
+.brand-accent { color: var(--lc-accent) }
+.nav-btn { text-align: left; padding: 9px 12px; background: transparent; color: var(--lc-text-dim); border: 1px solid transparent; border-radius: var(--lc-radius, 6px); cursor: pointer; font-size: 13.5px; font-family: inherit; transition: all .15s }
+.nav-btn:hover { color: var(--lc-text); background: var(--lc-hover) }
+.nav-btn.active { color: var(--lc-accent); background: var(--lc-active-bg); border-color: var(--lc-accent-dim) }
+.nav-foot { margin-top: auto; font-size: 11px; letter-spacing: 1px; color: var(--lc-accent); padding: 8px }
+.stage { flex: 1; padding: 26px 30px; max-width: 1100px }
+h1 { font-size: 20px; margin-bottom: 18px; color: var(--lc-title); letter-spacing: .5px }
+h2 { font-size: 14px; margin: 18px 0 8px; color: var(--lc-text-dim) }
+.h-sub { font-size: 11px; color: var(--lc-accent); letter-spacing: 2px; vertical-align: middle }
+.view { display: none } .view.active { display: block; animation: fade .18s ease }
+@keyframes fade { from { opacity: 0; transform: translateY(4px) } to { opacity: 1 } }
+/* ── 绘世式 hero banner ── */
+.hero { position: relative; display: flex; align-items: flex-end; justify-content: space-between; min-height: 190px; margin-bottom: 16px; padding: 20px 24px; border-radius: var(--lc-radius, 10px); overflow: hidden; border: 1px solid var(--lc-border); background: var(--lc-hero-bg, linear-gradient(120deg, #16203a, #0b0f1a)) center / cover no-repeat; box-shadow: var(--lc-card-glow, none) }
+.hero::after { content: ''; position: absolute; inset: 0; background: var(--lc-hero-veil, linear-gradient(90deg, rgba(0,0,0,.55), transparent 55%)); pointer-events: none }
+.hero-text, .hero-status { position: relative; z-index: 1 }
+.hero-kicker { font-size: 11px; letter-spacing: 4px; color: var(--lc-ok) }
+.hero-title { font-size: 34px; font-weight: 800; color: var(--lc-hero-title, #fff); letter-spacing: 2px; text-shadow: var(--lc-hero-title-shadow, 0 2px 18px rgba(0,0,0,.55)) }
+.hero-sub { font-size: 13px; color: var(--lc-hero-sub, rgba(255,255,255,.75)); margin-top: 4px }
+/* ── 文件夹快捷卡片行(绘世式) ── */
+.quick-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 14px }
+.qcard { display: flex; align-items: center; gap: 10px; padding: 13px 14px; background: var(--lc-card-bg); border: 1px solid var(--lc-border); border-radius: var(--lc-radius, 8px); color: var(--lc-text); cursor: pointer; font-family: inherit; font-size: 13.5px; text-align: left; transition: all .15s; box-shadow: var(--lc-card-glow, none) }
+.qcard:hover { border-color: var(--lc-accent); transform: translateY(-2px) }
+.q-ico { font-size: 18px; color: var(--lc-ok) }
+.q-name { flex: 1; display: flex; flex-direction: column } .q-name small { color: var(--lc-text-dim); font-size: 11px }
+.q-arrow { color: var(--lc-text-dim); font-size: 18px }
+/* ── 底部一键启动条(绘世式右下超大主按钮) ── */
+.launch-bar { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--lc-border-dim) }
+.ver-line { font-size: 11.5px; color: var(--lc-text-dim) }
+.btn.launch-big { font-size: 17px; font-weight: 700; padding: 14px 44px; letter-spacing: 2px }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 14px }
+.card { background: var(--lc-card-bg); border: 1px solid var(--lc-border); border-radius: var(--lc-radius, 8px); padding: 16px; box-shadow: var(--lc-card-glow, none) }
+.card.big { grid-column: span 2 }
+.stat-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--lc-text-dim); margin-bottom: 8px }
+.stat-value { font-size: 22px; font-weight: 700; margin-bottom: 12px; color: var(--lc-title) }
+.stat-value.ok { color: var(--lc-ok) } .stat-value.off { color: var(--lc-danger) }
+.row { display: flex; align-items: center } .gap { gap: 10px } .wrap { flex-wrap: wrap; margin-bottom: 12px }
+.btn { padding: 8px 16px; background: var(--lc-btn-bg); color: var(--lc-text); border: 1px solid var(--lc-border); border-radius: var(--lc-radius, 6px); cursor: pointer; font-size: 13px; font-family: inherit; transition: all .15s }
+.btn:hover { border-color: var(--lc-accent); color: var(--lc-accent); box-shadow: var(--lc-btn-glow, none) }
+.btn.primary { background: var(--lc-accent-bg); color: var(--lc-accent); border-color: var(--lc-accent) }
+.btn.danger { color: var(--lc-danger); border-color: var(--lc-danger-dim) }
+.btn.danger:hover { border-color: var(--lc-danger); box-shadow: 0 0 8px var(--lc-danger-dim) }
+.btn.mini { padding: 3px 10px; font-size: 12px }
+.btn.skin { margin: 4px 6px 4px 0 }
+.input { width: 100%; max-width: 460px; padding: 9px 12px; background: var(--lc-input-bg); color: var(--lc-text); border: 1px solid var(--lc-border); border-radius: var(--lc-radius, 6px); font-family: inherit; font-size: 13px; margin: 6px 0 }
+.input.area { min-height: 110px; font-family: Consolas, monospace; font-size: 12px }
+.input:focus { outline: none; border-color: var(--lc-accent) }
+.tbl { width: 100%; border-collapse: collapse; margin-top: 8px }
+.tbl th { text-align: left; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--lc-text-dim); padding: 8px 10px; border-bottom: 1px solid var(--lc-border) }
+.tbl td { padding: 8px 10px; border-bottom: 1px solid var(--lc-border-dim); font-variant-numeric: tabular-nums }
+.tbl tr:hover td { background: var(--lc-hover) }
+.dim { color: var(--lc-text-dim); font-size: 12.5px }
+.ok { color: var(--lc-ok) } .warn { color: var(--lc-warn) }
+.logbox { background: var(--lc-input-bg); border: 1px solid var(--lc-border); border-radius: var(--lc-radius, 6px); padding: 12px; font-family: Consolas, monospace; font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-all; overflow: auto; max-height: 340px; color: var(--lc-log-text, var(--lc-text)) }
+.logbox.tall { max-height: 560px; min-height: 320px } .logbox.small { max-height: 220px }
+.skin-list { margin: 6px 0 10px }
+details { margin-top: 10px } summary { cursor: pointer; color: var(--lc-text-dim); font-size: 12.5px }
+.toast { position: fixed; right: 22px; bottom: 22px; max-width: 420px; padding: 12px 18px; background: var(--lc-card-bg); border: 1px solid var(--lc-accent); border-radius: var(--lc-radius, 6px); color: var(--lc-text); font-size: 13px; opacity: 0; transform: translateY(8px); transition: all .25s; pointer-events: none; white-space: pre-wrap; box-shadow: var(--lc-card-glow, 0 4px 24px rgba(0,0,0,.4)) }
+.toast.show { opacity: 1; transform: none; animation: var(--lc-toast-anim, none) }
+
+/* ── Tokens 统计(CC 风格) ── */
+.usage-bar { justify-content: space-between; margin-bottom: 14px }
+.seg { display: inline-flex; gap: 2px; background: var(--lc-input-bg); border: 1px solid var(--lc-border); border-radius: var(--lc-radius, 6px); padding: 3px }
+.seg-btn { padding: 5px 14px; background: transparent; border: none; color: var(--lc-text-dim); border-radius: calc(var(--lc-radius, 6px) - 2px); cursor: pointer; font-size: 13px; font-family: inherit }
+.seg-btn.active { background: var(--lc-btn-bg); color: var(--lc-title); box-shadow: var(--lc-btn-glow, none) }
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px }
+.ucard { background: var(--lc-card-bg); border: 1px solid var(--lc-border); border-radius: var(--lc-radius, 8px); padding: 12px 14px; box-shadow: var(--lc-card-glow, none) }
+.ucard .stat-value { font-size: 19px; margin-bottom: 0 }
+.heat-card { margin-bottom: 6px }
+.heatmap { display: flex; gap: 3px; overflow-x: auto; padding: 4px 0 }
+.heat-col { display: flex; flex-direction: column; gap: 3px }
+.heat-cell { width: 13px; height: 13px; border-radius: 3px; background: var(--lc-heat-0, var(--lc-input-bg)); border: 1px solid var(--lc-border-dim) }
+.heat-cell.l1 { background: var(--lc-heat-1, #1d3f66); border-color: transparent }
+.heat-cell.l2 { background: var(--lc-heat-2, #2b6cb0); border-color: transparent }
+.heat-cell.l3 { background: var(--lc-heat-3, #3d8ff2); border-color: transparent }
+.heat-cell.l4 { background: var(--lc-heat-4, #7ab8ff); border-color: transparent; box-shadow: var(--lc-heat-glow, none) }
+.fun-fact { margin-top: 10px; font-size: 13px; color: var(--lc-text-dim) }
+@media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr) } }
+
+/* ── 品牌 logo 与导航图标骨架(皮肤可替换) ── */
+.brand-logo { width: 30px; height: 30px; object-fit: cover; vertical-align: -9px; display: inline-block; border-radius: 4px }
+.nav-glyph { display: inline-block; width: 20px; height: 20px; margin-right: 8px; text-align: center; vertical-align: -4px; line-height: 20px }
+.nav-text { vertical-align: 0 }
+
+/* 左下角语言切换小图标 */
+.lang-btn { margin-top: auto; align-self: flex-start; padding: 4px 10px; font-size: 11px; letter-spacing: 1px; background: transparent; color: var(--lc-text-dim); border: 1px solid var(--lc-border); border-radius: var(--lc-radius, 6px); cursor: pointer; font-family: inherit; transition: all .15s }
+.lang-btn:hover { color: var(--lc-accent); border-color: var(--lc-accent) }
+.nav-foot { margin-top: 6px }
+
+/* 内嵌控制台(秋叶式) */
+.console-box { background: #05080a; border: 1px solid var(--lc-border); border-radius: var(--lc-radius,6px); padding: 12px; font-family: Consolas, 'Cascadia Mono', monospace; font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; overflow-y: auto; height: 260px; color: #29d69c }
+.console-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px }
+
+/* 控制甲板 v2 卡片 */
+.deck-card { border: 1px solid var(--lc-border); border-radius: var(--lc-radius,6px); padding: 10px 12px; margin-bottom: 8px; background: var(--lc-input-bg) }
+.deck-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 6px; font-size: 12px; color: var(--lc-text-dim) }
+.deck-line .input { margin: 0 }
+.deck-cb { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: var(--lc-text-dim) }
+.deck-card textarea.input { margin-top: 2px }
+
+/* 皮肤条目:切换键 + 非内置删除键 */
+.skin-wrap { display: inline-flex; align-items: stretch; margin: 0 6px 6px 0 }
+.skin-wrap .btn.skin { margin: 0; border-radius: 6px 0 0 6px }
+.skin-wrap .btn.skin:only-child { border-radius: 6px }
+.btn.skin-del { margin: 0; padding: 4px 8px; border-radius: 0 6px 6px 0; border-left: none; opacity: .55; font-size: 11px }
+.btn.skin-del:hover { opacity: 1; color: #ff5c72; border-color: #ff5c72 }
+.mkt-repo { text-decoration: none; margin-left: 4px }

@@ -1,0 +1,11 @@
+{
+  "name": "dsh-quick-workspace",
+  "version": "0.1.0",
+  "description": "Create a dsh workspace by absolute path over HTTP, so the DSH Launcher can add one without the native folder dialog (works around the ungrouped '+' being inert for the no-workspace group).",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": { ".": { "default": "./lib/index.js" }, "./package.json": "./package.json" },
+  "files": ["lib", "cordis.patch.yml"],
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } },
+  "license": "MIT"
+}

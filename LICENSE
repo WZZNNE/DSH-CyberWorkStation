@@ -1,0 +1,41 @@
+MIT License
+
+Copyright (c) 2026 DSH Suite contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+Third-party notices
+
+- dsh-cost-meter-plus is a derivative work of dsh-cost-meter
+  (https://github.com/Han-1413141/dsh-cost-meter, MIT License, author Han-1413141).
+- dsh-token-usage-plus is a derivative work of dsh-usage-stats
+  (https://github.com/Tastelessor/dsh-usage-stats, MIT License, author Tastelessor).
+- dsh-control-deck reimplements prompt/regex/world-info/sampling semantics
+  following the behavior of SillyTavern (https://github.com/SillyTavern/SillyTavern,
+  AGPL-3.0). No SillyTavern source code is included; only observable behavior
+  was used as a compatibility reference.
+- Community skins downloaded through the skin market (e.g. the
+  @linxin666/dsh-client-ui-skin-center collection) are fetched from npm at the
+  user's request and converted locally; they remain under their original
+  licenses (including CC BY-NC-SA 4.0 for Maid Atelier) and are never
+  redistributed by this repository.
+- Launcher artwork (city backdrop, hex badge, icon grid, banner) was generated
+  with Jimeng AI by the suite author.

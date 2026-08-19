@@ -1,0 +1,4 @@
+# dsh-skin-loader bundle patch: one host row; the web app also loads ./client.
+- insert:
+    - id: skin-loader
+      name: dsh-skin-loader

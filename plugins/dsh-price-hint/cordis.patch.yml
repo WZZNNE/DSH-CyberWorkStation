@@ -1,0 +1,4 @@
+# dsh-price-hint bundle patch: one host row; web app loads ./client too.
+- insert:
+    - id: price-hint
+      name: dsh-price-hint

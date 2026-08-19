@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DSH Launcher · DeepSeek Harness 管理工作台</title>
+<link rel="stylesheet" href="/base.css">
+<link rel="stylesheet" href="/skins/launcher/active.css" id="skin-link">
+</head>
+<body>
+<div class="frame">
+  <aside class="nav">
+    <div class="brand"><img class="brand-logo" src="/assets/gen-logo-t.png" alt="DSH"> DSH<span class="brand-accent">_LAUNCHER</span></div>
+    <button class="nav-btn active" data-view="dash"><span class="nav-glyph" data-i="dash">▶</span><span class="nav-text" data-t="nav_dash">仪表盘</span></button>
+    <button class="nav-btn" data-view="plugins"><span class="nav-glyph" data-i="plugins">◧</span><span class="nav-text" data-t="nav_plugins">插件管理</span></button>
+    <button class="nav-btn" data-view="skills"><span class="nav-glyph" data-i="skills">✦</span><span class="nav-text" data-t="nav_skills">Skill 管理</span></button>
+    <button class="nav-btn" data-view="sessions"><span class="nav-glyph" data-i="sessions">☰</span><span class="nav-text" data-t="nav_sessions">对话管理</span></button>
+    <button class="nav-btn" data-view="storage"><span class="nav-glyph" data-i="storage">▤</span><span class="nav-text" data-t="nav_storage">存储空间</span></button>
+    <button class="nav-btn" data-view="update"><span class="nav-glyph" data-i="update">⟳</span><span class="nav-text" data-t="nav_update">更新推送</span></button>
+    <button class="nav-btn" data-view="tokens"><span class="nav-glyph" data-i="tokens">Σ</span><span class="nav-text" data-t="nav_tokens">Tokens 统计</span></button>
+    <button class="nav-btn" data-view="deck"><span class="nav-glyph" data-i="skills">✦</span><span class="nav-text" data-t="nav_deck">控制甲板</span></button>
+    <button class="nav-btn" data-view="skins"><span class="nav-glyph" data-i="skins">◆</span><span class="nav-text" data-t="nav_skins">外观皮肤</span></button>
+    <button class="nav-btn" data-view="logs"><span class="nav-glyph" data-i="logs">≡</span><span class="nav-text" data-t="nav_logs">内部日志</span></button>
+    <button class="lang-btn" id="lang-toggle" title="语言 / Language">中/EN</button>
+    <div class="nav-foot" id="nav-status">…</div>
+  </aside>
+  <main class="stage">
+    <section id="view-dash" class="view active">
+      <div class="hero">
+        <div class="hero-text">
+          <div class="hero-kicker">DEEPSEEK HARNESS</div>
+          <div class="hero-title" data-t="hero_title">DSH 工作台</div>
+          <div class="hero-sub" data-t="hero_sub">让 Agent 与你一同创作 // NIGHT CITY EDITION</div>
+        </div>
+        <div class="hero-status"><span class="stat-value" id="dash-state">检测中…</span></div>
+      </div>
+      <div class="cards">
+        <div class="card"><div class="stat-label" data-t="card_ver">本体版本</div><div class="stat-value" id="dash-ver">—</div></div>
+        <div class="card"><div class="stat-label">Node</div><div class="stat-value" id="dash-node">—</div></div>
+        <div class="card"><div class="stat-label" data-t="card_model">默认模型</div><div class="stat-value" id="dash-model" style="font-size:15px">—</div></div>
+        <div class="card"><div class="stat-label">Web UI</div><button class="btn" id="btn-openui" data-t="open_webui">打开 WEB UI ↗</button></div>
+      </div>
+      <h2 data-t="folders">文件夹</h2>
+      <div class="row gap wrap">
+        <input class="input" id="ws-path" data-t-ph="ws_ph" placeholder="输入绝对路径新建 dsh 工作区,如 H:/my-project" style="max-width:420px">
+        <button class="btn" id="btn-ws-create" data-t="ws_create">＋ 新建工作区</button>
+      </div>
+      <div class="quick-row">
+        <button class="qcard" data-open="repo"><span class="q-ico">▣</span><span class="q-name"><span data-t="f_repo">本体仓库</span><small>deepseekhardness</small></span><span class="q-arrow">›</span></button>
+        <button class="qcard" data-open="dshHome"><span class="q-ico">⌂</span><span class="q-name"><span data-t="f_home">DSH 主目录</span><small>~/.dsh</small></span><span class="q-arrow">›</span></button>
+        <button class="qcard" data-open="plugins"><span class="q-ico">◧</span><span class="q-name"><span data-t="f_plugins">本地插件</span><small>dsh-plugins</small></span><span class="q-arrow">›</span></button>
+        <button class="qcard" data-open="sessions"><span class="q-ico">☰</span><span class="q-name"><span data-t="f_sessions">会话日志</span><small>sessions</small></span><span class="q-arrow">›</span></button>
+      </div>
+      <div class="card">
+        <div class="console-head"><div class="stat-label" data-t="console">控制台 // CONSOLE</div><button class="btn mini" id="btn-console-clear" data-t="btn_clear">清屏</button></div>
+        <pre class="console-box" id="dash-log">—</pre>
+      </div>
+      <div class="launch-bar">
+        <div class="ver-line" id="ver-line"><span data-t="ver_line">DSH Launcher · 内部日志 logs/</span></div>
+        <div class="row gap">
+          <button class="btn danger" id="btn-stop" data-t="btn_stop">■ 退出</button>
+          <span class="launch-wrap" id="launch-wrap"><button class="btn primary launch-big" id="btn-start"><span data-t="btn_start">▶ 一键启动</span><span class="bolt-r"></span></button><span class="shock"></span></span>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-plugins" class="view">
+      <h1><span data-t="h_plugins">插件管理</span> <span class="h-sub">// PLUGINS</span></h1>
+      <div class="row gap wrap">
+        <input class="input" id="plugin-spec" data-t-ph="plugin_ph" placeholder="npm 包名@版本 或 link:H:/dsh-plugins/xxx">
+        <button class="btn primary" id="btn-plugin-add" data-t="btn_install">安装</button>
+      </div>
+      <table class="tbl" id="tbl-plugins"><thead><tr><th data-t="th_plugin">插件</th><th data-t="th_ver">版本</th><th data-t="th_src">来源</th><th data-t="th_bundle">bundle 层</th><th data-t="th_op">操作</th></tr></thead><tbody></tbody></table>
+      <h2 data-t="market_plugins">插件市场(npm 开源生态)</h2>
+      <div class="row gap wrap"><input class="input" id="mkt-plugin-q" data-t-ph="market_ph" placeholder="搜索关键词,如 memory / vision / theme"><button class="btn" id="mkt-plugin-search" data-t="btn_search">搜索</button></div>
+      <table class="tbl" id="tbl-mkt-plugin"><thead><tr><th data-t="th_plugin">插件</th><th data-t="th_ver">版本</th><th data-t="th_desc">描述</th><th></th></tr></thead><tbody></tbody></table>
+      <h2 data-t="builtin_rows">内置组合行(本体 bundle,只读)</h2>
+      <div class="dim" data-t="builtin_hint" style="margin-bottom:8px">…</div>
+      <div id="builtin-rows" class="dim" style="line-height:2">…</div>
+    </section>
+
+    <section id="view-skills" class="view">
+      <h1><span data-t="h_skills">Skill 管理</span> <span class="h-sub">// SKILLS</span></h1>
+      <div class="row gap"><button class="btn" data-open="skillsUser" data-t="open_skills">打开用户 Skills 文件夹 ↗</button></div>
+      <table class="tbl" id="tbl-skills"><thead><tr><th data-t="th_name">名称</th><th data-t="th_source">来源</th><th data-t="th_desc">描述</th></tr></thead><tbody></tbody></table>
+      <h2 data-t="market_skills">Skill 市场(GitHub 开源)</h2>
+      <div class="row gap wrap"><input class="input" id="mkt-skill-q" data-t-ph="market_ph" placeholder="搜索关键词"><button class="btn" id="mkt-skill-search" data-t="btn_search">搜索</button></div>
+      <table class="tbl" id="tbl-mkt-skill"><thead><tr><th data-t="th_name">仓库</th><th>★</th><th data-t="th_desc">描述</th><th></th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section id="view-sessions" class="view">
+      <h1><span data-t="h_sessions">对话管理</span> <span class="h-sub">// SESSIONS</span></h1>
+      <div class="row gap"><button class="btn" data-open="sessions" data-t="open_sessions">打开会话文件夹 ↗</button><span class="dim" id="sessions-total"></span></div>
+      <table class="tbl" id="tbl-sessions"><thead><tr><th data-t="th_file">会话文件</th><th data-t="th_size">大小 (KB)</th><th data-t="th_mtime">最后修改</th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section id="view-storage" class="view">
+      <h1><span data-t="h_storage">存储空间</span> <span class="h-sub">// STORAGE</span></h1>
+      <table class="tbl" id="tbl-storage"><thead><tr><th data-t="th_dir">目录</th><th data-t="th_usage">占用 (MB)</th><th data-t="th_path">路径</th><th></th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section id="view-update" class="view">
+      <h1><span data-t="h_update">更新推送</span> <span class="h-sub">// UPDATE</span></h1>
+      <div class="cards">
+        <div class="card"><div class="stat-label" data-t="up_core">本体(git pull + install + build)</div><button class="btn primary" id="btn-update-core" data-t="btn_up_core">⟳ 一键更新本体</button></div>
+        <div class="card"><div class="stat-label" data-t="up_plugins">插件(profile 内 pnpm update)</div><button class="btn primary" id="btn-update-plugins" data-t="btn_up_plugins">⟳ 一键更新插件</button></div>
+      </div>
+      <div class="card"><div class="stat-label" data-t="up_out">更新输出</div><pre class="logbox" id="update-log">—</pre></div>
+    </section>
+
+    <section id="view-deck" class="view">
+      <h1><span data-t="h_deck">控制甲板</span> <span class="h-sub">// CONTROL DECK</span></h1>
+      <div class="dim" data-t="deck_hint" style="margin-bottom:12px">保存后 dsh 侧 1.5 秒内热载生效(需已安装 dsh-control-deck 插件)。</div>
+      <div class="card"><div class="stat-label" data-t="deck_prompts">提示词注入(多条,order 分级 · ST 提示词管理器式)</div>
+        <div class="dim" data-t="deck_prompts_hint" style="margin:4px 0 8px">position=system 走系统提示词分级;user-prefix 或 interval&gt;1 时按间隔前置到用户消息。</div>
+        <div id="deck-prompts"></div>
+        <button class="btn mini" id="deck-add-prompt">＋</button></div>
+      <div class="card"><div class="stat-label" data-t="deck_regex">正则脚本(ST runRegexScript 式:{{match}}/$1/trimStrings/placement)</div>
+        <div id="deck-regex"></div>
+        <button class="btn mini" id="deck-add-regex">＋</button></div>
+      <div class="card"><div class="stat-label" data-t="deck_lore">世界书 / 记忆书(ST World Info 全字段)</div>
+        <div class="dim" data-t="deck_lore_hint" style="margin:4px 0 8px">keys 支持纯文本或 /正则/;selective 逻辑 andAny/andAll/notAny/notAll;蓝点=常驻;支持概率/递归/分组/时效。</div>
+        <div id="deck-lore"></div>
+        <button class="btn mini" id="deck-add-lore">＋</button></div>
+      <div class="card"><div class="stat-label" data-t="deck_sampling">采样参数</div>
+        <label class="dim" style="display:block;margin:4px 0"><input type="checkbox" id="deck-sampling-on"> <span data-t="deck_sampling_on">启用采样覆盖(不勾选则完全不干预请求参数)</span></label>
+        <div class="row gap wrap">
+          <label class="dim">temperature <input class="input" style="width:90px" id="deck-temp" type="number" min="0" max="2" step="0.1" placeholder="—"></label>
+          <label class="dim">maxTokens <input class="input" style="width:110px" id="deck-maxtok" type="number" min="1" placeholder="—"></label>
+          <label class="dim">stop <input class="input" style="width:180px" id="deck-stop" placeholder="a,b,c"></label>
+        </div>
+        <div class="row gap wrap" style="margin-top:8px">
+          <label class="dim">scanDepth <input class="input" style="width:70px" id="deck-scandepth" type="number" min="0" max="100" placeholder="6"></label>
+          <label class="dim">maxRecursion <input class="input" style="width:70px" id="deck-maxrec" type="number" min="1" max="10" placeholder="2"></label>
+          <label class="dim">budgetChars <input class="input" style="width:90px" id="deck-budget" type="number" min="200" placeholder="8000"></label>
+        </div>
+        <div class="row gap wrap" style="margin-top:8px">
+          <span class="dim" data-t="deck_tools_off">禁用工具(逗号分隔,如 web_search,web_fetch)</span>
+          <input class="input" style="max-width:320px" id="deck-tools-off" placeholder="web_search">
+        </div>
+        <div class="dim" data-t="deck_param_note" style="margin-top:8px">思考强度请在本体模型选择器设置(本页不做,避免冲突)。top_p/top_k 等字段 dsh 适配器未透传,暂无法生效。</div>
+      </div>
+      <button class="btn primary" id="deck-save" data-t="deck_save">保存并热载</button>
+    </section>
+
+    <section id="view-tokens" class="view">
+      <h1><span data-t="h_tokens">Tokens 统计</span> <span class="h-sub">// USAGE</span></h1>
+      <div class="row gap wrap usage-bar">
+        <div class="seg" id="usage-tab">
+          <button class="seg-btn active" data-utab="overview">Overview</button>
+          <button class="seg-btn" data-utab="models">Models</button>
+        </div>
+        <div class="seg right" id="usage-range">
+          <button class="seg-btn active" data-range="all">All</button>
+          <button class="seg-btn" data-range="30">30d</button>
+          <button class="seg-btn" data-range="7">7d</button>
+        </div>
+      </div>
+      <div id="usage-overview">
+        <div class="stat-grid">
+          <div class="ucard"><div class="stat-label">Sessions</div><div class="stat-value" id="u-sessions">—</div></div>
+          <div class="ucard"><div class="stat-label">Messages</div><div class="stat-value" id="u-messages">—</div></div>
+          <div class="ucard"><div class="stat-label">Total tokens</div><div class="stat-value" id="u-total">—</div></div>
+          <div class="ucard"><div class="stat-label">Active days</div><div class="stat-value" id="u-active">—</div></div>
+          <div class="ucard"><div class="stat-label">Current streak</div><div class="stat-value" id="u-cstreak">—</div></div>
+          <div class="ucard"><div class="stat-label">Longest streak</div><div class="stat-value" id="u-lstreak">—</div></div>
+          <div class="ucard"><div class="stat-label">Busiest day</div><div class="stat-value" id="u-busiest">—</div></div>
+          <div class="ucard"><div class="stat-label">Favorite model</div><div class="stat-value" id="u-favmodel">—</div></div>
+        </div>
+        <div class="card heat-card">
+          <div class="heatmap" id="heatmap"></div>
+          <div class="fun-fact" id="fun-fact"></div>
+        </div>
+        <h2 data-t="daily_detail">按日明细</h2>
+        <table class="tbl" id="tbl-days"><thead><tr><th data-t="th_date">日期</th><th data-t="th_calls">调用</th><th data-t="th_hit">命中</th><th data-t="th_miss">未命中</th><th data-t="th_out">输出</th><th data-t="th_cost">费用 ($)</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div id="usage-models" style="display:none">
+        <table class="tbl" id="tbl-models"><thead><tr><th>provider/model</th><th data-t="th_tokens">Tokens</th><th data-t="th_calls">调用</th><th data-t="th_hit">命中</th><th data-t="th_miss">未命中</th><th data-t="th_out">输出</th><th data-t="th_cost">费用 ($)</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <section id="view-skins" class="view">
+      <h1><span data-t="h_skins">外观皮肤</span> <span class="h-sub">// SKINS</span></h1>
+      <div class="card" style="margin-bottom:14px">
+        <div class="stat-label" data-t="ui_settings">界面设置</div>
+        <div class="row gap wrap">
+          <span class="dim" data-t="theme_label">default 主题(明/暗/跟随系统)</span>
+          <div class="seg" id="theme-seg">
+            <button class="seg-btn" data-theme="light" data-t="theme_light">明亮</button>
+            <button class="seg-btn" data-theme="dark" data-t="theme_dark">暗黑</button>
+            <button class="seg-btn" data-theme="auto" data-t="theme_auto">跟随系统</button>
+          </div>
+        </div>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <div class="stat-label" data-t="skin_launcher">启动器皮肤</div>
+          <div id="skins-launcher" class="skin-list"></div>
+          <details><summary data-t="imp_l">导入新启动器皮肤</summary>
+            <input class="input" id="imp-l-name" data-t-ph="skin_name_ph" placeholder="皮肤名"><textarea class="input area" id="imp-l-css" placeholder="粘贴 CSS(覆盖 --lc-* 变量)"></textarea>
+            <button class="btn" id="btn-imp-l" data-t="btn_import">导入</button></details>
+        </div>
+        <div class="card">
+          <div class="stat-label" data-t="skin_frontend">前端(dsh Web UI)皮肤</div>
+          <div id="skins-frontend" class="skin-list"></div>
+          <details><summary data-t="imp_f">导入新前端皮肤</summary>
+            <input class="input" id="imp-f-name" data-t-ph="skin_name_ph" placeholder="皮肤名"><textarea class="input area" id="imp-f-css" placeholder="粘贴 CSS(覆盖 --dsw-alias-* 变量)"></textarea>
+            <button class="btn" id="btn-imp-f" data-t="btn_import">导入</button></details>
+          <div class="dim" data-t="skin_note">切换后刷新 dsh 页面生效;选「(无)」恢复原生外观</div>
+          <button class="btn" id="btn-community-skins" data-t="btn_comm_skins" style="margin-top:8px">◆ 获取社区皮肤</button>
+          <div id="comm-skins" style="display:none">
+            <div class="row gap wrap" style="margin-top:8px"><input class="input" id="mkt-skin-q" data-t-ph="market_ph" placeholder="皮肤关键词"><button class="btn" id="mkt-skin-search" data-t="btn_search">搜索</button></div>
+            <table class="tbl" id="tbl-mkt-skin"><thead><tr><th data-t="th_name">皮肤插件</th><th data-t="th_ver">版本</th><th data-t="th_desc">描述</th><th></th></tr></thead><tbody></tbody></table>
+            <div class="dim" data-t="comm_skin_note">社区皮肤以 dsh 插件形式安装到 web profile;安装后刷新 dsh 页面即可在其设置中启用。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-logs" class="view">
+      <h1><span data-t="h_logs">内部日志</span> <span class="h-sub">// LOGS</span></h1>
+      <div class="row gap">
+        <button class="btn log-src active" data-log="launcher" data-t="log_launcher">启动器日志</button>
+        <button class="btn log-src" data-log="dsh" data-t="log_dsh">dsh 输出</button>
+        <button class="btn log-src" data-log="update-core" data-t="log_upcore">本体更新</button>
+        <button class="btn log-src" data-log="update-plugins" data-t="log_upplugins">插件更新</button>
+      </div>
+      <pre class="logbox tall" id="log-view">—</pre>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script src="/i18n.js"></script>
+<script src="/app.js"></script>
+<script src="/deck-market.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+# dsh-control-deck bundle patch: one host row.
+- insert:
+    - id: control-deck
+      name: dsh-control-deck
