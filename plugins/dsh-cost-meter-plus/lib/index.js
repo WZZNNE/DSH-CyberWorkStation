@@ -1160,6 +1160,10 @@ export function apply(ctx) {
               cacheWrite: usage.cacheWriteTokens ?? 0,
               reasoning: usage.reasoningTokens ?? 0,
             }, options?.model, options?.sessionId, Date.now(), options?.provider)
+            // rc.8 的 CLI 关机走 process.exit(不触发 beforeExit),2 秒延迟写盘
+            // 定时器在一次性(headless run)进程里等不到 —— 记账后立即落盘。
+            // flush 是幂等原子写(几 KB JSON),长驻 web 进程下代价可忽略。
+            ledger.flush()
           } catch (error) {
             ctx.logger?.warn?.(`[dsh-cost-meter] 计费失败: ${String(error)}`)
           }
@@ -1178,7 +1182,8 @@ export function apply(ctx) {
   syncOpenRouterPrices(ctx, ledger).catch(error => {
     console.warn(`[dsh-cost-meter] OpenRouter price auto-sync failed: ${error?.stack ?? String(error)}`)
   })
-  // fork:一次性(headless)进程退出前同步落盘,避免延迟写盘定时器被丢弃导致账本漏记。
+  // fork:进程退出/插件卸载双兜底落盘(rc.8 起主要路径是 account 后的即时 flush)。
   process.once('beforeExit', () => { try { if (ledger.pendingWrite) ledger.flush() } catch { /* 退出路径忽略 */ } })
+  ctx.effect(() => () => { try { ledger.close() } catch { /* 卸载路径忽略 */ } }, 'cost-meter: flush ledger on dispose')
   ctx.provide('costMeter', createService(ctx, ledger))
 }

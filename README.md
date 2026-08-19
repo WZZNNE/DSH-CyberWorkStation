@@ -126,14 +126,14 @@ The 🌐 icon at the bottom-left switches zh/en; the default skin supports light
 
 | Plugin | Responsibility | Tests |
 |---|---|---|
-| `dsh-control-deck` | ST-grade prompts/regex/lorebook/sampling (pure-function engine + thin host shell) | 11 semantics tests |
-| `dsh-safe-guard` | Destructive-command denial (deny, no confirm noise) | 38 |
+| `dsh-control-deck` | ST-grade prompts/regex/lorebook/sampling (pure-function engine + thin host shell) | 26 (11 semantics + 15 adversarial) |
+| `dsh-safe-guard` | Destructive-command denial (deny, no confirm noise) | 44 (38 + 6 bypass-adversarial) |
 | `dsh-cost-meter-plus` | Balances / prices / cache hits / ledger | 6 |
 | `dsh-token-usage-plus` | De-peaked usage panel | - |
 | `dsh-skin-loader` | Frontend skin injection | - |
 | `dsh-price-hint` | Hover model prices | - |
 | `dsh-quick-workspace` | HTTP quick workspace | - |
-| `dsh-skin-studio` | Model-facing skin studio: the `skin_studio` tool plus a guided requirements flow, installing through the launcher API; companion dsh skill (`dsh-skills/skin-studio`, installed to `~/.dsh/skills/`) carries the variable tables and templates | 4 |
+| `dsh-skin-studio` | Model-facing skin studio: the `skin_studio` tool plus a guided requirements flow, installing through the launcher API; companion dsh skill (`dsh-skills/skin-studio`, installed to `~/.dsh/skills/`) carries the variable tables and templates | 9 (4 + 5 adversarial) |
 
 ## ✦ Engineering skills (six-pack)
 

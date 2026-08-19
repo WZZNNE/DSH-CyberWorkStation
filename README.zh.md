@@ -126,14 +126,14 @@ setup.cmd
 
 | 插件 | 职责 | 测试 |
 |---|---|---|
-| `dsh-control-deck` | ST 级提示词/正则/世界书/采样(纯函数引擎 + 宿主薄壳) | 11 项语义测试 |
-| `dsh-safe-guard` | 危险命令拦截(deny,不打扰确认流) | 38 项 |
+| `dsh-control-deck` | ST 级提示词/正则/世界书/采样(纯函数引擎 + 宿主薄壳) | 26 项(11 语义 + 15 对抗) |
+| `dsh-safe-guard` | 危险命令拦截(deny,不打扰确认流) | 44 项(38 + 6 绕过对抗) |
 | `dsh-cost-meter-plus` | 余额/价格/缓存命中/台账 | 6 项 |
 | `dsh-token-usage-plus` | 用量面板去峰谷 | - |
 | `dsh-skin-loader` | 前端皮肤注入 | - |
 | `dsh-price-hint` | 模型悬停价格 | - |
 | `dsh-quick-workspace` | HTTP 快建工作区 | - |
-| `dsh-skin-studio` | 模型侧皮肤工坊:`skin_studio` 工具 + 需求引导流程,经启动器 API 落盘启用;配套 dsh Skill(`dsh-skills/skin-studio`,装到 `~/.dsh/skills/`)提供变量清单与模板 | 4 项 |
+| `dsh-skin-studio` | 模型侧皮肤工坊:`skin_studio` 工具 + 需求引导流程,经启动器 API 落盘启用;配套 dsh Skill(`dsh-skills/skin-studio`,装到 `~/.dsh/skills/`)提供变量清单与模板 | 9 项(4 + 5 对抗) |
 
 ## ✦ 工程 Skills(六件套)
 
