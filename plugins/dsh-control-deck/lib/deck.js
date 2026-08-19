@@ -93,8 +93,9 @@ export function compileRules(regex, placement) {
 
 /**
  * 单条规则应用(ST filterString 语义):对整段匹配与每个捕获组先做 trimStrings 剔除,
- * 再展开替换串里的 {{match}}(=整段匹配)、$&、$1..$9。全程函数式替换,
- * 避免 $& 在替换串里被 String.replace 当特殊符号导致 {{match}} 转换失效。
+ * 再展开替换串里的 {{match}}(=整段匹配)、$&、$$(字面 $,JS/ST 约定)、$1..$9。
+ * 用单遍扫描一次性识别全部记号:插入的匹配/组文本不会被二次当作记号重解析
+ * (例如匹配文本里含 "$1" 不会被误认成捕获组;字面 "$$5" 正确产出 "$5")。
  */
 export function applyRules(text, rules) {
   const trim = (v, strings) => { let x = String(v ?? ''); for (const s of strings) x = x.split(s).join(''); return x }
@@ -105,10 +106,11 @@ export function applyRules(text, rules) {
       const hasNamed = typeof args[args.length - 1] === 'object'
       const groups = args.slice(1, hasNamed ? -3 : -2).map(g => trim(g, rule.trimStrings))
       const match = trim(args[0], rule.trimStrings)
-      return rule.replaceString
-        .split('{{match}}').join(match)
-        .replace(/\$&/g, match)
-        .replace(/\$(\d)/g, (_, d) => groups[Number(d) - 1] ?? '')
+      return rule.replaceString.replace(/\{\{match\}\}|\$\$|\$&|\$(\d)/g, (tok, d) => {
+        if (tok === '$$') return '$' // 字面美元符转义
+        if (d !== undefined) return groups[Number(d) - 1] ?? '' // $1..$9(越界=空)
+        return match // {{match}} 或 $&
+      })
     })
   }
   return t
