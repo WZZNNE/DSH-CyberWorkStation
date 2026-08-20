@@ -17,7 +17,7 @@ import vm from 'node:vm'
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 // 本体检出位置:环境变量 > 整合包内置 core/ > 套件同级 deepseek-harness/ > 本机默认
 const REPO = process.env.DSH_REPO
-  ?? [path.join(ROOT, '..', 'core'), path.join(ROOT, '..', 'deepseek-harness'), 'H:/deepseekhardness'].find(p => fs.existsSync(path.join(p, 'package.json')))
+  ?? [path.join(ROOT, '..', 'core'), path.join(ROOT, '..', 'deepseek-harness')].find(p => fs.existsSync(path.join(p, 'package.json')))
   ?? path.join(ROOT, '..', 'core')
 const DSH_HOME = path.join(os.homedir(), '.dsh')
 const PLUGINS_DIR = process.env.DSH_SUITE_PLUGINS ?? path.join(ROOT, '..', 'plugins')
