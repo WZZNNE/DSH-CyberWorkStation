@@ -112,3 +112,6 @@ details { margin-top: 10px } summary { cursor: pointer; color: var(--lc-text-dim
 .btn.skin-del { margin: 0; padding: 4px 8px; border-radius: 0 6px 6px 0; border-left: none; opacity: .55; font-size: 11px }
 .btn.skin-del:hover { opacity: 1; color: #ff5c72; border-color: #ff5c72 }
 .mkt-repo { text-decoration: none; margin-left: 4px }
+
+/* ?noanim:禁用全部动画/过渡(无头截图与录屏用) */
+html.noanim *, html.noanim *::before, html.noanim *::after { animation: none !important; transition: none !important; opacity: 1 }

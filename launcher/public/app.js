@@ -12,6 +12,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 $$('.nav-btn').forEach(b => b.addEventListener('click', () => {
   $$('.nav-btn').forEach(x => x.classList.remove('active')); b.classList.add('active')
   $$('.view').forEach(v => v.classList.remove('active')); $('#view-' + b.dataset.view).classList.add('active')
+  location.hash = b.dataset.view // 可分享的直达链接,如 #deck / #skins
   refreshers[b.dataset.view]?.()
 }))
 $$('[data-open]').forEach(b => b.addEventListener('click', async () => toast((await api('/api/open', { key: b.dataset.open })).message)))
@@ -190,6 +191,13 @@ $$('#theme-seg .seg-btn').forEach(b => {
 })
 
 const refreshers = { dash: refreshDash, plugins: refreshPlugins, skills: refreshSkills, sessions: refreshSessions, storage: refreshStorage, tokens: refreshTokens, skins: refreshSkins, logs: refreshLogs, update: pollUpdate }
+if (new URLSearchParams(location.search).has('noanim')) document.documentElement.classList.add('noanim') // 截图/录屏:禁动画
 refreshDash(); refreshSkins()
+// URL hash 直达视图(如 /#deck):启动时还原,便于分享与截图
+{
+  const view = location.hash.replace('#', '')
+  const btn = view === '' ? null : $$('.nav-btn').find(b => b.dataset.view === view)
+  if (btn) btn.click()
+}
 setInterval(() => { if ($('#view-dash').classList.contains('active')) refreshDash() }, 3000)
 $('#btn-console-clear').addEventListener('click', () => { $('#dash-log').textContent = '—' })

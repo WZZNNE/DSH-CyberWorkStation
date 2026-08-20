@@ -5,6 +5,18 @@
 > 一套让 [DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) 从"命令行工具"变成"可视化工作站"的完整套件:赛博朋克风桌面启动器 + 8 个生产级插件 + 6 个工程 Skill + 1 个 dsh 内 Skill。
 > **不改本体一行代码** —— 全部能力通过官方插件扩展点外挂实现,本体随时可独立升级。
 
+![DSH 工作台 · 赛博朋克 2077 × 边缘行者皮肤](docs/screenshots/dashboard.png)
+
+| SillyTavern 级控制甲板 | 皮肤管理 + 社区皮肤市场 |
+|---|---|
+| ![控制甲板](docs/screenshots/deck.png) | ![皮肤系统](docs/screenshots/skins.png) |
+
+<details><summary>更多截图:CC 风格 Tokens 统计(热力图 / 连续天数 / 白鲸记彩蛋)</summary>
+
+![Tokens 统计](docs/screenshots/tokens.png)
+
+</details>
+
 ---
 
 ## ✦ 这是什么

@@ -5,6 +5,18 @@
 > A complete toolkit that turns [DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) from a CLI tool into a visual workstation: a cyberpunk desktop launcher + 8 production-grade plugins + 6 engineering skills + 1 in-dsh skill.
 > **Zero core rewrites** — every capability is delivered through official plugin extension points, so the upstream core stays independently upgradable at all times.
 
+![DSH Workbench · Cyberpunk 2077 × Edgerunners skin](docs/screenshots/dashboard.png)
+
+| SillyTavern-grade Control Deck | Skin manager + community skin market |
+|---|---|
+| ![Control Deck](docs/screenshots/deck.png) | ![Skin system](docs/screenshots/skins.png) |
+
+<details><summary>More: CC-style token analytics (heatmap / streaks / Moby-Dick easter egg)</summary>
+
+![Token analytics](docs/screenshots/tokens.png)
+
+</details>
+
 ---
 
 ## ✦ What is this
