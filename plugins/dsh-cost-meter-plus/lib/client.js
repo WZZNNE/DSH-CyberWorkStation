@@ -1,18 +1,9 @@
 /**
- * dsh-cost-meter 浏览器端 bundle(单文件,经 __ModuleLoader__ 加载)。
- *
- * 提供四个界面:
- *  - conversation.composer.dock / conversation.session.header.actions:本会话费用;
- *  - sidebar.footer.action:当日费用;
- *  - settings.section「费用」:汇总卡片、今日会话、历史记录、显示与价格设置、
- *    官方价格同步、历史清除。
- *
- * 数据通道:
- *  - costUsage 会话投影(useProjection)+ 客户端价格表 → 本会话费用;
- *  - remote.costMeter.*(Typert RPC)→ 账本快照、配置、官方价格同步。
- * 样式全部使用 --dsw-* 主题变量,跟随全局亮/暗主题。
+ * dsh-cost-meter-plus browser half: the settings card, the per-session cost
+ * badge (costUsage projection + client price tables), balance / quota widgets,
+ * history views and the bilingual (zh/en) UI strings. Loaded through
+ * window.__ModuleLoader__ like every dsh client plugin.
  */
-
 window.__ModuleLoader__.load({
   id: 'dsh-cost-meter-plus',
   factory: (require) => {
@@ -23,14 +14,11 @@ window.__ModuleLoader__.load({
     const React = require('react')
     const { Tooltip } = require('@deepseek-ai/dsh-client-ui-primitives')
 
-    // Token 用量统计的显示位置切换(通用设置 / 独立分节)暂时隐藏:仅固定显示在「费用」设置分节内。
-    // 恢复三位置切换时改回 true 即可(下拉框、通用设置注入与独立分节注册都会随之恢复)。
     const USAGE_POSITION_SWITCHABLE = false
 
-    // ── 样式 ────────────────────────────────────────────────────────────────
 
     const css = [
-      '/* dsh-cost-meter: 会话费用徽章与设置页 */',
+      '/* dsh-cost-meter: session cost badge and settings card */',
       '.cm-root{display:block;text-align:center;max-width:var(--dsh-chat-content-width,720px);width:100%;margin:0 auto;box-sizing:border-box;padding:4px calc(var(--dsh-composer-side-clearance,0px) + 16px) 0;font-size:12px;line-height:20px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '.cm-chip{display:inline-flex;align-items:center;gap:4px;max-width:180px;padding:0 8px;height:22px;border-radius:6px;background:var(--dsw-alias-bg-layer-2);font-size:12px;line-height:22px;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '.cm-foot{display:flex;align-items:center;gap:6px;height:32px;padding:0 8px;border-radius:8px;font-size:12px;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden}',
@@ -60,13 +48,11 @@ window.__ModuleLoader__.load({
       '.cm-card-value{font-size:20px;line-height:28px;font-weight:600}',
       '.cm-card-sub{font-size:12px;color:var(--dsw-alias-label-tertiary);margin-top:4px}',
       '.cm-h{font-size:13px;font-weight:600;margin:0}',
-      // 可折叠分节:常规三角展开按钮(caret 三角形,展开朝下/收起朝右)。
       '.cm-collapse-h{display:flex;align-items:center;gap:8px;background:none;border:none;padding:0;margin:0;cursor:pointer;color:inherit;font:inherit;text-align:left}',
       '.cm-collapse-h:hover .cm-h{color:var(--dsw-alias-interactive-text-hover,var(--dsw-alias-label-primary))}',
       '.cm-caret{flex:none;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--dsw-alias-label-secondary);transform:rotate(-90deg);transition:transform .15s ease}',
       '.cm-caret.open{transform:rotate(0)}',
       '.cm-collapse-body{display:flex;flex-direction:column;gap:12px;margin-top:12px}',
-      // 顶栏:界面语言等即时可见项,右对齐。
       '.cm-toolbar{display:flex;justify-content:flex-end;align-items:center;gap:10px}',
       '.cm-toolbar .cm-field{flex-direction:row;align-items:center;gap:8px}',
       '.cm-toolbar .cm-field label{margin:0;font-size:12px;color:var(--dsw-alias-label-tertiary)}',
@@ -79,7 +65,6 @@ window.__ModuleLoader__.load({
       '.cm-table tr:last-child td{border-bottom:none}',
       '.cm-table tr.cm-row-click{cursor:pointer}',
       '.cm-table tr.cm-row-click:hover td{background:var(--dsw-alias-bg-hover,rgba(127,127,127,.08))}',
-      // 会话单元格:标题为主行(超出省略),会话 ID 为辅行(可选显示,等宽淡化)。
       '.cm-sess-title{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.cm-sess-id{font-size:11px;font-family:ui-monospace,Consolas,monospace;color:var(--dsw-alias-label-tertiary)}',
       '.cm-empty{font-size:12px;color:var(--dsw-alias-label-tertiary);padding:8px 0}',
@@ -263,12 +248,14 @@ window.__ModuleLoader__.load({
       '.cm-mm-row.warn .cm-bbox-fill{background:var(--dsw-alias-state-warn-primary)}',
       '.cm-mm-row.over .cm-bbox-fill{background:var(--dsw-alias-state-error-primary)}',
       '.cm-bal-line{font-size:13px;color:var(--dsw-alias-label-secondary)}',
-      '.cm-bal-line.warn{color:var(--dsw-alias-state-warning-primary,#b45309)}',
+      '.cm-bal-line.warn{color:var(--dsw-alias-state-warn-primary,#b45309)}',
       '.cm-bal-line.err,.cm-bal-err{color:var(--dsw-alias-state-error-primary)}',
       '.cm-footer-stack{display:flex;flex-direction:column;gap:6px;width:100%;align-items:stretch;box-sizing:border-box}',
       '.cm-footer-stack.rail{align-items:center}',
       '.cm-footer-stack .cm-bbox{width:100%;min-width:0}',
       '.cm-footer-stack .cm-foot{width:100%;box-sizing:border-box}',
+      'select option,select optgroup{background:var(--dsw-alias-bg-layer-2,#1c1f28);color:var(--dsw-alias-label-primary,#e8ecf5)}',
+      'select option:checked{background:var(--dsw-alias-state-business-tertiary,rgba(106,163,255,.18))}',
       '@media (max-width:640px){.cm-cards{grid-template-columns:1fr}.cm-grid{grid-template-columns:1fr}.cm-budget-controls{grid-template-columns:1fr}}',
     ].join('\n')
     const cssTagId = 'dsh-cost-meter/client.css'
@@ -280,12 +267,9 @@ window.__ModuleLoader__.load({
       document.head.appendChild(tag)
     }
 
-    // ── 多语言(中/英) ──────────────────────────────────────────────────────
 
-    /** 全部界面文案:zh / en。{var} 为插值占位。 */
     const MESSAGES = {
       zh: {
-        // 会话徽章
         sessionCostTitle: '本会话费用(按每次调用实际时刻精确计费)',
         sessionDetailTokens: '输入 {input} · 缓存 {cache} · 输出 {output}',
         sessionDetailCache: '缓存:读 {read} · 写 {write}(写入按命中价计费)',
@@ -298,17 +282,15 @@ window.__ModuleLoader__.load({
         cacheLineWeek: '本周(近7天):命中 {hit} · 未命中 {miss} · 总 {total}',
         cacheLineMonth: '本月:命中 {hit} · 未命中 {miss} · 总 {total}',
         cacheLineTotal: '累计:命中 {hit} · 未命中 {miss} · 总 {total}',
-        // 余额行
         balanceQueryFailed: '余额查询失败:{message}',
         unknownError: '未知错误',
         balance: '余额',
         queryFailed: '查询失败',
-        balanceTitle: 'DeepSeek 开放平台账户余额',
+        balanceTitle: '接口账户余额(DeepSeek 开放平台或 OpenRouter credits)',
         reconcileLabel: '官方余额变动与本地账本交叉对账(偏差超阈时提示)',
         totalBalance: '总余额 {amount}',
         grantedToppedUp: '赠送 {granted} · 充值 {toppedUp}',
         updatedAt: '更新时间 {time}',
-        // 预算图框
         budgetOf: '预算({period})',
         usedOf: '已用 {used} / {amount}',
         todayShare: '今日 {amount} · 占预算 {pct}',
@@ -319,13 +301,11 @@ window.__ModuleLoader__.load({
         monthCost: '本月 {amount}',
         totalCost: '累计 {amount}',
         today: '今日',
-        // 周期
         periodDay: '今日',
         periodMonth: '本月',
         periodAll: '累计',
         periodCustom: '自定义',
         periodCustomRange: '自定义区间',
-        // 表格
         noHistory: '暂无历史记录。开始对话后,费用将按天汇总在这里。',
         colDate: '日期',
         colCalls: '调用',
@@ -335,8 +315,8 @@ window.__ModuleLoader__.load({
         colCost: '费用',
         noSessionsToday: '今日暂无会话记录。',
         colSession: '会话',
-        // 预算面板
         enableBudget: '启用预算',
+        enable: '启用',
         budgetAmountLabel: '预算额度(按显示币种)',
         budgetPeriodLabel: '预算周期',
         startDate: '开始日期',
@@ -346,14 +326,12 @@ window.__ModuleLoader__.load({
         budgetStatus: '{period}预算 {amount} · 已用 {used} · {pct}%',
         overLimit: '(已超出)',
         nearLimit: '(接近上限)',
-        // 价格卡
         legacyModel: '旧模型',
         defaultFallback: '默认回退',
         remove: '移除',
         tierBase: '基础',
         tierOffPeak: '谷时',
         tierPeak: '峰时',
-        // 余额面板
         balanceRefreshFailed: '余额刷新失败:{message}',
         balanceLine: '总余额 {total} · 赠送 {granted} · 充值 {toppedUp} · 更新于 {time}',
         balanceQueryFailedHint: '余额查询失败:{message}(使用 设置→模型 中配置的 API Key)',
@@ -430,7 +408,6 @@ window.__ModuleLoader__.load({
         goShortWeekly: '周',
         goShortMonthly: '月',
         budgetShort: '预算',
-        // 设置页
         ledgerReadFailed: '账本读取失败:{message}',
         readingLedger: '正在读取账本…',
         ledgerUnavailable: '账本不可用',
@@ -609,13 +586,11 @@ window.__ModuleLoader__.load({
         source: ';来源:{source}',
         sourceOfficial: '官方文档',
         sourceBundled: '内置默认',
-        // 语言
         languageLabel: '界面语言',
         localeAuto: '跟随浏览器(自动)',
         localeZh: '简体中文',
         localeEn: 'English',
-        sectionLabel: '费用',
-        // RPC 错误
+        sectionLabel: '用量与费用',
         rpcFailed: '{method} 调用失败',
         rpcSyncFailed: '同步调用失败',
         rpcBalanceFailed: '余额刷新调用失败',
@@ -637,7 +612,7 @@ window.__ModuleLoader__.load({
         unknownError: 'Unknown error',
         balance: 'Balance',
         queryFailed: 'Query failed',
-        balanceTitle: 'DeepSeek open-platform account balance',
+        balanceTitle: 'API account balance (DeepSeek open platform or OpenRouter credits)',
         reconcileLabel: 'Cross-check official balance changes against the local ledger (warn when they diverge)',
         totalBalance: 'Total {amount}',
         grantedToppedUp: 'Granted {granted} · Topped-up {toppedUp}',
@@ -667,6 +642,7 @@ window.__ModuleLoader__.load({
         noSessionsToday: 'No sessions recorded today.',
         colSession: 'Session',
         enableBudget: 'Enable budget',
+        enable: 'Enable',
         budgetAmountLabel: 'Budget amount (in display currency)',
         budgetPeriodLabel: 'Budget period',
         startDate: 'Start date',
@@ -940,26 +916,23 @@ window.__ModuleLoader__.load({
         localeAuto: 'Follow browser (auto)',
         localeZh: 'Simplified Chinese',
         localeEn: 'English',
-        sectionLabel: 'Cost',
+        sectionLabel: 'Usage & cost',
         rpcFailed: '{method} call failed',
         rpcSyncFailed: 'Sync call failed',
         rpcBalanceFailed: 'Balance refresh call failed',
       },
     }
 
-    /** 探测浏览器语言:zh* → zh,其余 → en。 */
     function detectBrowserLocale() {
       const lang = typeof navigator !== 'undefined' && typeof navigator.language === 'string' ? navigator.language : ''
       return lang.toLowerCase().startsWith('zh') ? 'zh' : 'en'
     }
 
-    /** 解析生效语言:显式 zh/en 直接采用;auto/缺失 → 浏览器探测。 */
     function resolveLocale(configLocale) {
       if (configLocale === 'zh' || configLocale === 'en') return configLocale
       return detectBrowserLocale()
     }
 
-    /** 构造按当前语言取文案的函数 t(key, vars)。 */
     function makeT(locale) {
       const dict = locale === 'zh' ? MESSAGES.zh : MESSAGES.en
       return (key, vars) => {
@@ -971,7 +944,6 @@ window.__ModuleLoader__.load({
 
     const PERIOD_KEYS = { day: 'periodDay', month: 'periodMonth', all: 'periodAll', custom: 'periodCustom' }
 
-    // ── 线路校验器(与服务端 zod 清单对应,宽松校验必要字段) ─────────────────
 
     function fail(path, expect) {
       throw new Error('dsh-cost-meter: 服务端数据非法 (' + path + ': ' + expect + ')')
@@ -989,7 +961,6 @@ window.__ModuleLoader__.load({
       return v
     }
     function aggregateModelMap(v, path) {
-      // 宽容解析模型聚合 map(旧账本条目可能缺字段/带 null/非对象):数值归一为有限非负数。
       const out = {}
       if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
         for (const key of Object.keys(v)) {
@@ -1109,7 +1080,6 @@ window.__ModuleLoader__.load({
           return out
         })(),
         priceTableDisplay: (() => {
-          // 键 'provider:modelId',缺省 = DeepSeek 模型直接显示、第三方收入拓展表。
           const out = {}
           if (v.priceTableDisplay !== null && typeof v.priceTableDisplay === 'object' && !Array.isArray(v.priceTableDisplay)) {
             for (const [k, val] of Object.entries(v.priceTableDisplay)) if (typeof k === 'string') out[k] = val === true
@@ -1127,7 +1097,6 @@ window.__ModuleLoader__.load({
                 display: e.display === 'sidebar' || e.display === 'both' || e.display === 'off' ? e.display : 'settings',
                 refreshMinutes: typeof e.refreshMinutes === 'number' && Number.isFinite(e.refreshMinutes) ? e.refreshMinutes : 15,
                 apiKey: typeof e.apiKey === 'string' ? e.apiKey : '',
-                // SCNet 本地计量字段(issue #26):其余厂商无此二键,缺省剔除。
                 ...(typeof e.planCredits === 'number' && Number.isFinite(e.planCredits) && e.planCredits > 0 ? { planCredits: e.planCredits } : {}),
                 ...(typeof e.planStart === 'string' ? { planStart: e.planStart } : {}),
               }
@@ -1244,7 +1213,6 @@ window.__ModuleLoader__.load({
         codingPlans: v.codingPlans !== null && typeof v.codingPlans === 'object' && !Array.isArray(v.codingPlans) ? v.codingPlans : {},
         history: Array.isArray(v.history) ? v.history.map((d, i) => parseDay(d, path + '.history[' + i + ']')) : [],
         config: parseConfig(v.config, path + '.config'),
-        // 扩展价格表目录(宿主只读下发;缺失时 UI 自动隐藏目录面板)。
         priceCatalog: v.priceCatalog !== null && typeof v.priceCatalog === 'object' && !Array.isArray(v.priceCatalog) ? v.priceCatalog : null,
         meta: {
           now: typeof v.meta?.now === 'number' ? v.meta.now : Date.now(),
@@ -1297,7 +1265,6 @@ window.__ModuleLoader__.load({
       return v
     })
 
-    // ── RPC 贡献(与服务端 ./typert 清单一一对应) ───────────────────────────
 
     const CONTRIBUTION = {
       package: 'dsh-cost-meter-plus',
@@ -1368,7 +1335,6 @@ window.__ModuleLoader__.load({
       ],
     }
 
-    // ── 计费与显示助手(与服务端 pricing.js 一致) ───────────────────────────
 
     function priceEntryFor(modelId, table) {
       const models = table?.models ?? {}
@@ -1415,7 +1381,6 @@ window.__ModuleLoader__.load({
       const reasoning = Math.max(0, Number(buckets.reasoning) || 0)
       return (input * tier.cacheMiss + output * tier.output + (cacheRead + cacheWrite) * tier.cacheHit + reasoning * (tier.reasoning ?? 0)) / 1_000_000
     }
-    /** 已换算币种金额 → 显示字符串(符号 + 可调小数位)。 */
     function formatMoneyValue(value, config) {
       const symbol = typeof config?.symbol === 'string' && config.symbol.length > 0 ? config.symbol : '$'
       const decimals = Math.max(0, Math.min(10, Math.floor(Number(config?.decimals) || 2)))
@@ -1437,20 +1402,12 @@ window.__ModuleLoader__.load({
       if (v < 1000000) return scaled(v / 1000) + 'K'
       return scaled(v / 1000000) + 'M'
     }
-    /**
-     * 模型名归一化(与 lib/pricing.js 的 canonModelId 同逻辑;bundle 无法导入,修改时两处同步):
-     * 小写,去括号附注(如 (go)),只保留字母数字——大小写/空格/横杠/点号等差异全部忽略。
-     */
     function canonModelIdLocal(id) {
       return String(id ?? '').toLowerCase()
         .replace(/\([^)]*\)/g, ' ')
         .replace(/（[^）]*）/g, ' ')
         .replace(/[^a-z0-9]+/g, '')
     }
-    /**
-     * 模型名自动匹配(与 lib/pricing.js 的 matchModelId 同逻辑;bundle 无法导入,修改时两处同步)。
-     * 精确 → 归一化等价 → 宽泛包含(取最长候选) → 去后缀 → 前缀 → 家族 token 相似。
-     */
     function matchModelIdLocal(modelId, candidates) {
       if (typeof modelId !== 'string' || modelId.length === 0) return null
       const list = Array.isArray(candidates) ? candidates.filter(c => typeof c === 'string' && c.length > 0) : []
@@ -1491,16 +1448,11 @@ window.__ModuleLoader__.load({
         const ct = tokensOf(c)
         let n = 0
         while (n < mt.length && n < ct.length && mt[n] === ct[n]) n += 1
-        // 防跨版本误配(issue #18,与 pricing.js 同步):分歧位置两侧都是数字/版本号 token 时拒绝匹配。
         if (n < mt.length && n < ct.length && /^\d+$/.test(mt[n]) && /^\d+$/.test(ct[n])) continue
         if (n >= 2 && (n > bestLen || (n === bestLen && best !== null && c.length < best.length))) { best = c; bestLen = n }
       }
       return best
     }
-    /**
-     * 客户端价格解析(与 pricing.js providerPriceEntryFor 同口径):手动覆盖 → 精确 → 自动匹配。
-     * @returns { entry, priced, billingMode }。
-     */
     function resolveClientPrice(providerRaw, modelId, config) {
       const prices = config?.prices ?? {}
       const mode = config?.priceMatch === 'exact' ? 'exact' : 'auto'
@@ -1534,7 +1486,6 @@ window.__ModuleLoader__.load({
       const hit = catalog[targetModel] !== undefined ? targetModel
         : (mode === 'auto' ? matchModelIdLocal(targetModel, Object.keys(catalog)) : null)
       if (hit !== null) return { entry: catalog[hit], priced: catalog[hit]?.unpriced !== true, billingMode: 'flat' }
-      // 跨厂商兑底(与 pricing.js 同口径):provider 未在价格表登记时按模型名全库查找。
       if (mode === 'auto') {
         const dsModels = prices.models ?? {}
         const dsHit = matchModelIdLocal(targetModel, Object.keys(dsModels))
@@ -1553,11 +1504,8 @@ window.__ModuleLoader__.load({
       }
       return { entry: null, priced: false, billingMode: 'flat' }
     }
-    /** 投影 token 桶 → 按当前时刻档位计价的美元成本。 */
     function usageCost(usage, config) {
       if (!usage || !config) return 0
-      // 宿主按事件时刻逐次计费的成本(历史正确,含峰谷时代前的旧基础价);
-      // 旧宿主/旧状态缺失 cost 时回退客户端估算。
       if (typeof usage.cost === 'number' && Number.isFinite(usage.cost)) return usage.cost
       const peak = {
         enabled: config.peakEnabled === true,
@@ -1596,7 +1544,6 @@ window.__ModuleLoader__.load({
       return (usage?.input ?? 0) + (usage?.cacheRead ?? 0) + (usage?.cacheWrite ?? 0)
     }
 
-    // ── 客户端状态存储 ──────────────────────────────────────────────────────
 
     function makeStore(initial) {
       let snapshot = initial
@@ -1617,7 +1564,6 @@ window.__ModuleLoader__.load({
 
     const { createElement: el, Fragment, useState, useEffect, useMemo, useCallback, useRef } = React
 
-    // ── 钱包图标:官方填充式单色 SVG(16×16),与 @deepseek-ai/dsh-client-ui-primitives 同构 ──
 
     function WalletIcon({ size = 16, className }) {
       return el('svg', { width: size, height: size, className, viewBox: '0 0 16 16', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' },
@@ -1630,7 +1576,6 @@ window.__ModuleLoader__.load({
         el('path', { d: 'M8 2.8A1.3 1.3 0 1 0 8 5.4A1.3 1.3 0 1 0 8 2.8Z', fill: 'currentColor' }))
     }
 
-    // ── 会话费用徽章(dock / header) ────────────────────────────────────────
 
     function SessionCost(props) {
       const usage = props.useProjection ? props.useProjection('costUsage') : undefined
@@ -1683,10 +1628,8 @@ window.__ModuleLoader__.load({
         }))
     }
 
-    // ── 侧边栏:余额行 + 预算图框/今日徽章(纵向堆叠,位于设置按钮上方) ──────
 
     function formatBalanceMoney(value, config, currency) {
-      // 余额是接口返回的记账币种金额,不经汇率换算;符号跟随接口币种(USD→$,CNY→¥),未知币种回退配置符号。
       const symbol = currency === 'USD' ? '$' : currency === 'CNY' ? '¥' : config.symbol
       return formatMoneyValue(value, { symbol, decimals: Math.max(2, Math.min(10, Math.floor(Number(config.decimals) || 2))) })
     }
@@ -1954,7 +1897,6 @@ window.__ModuleLoader__.load({
         const [flagKey, win, shortKey, labelKey] = defOf(k)
         pushGo(corner[flagKey] === true, win, shortKey, labelKey)
       }
-      // 预算 chip:预算图框同款口径(≥80% 预警、≥100% 超支)。
       if (corner.budget === true) {
         const budget = config.budget ?? { enabled: false, amount: 100, period: 'month' }
         if (budget.enabled === true) {
@@ -1984,10 +1926,6 @@ window.__ModuleLoader__.load({
           el('span', { className: 'cm-corner-chip' + (c.level === 'ok' ? '' : ' ' + c.level) }, c.text))))
     }
 
-    /**
-     * 峰谷相位与相邻切换点(与 lib/pricing.js 的 peakPhaseAt 同逻辑;bundle 无法导入,
-     * 修改时两处需同步)。窗口半开区间 [start, end),兼容跨午夜窗口。
-     */
     function peakPhaseAt(atMs, windows) {
       if (!Array.isArray(windows) || windows.length === 0 || !Number.isFinite(atMs)) return null
       const hourAt = (dayOffset, hour) => {
@@ -2016,7 +1954,6 @@ window.__ModuleLoader__.load({
       if (prev === null || next === null) return null
       return { inPeak, prevAtMs: prev.at, nextAtMs: next.at, nextIntoPeak: next.intoPeak }
     }
-    /** 峰谷显示门控:peakNotice 开关 + peakEnabled + peakEffectiveAt + 非空窗口;不满足返回 null。 */
     function peakView(config, now) {
       if (!config || config.peakNotice === false || config.peakEnabled !== true) return null
       const effectiveAtMs = Date.parse(config.peakEffectiveAt || '')
@@ -2025,7 +1962,6 @@ window.__ModuleLoader__.load({
       return peakPhaseAt(now, windows)
     }
 
-    /** 倒计时文本(距下次相位切换,向上取整到分钟)。 */
     function countdownText(view, now, t) {
       const duration = Math.max(0, view.nextAtMs - now)
       const minutes = Math.max(1, Math.ceil(duration / 60000))
@@ -2036,12 +1972,6 @@ window.__ModuleLoader__.load({
         : t('countdownMinute', { m: minutes })
     }
 
-    /**
-     * 峰/谷切换前弹窗提醒:距下次相位切换不足配置提前量(默认 2 分钟)时弹浮层,
-     * 位置可选屏幕右下角 / 屏幕中心;提醒类型按配置过滤(进入峰/进入谷/峰和谷);
-     * 同一切换点只弹一次(手动关闭即记点),切换完成后浮层自然消失。
-     * 若开启 Web 通知且有授权,还会在同一切换点向系统发送一次浏览器通知。
-     */
     function PeakAlert(props) {
       const costStore = props.useCost ? props.useCost(s => s) : undefined
       const config = costStore?.state?.config
@@ -2053,7 +1983,6 @@ window.__ModuleLoader__.load({
         return () => window.clearInterval(timer)
       }, [])
       useEffect(() => {
-        // Web 通知:每次 tick 自包含重算切换点,同一切换点只发一次。
         if (!config || config.peakAlertEnabled !== true || config.peakEnabled !== true) return
         if (config.peakAlertWebNotify !== true || !window.Notification || Notification.permission !== 'granted') return
         if (notifiedAtRef.current === now) return
@@ -2071,7 +2000,7 @@ window.__ModuleLoader__.load({
           new Notification(
             t(intoPeak ? 'peakAlertTitlePeak' : 'peakAlertTitleOffPeak'),
             { body: t('peakAlertBody', { time: countdownText(wv, now, t), phase: t(intoPeak ? 'peakAlertPhasePeak' : 'peakAlertPhaseOffPeak') }) })
-        } catch (_) { /* 通知被系统拒绝时静默 */ }
+        } catch (_) { }
       }, [now]) // eslint-disable-line react-hooks/exhaustive-deps
       if (!config || config.peakAlertEnabled !== true || config.peakEnabled !== true) return null
       const effectiveAtMs = Date.parse(config.peakEffectiveAt || '')
@@ -2099,7 +2028,6 @@ window.__ModuleLoader__.load({
           actionBtn('cm-btn', t('peakAlertBtn'), () => setDismissedAt(view.nextAtMs))))
     }
 
-    /** 展开态简洁样式:单行紧凑时段条——细轨道(左橙右蓝,非当前段淡化)+ 标记线 + 右侧倒计时文本。 */
     function PeakStrip(props) {
       const { config, t } = props
       const [now, setNow] = useState(Date.now())
@@ -2121,7 +2049,6 @@ window.__ModuleLoader__.load({
           el('span', { className: 'cm-peak-chip' }, t(view.inPeak ? 'peakShort' : 'offPeakShort') + ' · ' + chipText)))
     }
 
-    /** 展开态经典样式:轨道 + 箭头旗标 + 胶囊芯片(两行)。 */
     function PeakStripClassic(props) {
       const { config, t } = props
       const [now, setNow] = useState(Date.now())
@@ -2142,14 +2069,12 @@ window.__ModuleLoader__.load({
             el('div', { className: 'cm-peak-segment cm-peak-low' })),
           el('span', { className: 'cm-peak-classic-chip' }, t(view.inPeak ? 'peakShort' : 'offPeakShort') + ' · ' + chipText)))
     }
-    /** 聚合一段账期(day 形状)的缓存命中/未命中/总 tokens(命中=缓存读写,未命中=输入,总=全部)。 */
     function cacheAgg(day) {
       const hit = (Number(day?.cacheRead) || 0) + (Number(day?.cacheWrite) || 0)
       const miss = Number(day?.input) || 0
       const total = hit + miss + (Number(day?.output) || 0) + (Number(day?.reasoning) || 0)
       return { hit, miss, total }
     }
-    /** 近 7 天(含今日)聚合:history 按日期去重 + 今日快照兜底;date 为 YYYY-MM-DD,字符串可直接比较。 */
     function weekCacheAgg(state) {
       const pad = n => String(n).padStart(2, '0')
       const cut = new Date(Date.now() - 6 * 86400000)
@@ -2175,7 +2100,6 @@ window.__ModuleLoader__.load({
         fmtLine('cacheLineTotal', cacheAgg(state?.total)),
       ]
     }
-    /** 展开态:横向 命中(蓝)/未命中(橙) 双段条 + 今日占比短标;悬停显示 今日/周/月/累计 明细。 */
     function CacheStrip(props) {
       const { state, t } = props
       const today = cacheAgg(state?.today)
@@ -2190,7 +2114,6 @@ window.__ModuleLoader__.load({
             el('div', { className: 'cm-cache-miss', style: { width: (100 - pct) + '%' } })),
           el('span', { className: 'cm-peak-chip' }, t('cacheStripLabel', { pct: String(pct), total: formatTokens(today.total) }))))
     }
-    /** 收起(rail)态:竖向同构双段条,短标为命中百分比;明细在悬停提示。 */
     function CacheRailStrip(props) {
       const { state, t } = props
       const today = cacheAgg(state?.today)
@@ -2210,7 +2133,6 @@ window.__ModuleLoader__.load({
       return el(CacheStrip, { state, config, t })
     }
 
-    /** 收起(rail)态简洁样式:竖向同构时段条 + 横排短词(「峰时/平价」),倒计时与完整文案在悬停提示中。 */
     function PeakRailStrip(props) {
       const { config, t } = props
       const [now, setNow] = useState(Date.now())
@@ -2233,7 +2155,6 @@ window.__ModuleLoader__.load({
           el('span', { className: 'cm-peak-rail-label' }, t(view.inPeak ? 'peakShort' : 'offPeakShort'))))
     }
 
-    /** 收起(rail)态经典样式:竖向胶囊条——上橙下蓝满色分段(与展开态一致,不淡化不填充),标记指向当前时段,下方横排短词。 */
     function PeakRailStripClassic(props) {
       const { config, t } = props
       const [now, setNow] = useState(Date.now())
@@ -2259,7 +2180,6 @@ window.__ModuleLoader__.load({
       return el(CacheRailStrip, { state, config, t })
     }
 
-    /** 预算图框内容(不含外框),供单独显示与「Go+预算」合并卡片复用;详细信息按 budget.detail 开关。 */
     function budgetBoxBody(state, config, t) {
       const today = state.today
       const budget = config.budget ?? { enabled: false, amount: 100, period: 'month' }
@@ -2297,7 +2217,6 @@ window.__ModuleLoader__.load({
       }
     }
 
-    /** OpenCode Go 额度图框内容(不含外框),与预算图框同风格;主档位可配(默认 5h),其余档位在下方一行展示;详细信息按 goQuota.detail 开关。 */
     function goBoxBody(state, config, t) {
       const goQuota = state.goQuota
       const mainKey = config?.goQuota?.main === 'weekly' || config?.goQuota?.main === 'monthly' ? config.goQuota.main : 'rolling'
@@ -2351,7 +2270,6 @@ window.__ModuleLoader__.load({
           wide ? view.body : el('div', { className: 'cm-bbox-rail cm-num' }, view.rail)))
     }
 
-    /** MiniMax Token Plan:percent 为已用%,界面按余量(100-已用)展示。 */
     function miniMaxRemainPct(win) {
       if (win === null || typeof win !== 'object' || typeof win.percent !== 'number') return null
       return Math.max(0, Math.min(100, 100 - Number(win.percent)))
@@ -2448,7 +2366,6 @@ window.__ModuleLoader__.load({
       const level = pct === null ? 'ok' : pct >= 100 ? 'over' : pct >= 80 ? 'warn' : 'ok'
 
       if (budget.enabled === true) {
-        // 预算圆角方形图框(渲染在设置按钮上方、余额行下方)。
         const todayUsed = today.cost * (Number.isFinite(rate) && rate > 0 ? rate : 1)
         const todayPct = amount > 0 ? Math.min(999, todayUsed / amount * 100) : null
         const detail = [
@@ -2493,9 +2410,6 @@ window.__ModuleLoader__.load({
       const state = costStore?.state
       const wide = !!props.wide
       const rootRef = useRef(null)
-      // 兼容外壳 footerActions 与其它插件(如 dsh-remote-web-ui 的「更新/远程控制」行)的图标布局:
-      // - 展开(wide):本插件堆叠保持在最左侧;
-      // - 窄栏(rail):把外壳容器改为纵向排布,本插件置底,同一行的其它插件图标上移。
       useEffect(() => {
         const root = rootRef.current
         const parent = root?.parentElement
@@ -2559,7 +2473,6 @@ window.__ModuleLoader__.load({
       else if (showCustomBalance) nodes.push(el(CustomBalanceRowContent, { state, wide }))
       if (mmOk) nodes.push(el(MiniMaxPlanBox, { state, wide }))
       if (goOk && budgetOn && wide) {
-        // 同时出现:合并为一张卡片(Go 在上、预算在下,细分隔线),各自保留预警色与自己的详细信息开关。
         const goView = goBoxBody(state, config, t)
         const budgetView = budgetBoxBody(state, config, t)
         const level = goView.level === 'over' || budgetView.level === 'over' ? 'over'
@@ -2573,13 +2486,10 @@ window.__ModuleLoader__.load({
         if (budgetOn) nodes.push(el(BudgetBoxContent, { state, wide }))
       }
       if (!budgetOn && showToday) nodes.push(el(BudgetBoxContent, { state, wide }))
-      // 收起(rail)态:无论预算/Go 额度开关状态,统一在图框下方追加竖向峰谷进度条(受 peakNotice 等门控,内部自行返回 null)。
       if (!wide) nodes.push(peakNoticeRailEl(state, config, t))
-      // 外壳的 footerActions 是横向 flex;这里用自建纵向堆叠保证余额在上、图框在下。
       return el('div', { ref: rootRef, className: 'cm-footer-stack' + (wide ? '' : ' rail') }, ...nodes)
     }
 
-    // ── 设置页「费用」 ──────────────────────────────────────────────────────
 
     function Card(props) {
       return el('div', { className: 'cm-card' },
@@ -2588,7 +2498,6 @@ window.__ModuleLoader__.load({
         el('p', { className: 'cm-card-sub' }, props.sub))
     }
 
-    // 历史记录折叠面板(issue #22):三角展开/收起,内部为按天表格(日期行再展开会话明细)。
     function HistoryPanel(props) {
       const { state, api } = props
       const t = makeT(resolveLocale(state.config?.locale))
@@ -2604,7 +2513,6 @@ window.__ModuleLoader__.load({
     function HistoryTable(props) {
       const { state, api } = props
       const t = makeT(resolveLocale(state.config?.locale))
-      // 点击日期行展开当日会话明细(issue #22):按需经 getDaySessions 拉取并缓存。
       const [openDate, setOpenDate] = useState(null)
       const [cache, setCache] = useState({})
       const [busyDate, setBusyDate] = useState(null)
@@ -2660,13 +2568,11 @@ window.__ModuleLoader__.load({
           }))))
     }
 
-    // 按会话统计(issue #22 不分日期视角):全部历史会话排行,默认收起、展开时按需拉取;排序可切换。
     function SessionRankPanel(props) {
       const { state, api } = props
       const t = makeT(resolveLocale(state.config?.locale))
       const [open, setOpen] = useState(false)
       const [limit, setLimit] = useState(100)
-      // 排序模式:cost-desc / cost-asc / time-desc / time-asc / recent(实时顺序)。
       const [sortMode, setSortMode] = useState('cost-desc')
       const [rows, setRows] = useState(null)
       const [busy, setBusy] = useState(false)
@@ -2758,7 +2664,6 @@ window.__ModuleLoader__.load({
             el('td', { className: 'num' }, formatMoneyUsd(session.cost, state.config)))))))
     }
 
-    /** 会话单元格:标题为主行(未命名回落短 id),showId 时附显等宽短 id;悬停看完整标题与 id。 */
     function sessionCell(session, showId, t) {
       const rawTitle = typeof session.title === 'string' ? session.title.trim() : ''
       const shortId = String(session.id).slice(0, 14) + '…'
@@ -2775,14 +2680,12 @@ window.__ModuleLoader__.load({
       EUR: { symbol: '€', decimals: 6, exchangeRate: 0.92 },
     }
 
-    // ── 预算面板(设置页顶部) ──────────────────────────────────────────────
 
     function BudgetPanel(props) {
       const { state, draft, setDraft, t } = props
       const config = state.config
       const budget = draft?.budget ?? config.budget
       const rate = Number(config.exchangeRate)
-      // 已用金额优先用宿主按周期聚合的 budgetUsed(支持自定义区间);缺失时回退客户端计算。
       const periodCost = state.budgetUsed ?? (
         budget.period === 'day' ? state.today.cost
           : budget.period === 'all' ? state.total.cost
@@ -2863,7 +2766,6 @@ window.__ModuleLoader__.load({
           : el('p', { className: 'cm-note' }, t('budgetDisabledNote')))
     }
 
-    // ── 峰谷面板(独立于预算:启用开关、提示开关、样式切换、时段条预览与窗口状态) ──
 
     function PeakPanel(props) {
       const { state, draft, setDraft, t } = props
@@ -2872,7 +2774,6 @@ window.__ModuleLoader__.load({
         if (draft === null) return
         setDraft({ ...draft, [field]: value })
       }
-      // 预览与状态行用草稿值,切换开关/样式即时可见效果。
       const previewConfig = draft === null ? config : { ...config, ...draft }
       const peakStatusText = (() => {
         if (previewConfig.peakEnabled !== true) return t('peakOff')
@@ -2973,9 +2874,7 @@ window.__ModuleLoader__.load({
                 checked: draft?.peakAlertWebNotify === true,
                 onChange: event => {
                   setField('peakAlertWebNotify', event.target.checked)
-                  // 开启需用户手势申请浏览器通知权限(地址栏授权)。
                   if (event.target.checked && window.Notification && Notification.permission === 'default') {
-                    // 旧 Safari 的 requestPermission 不返回 Promise,包一层防抛错。
                     Promise.resolve(Notification.requestPermission()).catch(() => {})
                   }
                 },
@@ -3055,7 +2954,6 @@ window.__ModuleLoader__.load({
         tierRow(t('tierPeak'), 'peak'))
     }
 
-    // ── 拓展价格表面板(厂商/家族分类目录 + 挂载/取消挂载) ─────────────
 
     const CATALOG_VENDOR_LABELS = {
       deepseek: 'DeepSeek', openai: 'OpenAI', anthropic: 'Anthropic', google: 'Google Gemini',
@@ -3063,7 +2961,6 @@ window.__ModuleLoader__.load({
       minimax: 'MiniMax', tencent: '腾讯混元', xiaomi: '小米', upstage: 'Upstage', nvidia: 'NVIDIA', mistral: 'Mistral', 'opencode-go': 'OpenCode Go',
     }
 
-    /** 目录条目价格摘要(美元;峰谷两档写 谷/峰)。 */
     function catalogPriceText(entry, t) {
       if (entry === null || typeof entry !== 'object') return ''
       if (entry.unpriced === true) return t('catalogUnpriced')
@@ -3076,16 +2973,11 @@ window.__ModuleLoader__.load({
     function PriceCatalogPanel(props) {
       const { state, draft, setDraft, t } = props
       const [open, setOpen] = useState(false)
-      // 厂商默认全部折叠;点开某厂商后仅展开该厂商。
       const [openVendors, setOpenVendors] = useState({})
       const catalog = state.priceCatalog
       if (catalog === null || typeof catalog !== 'object') return null
       const prices = draft?.prices ?? state.config.prices
-      // 「在费用设置直接显示」开关(按模型):仅决定价格卡是否在费用设置「价格表」区直接显示,
-      // 不影响挂载与计费;不直接显示的模型其价格卡在本面板内可编辑。
       const displayMap = draft?.priceTableDisplay ?? state.config.priceTableDisplay ?? {}
-      // 「在费用设置直接显示」精确到单个模型:键 'provider:modelId',值显式布尔;
-      // 缺省 = 默认策略(DeepSeek 模型直接显示,第三方收入拓展表)。只决定展示位置,不影响挂载与计费。
       const isDirect = (provider, modelId) => {
         const value = displayMap[provider + ':' + modelId]
         return typeof value === 'boolean' ? value : provider === 'deepseek'
@@ -3126,14 +3018,10 @@ window.__ModuleLoader__.load({
           setDraft({ ...draft, prices: { ...draft.prices, providers } })
         }
       }
-      // 厂商顺序:DeepSeek 居首,其余按字母序;每家默认折叠,标题可点开。
       const providerIds = Object.keys(catalog).sort((a, b) => (a === 'deepseek' ? -1 : b === 'deepseek' ? 1 : a.localeCompare(b)))
       const countModels = provider => Object.values(catalog[provider]).reduce((n, fam) => n + Object.keys(fam).length, 0)
-      // DeepSeek 目录模型集合:目录之外手动新增的已挂载模型也要能切换直接显示/编辑。
       const dsCatalogIds = new Set(Object.values(catalog.deepseek ?? {}).flatMap(fam => Object.keys(fam)))
       const dsExtraMounted = Object.keys(prices.models ?? {}).filter(id => !dsCatalogIds.has(id)).sort()
-      // 单个模型行:已挂载且未直接显示 → 目录内可编辑卡片(带切回直接显示的开关);
-      // 其余 → 只读行(已挂载的带直接显示开关与挂载/取消挂载按钮)。
       const renderModel = (provider, modelId, entry) => {
         const mounted = isMounted(provider, modelId)
         const direct = isDirect(provider, modelId)
@@ -3193,7 +3081,6 @@ window.__ModuleLoader__.load({
           : null)
     }
 
-    /** provider 展示名归一:历史请求携带的 'zen' 是错误叫法,统一展示为 'go'。 */
     const prettyProvider = provider => (provider === 'zen' ? 'go' : provider)
     const prettyProviderKey = key => {
       const sep = key.indexOf(':')
@@ -3201,16 +3088,10 @@ window.__ModuleLoader__.load({
       return prettyProvider(key.slice(0, sep).toLowerCase()) + key.slice(sep)
     }
 
-    /** 按模型统计面板:今日/近90天两个口径,费用排行、Token 消耗(堆叠)、缓存命中率、性价比。
-     *  纯前端聚合:state.today.byProviderModel 与 state.history[].byProviderModel(宿主已逐次计费)。
-     *  口径:命中率 = 缓存读/(缓存读+非缓存输入);综合单价 = 费用/总token×1M;性价比 = 总token/费用。 */
     function ModelStatsPanel(props) {
       const { state, config, t, initialTab } = props
       const [tab, setTab] = useState(initialTab === 'history' ? 'history' : 'today')
-      // 默认收起,保持设置页简洁;需要时点三角展开。
       const [open, setOpen] = useState(false)
-      // 旧账本兼容:优先 byProviderModel(provider:model 键);旧格式回退 byModel(纯模型名键);
-      // 两者皆缺时用会话明细按会话 provider/model 近似重建;再兑底为未分模型合计行。
       const modelMapOf = src => {
         if (src === null || typeof src !== 'object') return {}
         if (src.byProviderModel && Object.keys(src.byProviderModel).length > 0) return src.byProviderModel
@@ -3231,7 +3112,6 @@ window.__ModuleLoader__.load({
         }
         if (Object.keys(rebuilt).length > 0) return rebuilt
         if ((Number(src.cost) > 0 || Number(src.input) > 0 || Number(src.output) > 0)) {
-          // 更旧版本连模型明细都没有:合计作为未分模型行,保证费用/用量可见。
           const num = x => (typeof x === 'number' && Number.isFinite(x) && x >= 0 ? x : 0)
           return { 'deepseek:legacy': { input: num(src.input), output: num(src.output), cacheRead: num(src.cacheRead), cacheWrite: num(src.cacheWrite), reasoning: num(src.reasoning), cost: num(src.cost) } }
         }
@@ -3296,11 +3176,9 @@ window.__ModuleLoader__.load({
         rows.length === 0
           ? el('p', { className: 'cm-note' }, t('modelStatsEmpty'))
           : el(Fragment, null,
-            // 1) 费用排行(降序,橙色条)。
             el('div', { className: 'cm-mstats-h' }, t('modelStatsCostH')),
             rows.map(r => el(Fragment, { key: 'c:' + r.label },
               barRow(r.label, maxCost > 0 ? r.cost / maxCost : 0, 'cost', formatMoneyUsd(r.cost, config)))),
-            // 2) Token 消耗(堆叠:输入/缓存/输出)。
             el('div', { className: 'cm-mstats-h' }, t('modelStatsTokensH')),
             el('div', { className: 'cm-mstats-legend' },
               el('span', null, el('span', { className: 'cm-mstats-dot', style: { background: 'var(--dsw-alias-state-business-primary)' } }), t('modelStatsInput')),
@@ -3313,11 +3191,9 @@ window.__ModuleLoader__.load({
                 el('div', { className: 'cm-mstats-seg cache', style: { width: pct(maxTokens > 0 ? (r.cacheRead + r.cacheWrite) / maxTokens : 0) } }),
                 el('div', { className: 'cm-mstats-seg out', style: { width: pct(maxTokens > 0 ? (r.output + r.reasoning) / maxTokens : 0) } })),
               el('span', { className: 'cm-mstats-val' }, formatTokens(r.tokens)))),
-            // 3) 缓存命中率(绿条;无缓存流量的模型显示—)。
             el('div', { className: 'cm-mstats-h' }, t('modelStatsHitH')),
             [...rows].sort((a, b) => (b.hitRate ?? -1) - (a.hitRate ?? -1)).map(r => el(Fragment, { key: 'h:' + r.label },
               barRow(r.label, r.hitRate ?? 0, 'hit', r.hitRate === null ? '—' : (r.hitRate * 100).toFixed(1) + '%'))),
-            // 4) 性价比:每美元 token 数(紫条),右侧附综合单价。
             el('div', { className: 'cm-mstats-h' }, t('modelStatsValueH')),
             [...rows].sort((a, b) => (b.perUsd ?? -1) - (a.perUsd ?? -1)).map(r => el(Fragment, { key: 'v:' + r.label },
               barRow(r.label, maxPerUsd > 0 ? (r.perUsd ?? 0) / maxPerUsd : 0, 'value',
@@ -3326,7 +3202,6 @@ window.__ModuleLoader__.load({
         : null)
     }
 
-    /** 已挂载的第三方模型价格卡(与 DeepSeek 卡片同区展示,可编辑/取消挂载)。 */
     function ProviderPriceCard(props) {
       const { provider, modelId, entry, draft, setDraft, t } = props
       const writeModels = models => {
@@ -3366,7 +3241,6 @@ window.__ModuleLoader__.load({
               numInput({ value: entry?.output ?? null }, v => setNum('output', v)))))
     }
 
-    // ── 余额面板(设置页,按 balance.display 配置挂载) ────────────────────────
 
     function BalancePanel(props) {
       const { state, api, t, draft, setDraft } = props
@@ -3374,7 +3248,6 @@ window.__ModuleLoader__.load({
       const [msg, setMsg] = useState(null)
       const balance = state.balance
       const config = state.config
-      // 余额差对账(issue #18):drift 时在面板内展示警告行,开关随草稿保存。
       const reconcile = state.reconcile
       const reconcileOn = (draft?.balance ?? config.balance ?? {}).reconcile !== false
       const toggleReconcile = event => {
@@ -3419,15 +3292,19 @@ window.__ModuleLoader__.load({
     }
 
     const CUSTOM_BALANCE_OPEN_KEY = 'dsh-cost-meter.customBalance.open'
-    function readCustomBalanceOpen() {
-      try { return window.localStorage.getItem(CUSTOM_BALANCE_OPEN_KEY) !== '0' } catch { return true }
+    /** Until the owner has toggled it, the custom-balance form is open only when the feature is on. */
+    function readCustomBalanceOpen(fallback = true) {
+      try {
+        const stored = window.localStorage.getItem(CUSTOM_BALANCE_OPEN_KEY)
+        return stored === null ? fallback : stored !== '0'
+      } catch { return fallback }
     }
 
     function CustomBalancePanel(props) {
       const { state, api, t, draft, setDraft } = props
       const [busy, setBusy] = useState(false)
       const [msg, setMsg] = useState(null)
-      const [open, setOpen] = useState(readCustomBalanceOpen)
+      const [open, setOpen] = useState(() => readCustomBalanceOpen(props.state?.config?.customBalance?.enabled === true))
       const [headersText, setHeadersText] = useState('')
       const [extractText, setExtractText] = useState('')
       const [jsonErr, setJsonErr] = useState({ headers: '', extract: '' })
@@ -3475,7 +3352,7 @@ window.__ModuleLoader__.load({
         try {
           const parsed = JSON.parse(text)
           if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('invalid')
-          if (Object.values(parsed).some(value => typeof value !== 'string')) throw new Error('invalid') // 值必须是字符串(与服务端 strict 校验同口径)
+          if (Object.values(parsed).some(value => typeof value !== 'string')) throw new Error('invalid')
           setJsonErr(err => ({ ...err, headers: '' }))
           setCustomBalanceRequest('headers', parsed)
         } catch {
@@ -3494,7 +3371,6 @@ window.__ModuleLoader__.load({
         }
       }
       const doRefresh = async () => {
-        // 门控用服务端已保存配置(而非草稿):避免刚勾选启用未过防抖保存时点刷新被服务端拒绝。
         if (busy || config.customBalance?.enabled !== true) return
         setBusy(true)
         setMsg(null)
@@ -3678,7 +3554,6 @@ window.__ModuleLoader__.load({
         msg !== null ? el('div', { className: 'cm-msg ' + msg.kind }, msg.text) : null)
     }
 
-    // ── Coding Plan 额度面板(Anthropic / Z.ai·GLM / MiniMax,各家独立开关与凭据) ───
 
     const CODING_PLAN_ROWS = [
       { id: 'anthropic', labelKey: 'codingPlanAnthropic' },
@@ -3690,7 +3565,6 @@ window.__ModuleLoader__.load({
       { id: 'scnet', labelKey: 'codingPlanScnet' },
     ]
 
-    /** Coding Plan 面板展开状态:localStorage 记住,默认折叠。 */
     const CODING_PLANS_OPEN_KEY = 'dsh-cost-meter.codingPlans.open'
     function readCodingPlansOpen() {
       try { return window.localStorage.getItem(CODING_PLANS_OPEN_KEY) === '1' } catch { return false }
@@ -3704,7 +3578,7 @@ window.__ModuleLoader__.load({
       const toggleOpen = () => {
         setOpen(o => {
           const next = !o
-          try { window.localStorage.setItem(CODING_PLANS_OPEN_KEY, next ? '1' : '0') } catch { /* 存储不可用时仅本会话生效 */ }
+          try { window.localStorage.setItem(CODING_PLANS_OPEN_KEY, next ? '1' : '0') } catch { }
           return next
         })
       }
@@ -3731,7 +3605,6 @@ window.__ModuleLoader__.load({
         }
       }
       const windowRow = (name, win) => {
-        // 文本窗口(余额等无百分比的量):直接显示文本行。
         if (typeof win?.percent !== 'number') {
           return el('div', { className: 'cm-go-row' },
             el('span', { className: 'cm-go-label' }, name.replace(/_/g, ' ')),
@@ -3826,11 +3699,9 @@ window.__ModuleLoader__.load({
           : el('p', { className: 'cm-note cm-collapsed-note' }, t('codingPlansCollapsedHint')))
     }
 
-    // ── Token 用量统计(历史总量 + 每日格子热图;显示位置可配) ────────────────
 
     const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-    /** 单日 token 总量(输入 + 缓存读写 + 输出)。 */
     const dayTokensOf = day => (day.input ?? 0) + (day.output ?? 0) + (day.cacheRead ?? 0) + (day.cacheWrite ?? 0)
 
     function UsagePanel(props) {
@@ -3847,9 +3718,6 @@ window.__ModuleLoader__.load({
           el('p', { className: 'cm-empty' }, t('usageEmpty')))
       }
       const todayKey = state.meta?.dayKey ?? ''
-      // Codex 用量图风格:最近 26 周的方格热图(列 = 周、行 = 周一至周日),
-      // 格子 aspect-ratio 自适应,横向铺满整个设置页宽度;未来日与零消耗日同款格子,矩形完整;
-      // 月份标签在网格下方,标在月份变化的列;无星期标签(与参考样式一致)。
       const byDate = new Map(history.map(day => [day.date, day]))
       const dayKeyOf = d => {
         const pad = n => String(n).padStart(2, '0')
@@ -3858,7 +3726,7 @@ window.__ModuleLoader__.load({
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       const end = new Date(today)
-      end.setDate(end.getDate() + (6 - (today.getDay() + 6) % 7)) // 对齐到本周周日
+      end.setDate(end.getDate() + (6 - (today.getDay() + 6) % 7))
       const WEEKS = 26
       const columns = []
       const monthLabels = []
@@ -3922,34 +3790,26 @@ window.__ModuleLoader__.load({
       const [confirmImport, setConfirmImport] = useState(false)
       const [newModelId, setNewModelId] = useState('')
       const [busy, setBusy] = useState(false)
-      // 价格表折叠开关(默认收起,保持设置页简洁;三角按钮展开)。
       const [priceOpen, setPriceOpen] = useState(false)
-      // 自动保存状态:idle(无改动) | saving | saved | error。
       const [saveState, setSaveState] = useState({ status: 'idle', at: 0, error: null })
       const savedRef = React.useRef(null)
-      // 最近一次已知的服务端配置对象:保存时按顶层键 diff,只提交真正改动的键。
       const baselineRef = React.useRef(null)
 
       useEffect(() => {
         if (state !== null) {
           const json = JSON.stringify(state.config)
           baselineRef.current = state.config
-          // 轮询/其它来源的 state 刷新不得覆盖有未保存改动的草稿(#3 的周期轮询引入的回归):
-          // 草稿与已保存快照不一致(正在编辑)时保留草稿,待防抖保存落盘后再对齐。
           setDraft(prev => (prev !== null && JSON.stringify(prev) !== savedRef.current ? prev : JSON.parse(json)))
           savedRef.current = json
         }
       }, [state])
 
-      // 配置改动 600ms 防抖后即时保存(无需点击保存按钮)。
       useEffect(() => {
         if (draft === null || api === undefined) return
         const json = JSON.stringify(draft)
         if (json === savedRef.current) return
         setSaveState(prev => (prev.status === 'saving' ? prev : { ...prev, status: 'saving' }))
         const timer = setTimeout(() => {
-          // 只提交发生变化的顶层键(diff 补丁):多窗口同开时,旧窗口的草稿
-          // 不再整份覆盖其它窗口已保存的改动(否则会互相回弹)。
           const patch = {}
           const base = baselineRef.current
           if (base !== null && typeof base === 'object') {
@@ -3976,7 +3836,6 @@ window.__ModuleLoader__.load({
         if (costStore?.status === 'error' && costStore.error) setMessage({ kind: 'err', text: t('ledgerReadFailed', { message: costStore.error }) })
       }, [costStore?.status, costStore?.error])
 
-      // 语言跟随当前草稿(切换语言立即生效),草稿为空时用已保存配置。
       const locale = resolveLocale((draft ?? state?.config)?.locale)
       const t = makeT(locale)
 
@@ -3993,7 +3852,6 @@ window.__ModuleLoader__.load({
         try {
           const result = await api.fetchPrices()
           setMessage({ kind: result.ok ? 'ok' : 'err', text: result.message })
-          // 同步成功后,草稿整体对齐到返回的最新配置,价格表等显示立即刷新。
           if (result.ok && result.state && typeof result.state.config === 'object') {
             const json = JSON.stringify(result.state.config)
             setDraft(JSON.parse(json))
@@ -4019,7 +3877,6 @@ window.__ModuleLoader__.load({
           setConfirmReset(false)
         }
       }
-      // 导入安装前历史(issue #27):回放宿主全部会话日志,补账本缺失的日期/会话。
       const doImportLegacy = async () => {
         if (busy) return
         setBusy(true)
@@ -4048,7 +3905,6 @@ window.__ModuleLoader__.load({
       }
       const priceCards = draft === null ? [] : Object.keys(draft.prices.models)
         .filter(modelId => {
-          // priceTableDisplay 按模型门控:缺省 DeepSeek 模型直接显示;显式 false 的收入拓展价格表。
           const displayMap = draft?.priceTableDisplay ?? config.priceTableDisplay ?? {}
           const value = displayMap['deepseek:' + modelId]
           return typeof value === 'boolean' ? value : true
@@ -4061,7 +3917,6 @@ window.__ModuleLoader__.load({
           })
         ))
       return el('div', { className: 'cm-section' },
-        // 顶栏:界面语言(打开费用设置即见)
         el('div', { className: 'cm-toolbar' },
           el('div', { className: 'cm-field' },
             el('label', null, t('languageLabel')),
@@ -4073,26 +3928,13 @@ window.__ModuleLoader__.load({
               el('option', { value: 'auto' }, t('localeAuto')),
               el('option', { value: 'zh' }, t('localeZh')),
               el('option', { value: 'en' }, t('localeEn'))))),
-        // Token 用量统计(费用设置最上方)
-        (!USAGE_POSITION_SWITCHABLE || (config.usage?.position ?? 'cost') === 'cost')
-          ? el(UsagePanel, { state, t, locale })
-          : null,
-        // 按模型统计(紧随用量统计;今日/近90天:费用、token、缓存命中率、性价比)
-        el(ModelStatsPanel, { state, config: draft ?? config, t }),
-        // OpenCode Go 订阅额度(含启用开关,像预算面板一样常驻)
-        el(GoQuotaPanel, { state, api, t, draft, setDraft }),
-        // Coding Plan 额度(Anthropic / Z.ai·GLM / MiniMax,各家独立开关)
-        el(CodingPlansPanel, { state, api, t, draft, setDraft }),
-        // 自定义 Provider 余额(可配置 HTTP 查询;与 Coding Plan 同区,可折叠)
-        el(CustomBalancePanel, { state, api, t, draft, setDraft }),
-        // 预算(紧随其后)
-        el(BudgetPanel, { state, draft, setDraft, t }),
-        // fork:波峰波谷显示整体移除 —— 峰谷面板不再渲染(峰谷计价配置保持原值,后台照常按时刻计费)。
-        // 官方余额(按显示配置)
+        // Money first: balance, the three cards, today's sessions. Then the token views and the
+        // budget, then history. Vendor quota panels (Go / Coding Plan / custom balance) come
+        // last: most owners never enable them. Reordered 2026-09-02 (user report: the numbers
+        // that matter sat seven screens down).
         (config.balance?.display === 'settings' || config.balance?.display === 'both')
           ? el(BalancePanel, { state, api, t, draft, setDraft })
           : null,
-        // 汇总卡片
         el('div', { className: 'cm-cards' },
           el(Card, {
             title: t('cardToday'),
@@ -4119,15 +3961,19 @@ window.__ModuleLoader__.load({
             value: formatMoneyUsd(state.total.cost, config),
             sub: t('cardTotalSub', { calls: state.total.calls }),
           })),
-        // 今日会话
         el('div', null,
           el('h3', { className: 'cm-h' }, t('todaySessions')),
           el(TodaySessions, { state, t })),
-        // 历史(三角折叠面板;日期行可再展开会话明细)
+        (!USAGE_POSITION_SWITCHABLE || (config.usage?.position ?? 'cost') === 'cost')
+          ? el(UsagePanel, { state, t, locale })
+          : null,
+        el(ModelStatsPanel, { state, config: draft ?? config, t }),
+        el(BudgetPanel, { state, draft, setDraft, t }),
         el(HistoryPanel, { state, api }),
-        // 按会话统计(全部历史,不分日期;issue #22)
         el(SessionRankPanel, { state, api }),
-        // 显示设置
+        el(GoQuotaPanel, { state, api, t, draft, setDraft }),
+        el(CodingPlansPanel, { state, api, t, draft, setDraft }),
+        el(CustomBalancePanel, { state, api, t, draft, setDraft }),
         el('div', null,
           el('h3', { className: 'cm-h' }, t('displaySettings')),
           el('div', { className: 'cm-grid' },
@@ -4355,7 +4201,6 @@ window.__ModuleLoader__.load({
                 }),
                 el('span', null, t('budgetDetailLabel'))))),
           el('p', { className: 'cm-note' }, t('badgeNote'))),
-        // 价格表(可折叠,默认收起;priceTableDisplay 按模型门控:未勾选直接显示的模型收入拓展价格表,该开关只决定展示位置)
         el('div', null,
           el('button', { type: 'button', className: 'cm-collapse-h', 'aria-expanded': String(priceOpen), onClick: () => setPriceOpen(!priceOpen) },
             el('span', { className: 'cm-caret' + (priceOpen ? ' open' : '') }),
@@ -4377,7 +4222,6 @@ window.__ModuleLoader__.load({
               onChange: event => setNewModelId(event.target.value),
             }),
             el('button', { className: 'cm-btn small', onClick: addModel, disabled: newModelId.trim().length === 0 }, t('addModel'))),
-          // 已挂载的第三方 provider 模型(仅逐模型勾选了「在费用设置直接显示」的条目;其余在拓展价格表内展示与编辑)
           (() => {
             const displayMap = draft?.priceTableDisplay ?? config.priceTableDisplay ?? {}
             const providers = draft?.prices?.providers ?? {}
@@ -4393,12 +4237,10 @@ window.__ModuleLoader__.load({
                   el(ProviderPriceCard, { key: p + ':' + id, provider: p, modelId: id, entry: providers[p].models[id], draft, setDraft, t }))))
           })())
           : null),
-        // 模型名匹配(自动匹配开关 + 未命中模型的手动指定)
         (() => {
           const overrides = draft?.priceOverrides ?? config.priceOverrides ?? {}
           const pricesNow = draft?.prices ?? config.prices
           const byProvider = state.today.byProviderModel ?? {}
-          // 今日出现但未精确命中价格表的 provider:model 键(含 DeepSeek 回退默认价的)。
           const unmatchedKeys = Object.keys(byProvider).filter(key => {
             const sep = key.indexOf(':')
             const provider = (sep > 0 ? key.slice(0, sep) : 'deepseek').toLowerCase()
@@ -4452,9 +4294,7 @@ window.__ModuleLoader__.load({
                       : null)))
               : el('p', { className: 'cm-hint' }, t('overrideNone')))
         })(),
-        // 拓展价格表(厂商/家族分类目录;挂载 ↔ 费用设置价格表)
         el(PriceCatalogPanel, { state, draft, setDraft, t }),
-        // 操作
         el('div', null,
           el('h3', { className: 'cm-h' }, t('dataSync')),
           el('div', { className: 'cm-buttons' },
@@ -4488,7 +4328,6 @@ window.__ModuleLoader__.load({
           message !== null ? el('div', { className: 'cm-msg ' + message.kind }, message.text) : null))
     }
 
-    // ── 插件主体 ────────────────────────────────────────────────────────────
 
     const inject = ['remote']
 
@@ -4501,7 +4340,6 @@ window.__ModuleLoader__.load({
       if (costMeter === undefined) return
       const store = makeStore({ status: 'loading', error: null, state: null })
 
-      // RPC 层错误兜底文案(按当前配置语言)。
       const rpcT = () => makeT(resolveLocale(store.getSnapshot().state?.config?.locale))
 
       const call = async (method, args) => {
@@ -4513,14 +4351,12 @@ window.__ModuleLoader__.load({
       }
       let reloading = false
       const reload = async () => {
-        if (reloading) return // 并发防抖:轮询/手动刷新/重连不叠加 getState,避免乱序覆盖
+        if (reloading) return
         reloading = true
         const prev = store.getSnapshot()
         try {
           const state = await call('getState')
           store.set({ status: 'ready', error: null, state })
-          // locale=auto 始终动态跟随当前浏览器语言,不要把探测结果持久化成 en/zh。
-          // 否则用户切换浏览器语言后,旧的固定配置会继续覆盖浏览器语言。
         } catch (error) {
           store.set({ status: 'error', error: error?.message ?? String(error), state: prev.state })
         } finally {
@@ -4528,8 +4364,6 @@ window.__ModuleLoader__.load({
         }
       }
       ctx.effect(() => ctx.on('connection/reset', () => { void reload() }), 'cost-meter: reconnect reload')
-      // 侧边栏「今日费用/余额」与设置页看板依赖 getState 快照渲染,没有推送通道:
-      // 60s 周期轮询(页面隐藏时跳过) + visibilitychange 重新可见时立即刷新,避免冻结在加载时刻(#3)。
       const pollTimer = setInterval(() => { if (!document.hidden) void reload() }, 60_000)
       ctx.effect(() => () => { clearInterval(pollTimer) }, 'cost-meter: poll timer')
       const onVisible = () => { if (document.visibilityState === 'visible') void reload() }
@@ -4556,7 +4390,6 @@ window.__ModuleLoader__.load({
           store.set({ status: 'ready', error: null, state })
           return state
         },
-        // 导入安装前历史(issue #27):返回 { ok, message, state? },成功时刷新本地快照。
         importLegacyHistory: async () => {
           const result = await costMeter.importLegacyHistory()
           if (result === null || typeof result !== 'object' || result.ok !== true) {
@@ -4565,9 +4398,7 @@ window.__ModuleLoader__.load({
           if (result.value.state !== undefined) store.set({ status: 'ready', error: null, state: result.value.state })
           return result.value
         },
-        // 按需拉取某天会话明细(issue #22),返回当日完整记录。
         getDaySessions: async date => call('getDaySessions', [date]),
-        // 跨全部日期的会话排行(issue #22 不分日期视角):支持费用/时间升降序与实时顺序。
         getTopSessions: async (limit, sort, dir) => call('getTopSessions', [limit, sort, dir]),
         refreshBalance: async () => {
           const result = await costMeter.refreshBalance()
@@ -4611,7 +4442,6 @@ window.__ModuleLoader__.load({
       const injected = () => ({ hooks: { cost: store }, api })
       const sectionInjected = () => ({ hooks: { cost: store }, api })
 
-      // 会话徽章按配置位置注册;配置变化时先撤销旧注册再重建。
       const sessionActive = { gen: 0, dispose: null }
       const registerSession = position => {
         if (sessionActive.dispose !== null) { sessionActive.dispose(); sessionActive.dispose = null }
@@ -4650,7 +4480,6 @@ window.__ModuleLoader__.load({
           }
         })
       }
-      // 右下角(dock)的 Go 额度 / 预算 chips:独立于会话费用位置,按 corner.enabled 开关。
       const cornerActive = { gen: 0, dispose: null }
       const registerCorner = enabled => {
         if (cornerActive.dispose !== null) { cornerActive.dispose(); cornerActive.dispose = null }
@@ -4669,14 +4498,11 @@ window.__ModuleLoader__.load({
         })
       }
 
-      // 峰/谷切换前弹窗提醒:全局 fixed 浮层,挂在 dock 插槽常驻渲染,组件内部
-      // 再按配置门控(peakAlertEnabled + peakEnabled);开关变化时重挂/卸载。
       const peakAlertActive = { gen: 0, dispose: null }
       const registerPeakAlert = enabled => {
         if (peakAlertActive.dispose !== null) { peakAlertActive.dispose(); peakAlertActive.dispose = null }
         peakAlertActive.gen += 1
         const gen = peakAlertActive.gen
-        // fork:波峰波谷显示整体移除 —— 弹窗提醒永不注册(计价仍按实际时刻在账本正确计算)。
         if (true) return
         if (!enabled) return
         slots.inject('conversation.composer.dock', () => {
@@ -4691,7 +4517,6 @@ window.__ModuleLoader__.load({
         })
       }
 
-      // 设置页「费用/Cost」分节:语言变化时撤销旧注册并重建,让侧边栏标签同步。
       const sectionActive = { gen: 0, dispose: null }
       const registerSection = locale => {
         if (sectionActive.dispose !== null) { sectionActive.dispose(); sectionActive.dispose = null }
@@ -4715,7 +4540,6 @@ window.__ModuleLoader__.load({
         })
       }
 
-      // Token 用量统计「通用设置」行(position = general 时,注入宿主通用设置页的 settings.general.item 插槽)。
       const generalUsageActive = { gen: 0, dispose: null }
       const registerGeneralUsage = enabled => {
         if (generalUsageActive.dispose !== null) { generalUsageActive.dispose(); generalUsageActive.dispose = null }
@@ -4733,7 +4557,6 @@ window.__ModuleLoader__.load({
           }
         })
       }
-      // Token 用量统计「独立分节」(position = section 时,像「费用」一样拥有自己的设置导航项)。
       const usageSectionActive = { gen: 0, dispose: null }
       const registerUsageSection = (enabled, locale) => {
         if (usageSectionActive.dispose !== null) { usageSectionActive.dispose(); usageSectionActive.dispose = null }

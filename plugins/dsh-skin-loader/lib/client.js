@@ -1,6 +1,7 @@
 /**
- * dsh-skin-loader 浏览器半:启动时拉取 /dsh-skin-loader/active.css,
- * 注入 <head> 末尾的 style 标签(空内容 = 原生外观)。切换皮肤后刷新页面生效。
+ * dsh-skin-loader browser half: fetch /dsh-skin-loader/active.css at boot and
+ * inject it as the last <style> tag in <head> (empty content = stock look).
+ * Switching skins takes effect on the next page refresh.
  */
 window.__ModuleLoader__.load({
   id: 'dsh-skin-loader',
@@ -19,7 +20,7 @@ window.__ModuleLoader__.load({
         tag.dataset.pluginCss = TAG_ID
         document.head.appendChild(tag)
       } else {
-        // 保持"最后一个 style"位置,确保覆盖后续插件样式表的令牌定义。
+        // Keep the "last style tag" position so later plugin stylesheets cannot override the token overrides.
         document.head.appendChild(tag)
       }
       tag.textContent = css
@@ -29,7 +30,7 @@ window.__ModuleLoader__.load({
       fetch('/dsh-skin-loader/active.css', { cache: 'no-store' })
         .then(r => (r.ok ? r.text() : ''))
         .then(css => { if (typeof css === 'string' && css.length > 0) applyCss(css) })
-        .catch(() => { /* 拉取失败 = 保持原生外观 */ })
+        .catch(() => { /* fetch failure = keep the stock look */ })
     }
 
     exports.apply = apply

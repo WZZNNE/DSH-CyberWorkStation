@@ -1,0 +1,4 @@
+# dsh-import-note bundle patch: one host row (nothing to serve); the browser half rides ./client.
+- insert:
+    - id: import-note
+      name: dsh-import-note

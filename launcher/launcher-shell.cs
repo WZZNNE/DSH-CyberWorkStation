@@ -1,6 +1,7 @@
-// DSH Launcher 引导器:双击 → 后台拉起 node server(隐藏窗口)→ 等端口就绪
-// → 以浏览器 --app 独立应用窗口打开工作台(无地址栏/标签页,原生程序观感)。
-// 编译:csc /target:winexe /win32icon:dsh.ico /out:DSH启动器.exe launcher-shell.cs
+// DSH Launcher bootstrap shell: double-click → start the Node server in the background
+// (hidden window) → wait for the port → open the workbench in a browser --app window
+// (no address bar / tabs, native-application feel).
+// Build: csc /target:winexe /win32icon:dsh.ico /out:<launcher exe name from setup.cmd> launcher-shell.cs
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -41,18 +42,30 @@ static class DshLauncherShell {
             };
             try { Process.Start(psi); }
             catch (Exception e) { MessageBox.Show("启动 node 失败(需安装 Node.js 并在 PATH):\n" + e.Message, "DSH Launcher"); return; }
-            for (int i = 0; i < 40 && !PortUp(); i++) Thread.Sleep(500);
-            if (!PortUp()) { MessageBox.Show("服务 60 秒内未就绪,查看 logs/ 目录。", "DSH Launcher"); return; }
+            for (int i = 0; i < 120 && !PortUp(); i++) Thread.Sleep(500);
+            if (!PortUp()) { MessageBox.Show("服务 60 秒内未就绪,查看 .local/logs/ 目录。", "DSH Launcher"); return; }
         }
+        // The API token is minted when the server owns the port and written to ~/.dsh. It travels
+        // as a `?t=` query — only to the loopback server that minted it, and the page scrubs it
+        // from the address bar immediately. A `#t=` fragment would be cleaner still, but Edge's
+        // `--app=` handoff to an already-running browser drops fragments, which opened dead pages.
+        string tokenFile = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".dsh", "launcher.token");
+        string token = "";
+        for (int i = 0; i < 60 && token.Length == 0; i++) {
+            try { token = File.ReadAllText(tokenFile).Trim(); } catch { }
+            if (token.Length == 0) Thread.Sleep(500);
+        }
+        string url = "http://127.0.0.1:" + Port + "/" + (token.Length > 0 ? "?t=" + token : "");
         string browser = FindBrowser();
         if (browser != null) {
             Process.Start(new ProcessStartInfo {
                 FileName = browser,
-                Arguments = "--app=http://127.0.0.1:" + Port + "/ --window-size=1380,940",
+                Arguments = "--app=" + url + " --window-size=1380,940",
                 UseShellExecute = false,
             });
         } else {
-            Process.Start(new ProcessStartInfo { FileName = "http://127.0.0.1:" + Port + "/", UseShellExecute = true });
+            Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
         }
     }
 }

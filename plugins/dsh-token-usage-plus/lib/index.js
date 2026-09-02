@@ -818,8 +818,8 @@ const NO_CACHE_WRITE = 0;
 * Verified against the official DeepSeek API pricing page
 * (api-docs.deepseek.com, fetched 2026-08-18): peak hours are Beijing time
 * 09:00–12:00 and 14:00–18:00; off-peak is half of peak.
-*   deepseek-v4-flash 空闲 0.05/1.5/4.5  高峰 0.10/3.0/9.0
-*   deepseek-v4-pro   空闲 0.15/4.5/13.5 高峰 0.30/9.0/27.0
+*   deepseek-v4-flash off-peak 0.05/1.5/4.5  peak 0.10/3.0/9.0
+*   deepseek-v4-pro   off-peak 0.15/4.5/13.5 peak 0.30/9.0/27.0
 */
 const DEFAULT_PRICES_CNY = {
 	"deepseek-v4-flash": {
@@ -853,8 +853,8 @@ const DEFAULT_PRICES_CNY = {
 };
 /**
 * Default prices in USD, verified against the official DeepSeek API pricing
-* page (2026-08): flash 空闲 $0.007/$0.22/$0.66 高峰 $0.014/$0.44/$1.32；
-* pro 空闲 $0.022/$0.66/$1.98 高峰 $0.044/$1.32/$3.96。
+* page (2026-08): flash off-peak $0.007/$0.22/$0.66, peak $0.014/$0.44/$1.32;
+* pro off-peak $0.022/$0.66/$1.98, peak $0.044/$1.32/$3.96.
 */
 const DEFAULT_PRICES_USD = {
 	"deepseek-v4-flash": {
@@ -1479,8 +1479,24 @@ function createPricesHandler(deps) {
 			res.end();
 			return;
 		}
-		let raw = "";
-		for await (const chunk of req) raw += chunk;
+		// Bytes with a cap, like every other router in this suite: string concatenation corrupts a
+		// multibyte character split across two chunks, and an unbounded read buffers whatever is sent.
+		const MAX_BODY = 512 * 1024;
+		const chunks = [];
+		let bytes = 0;
+		let over = false;
+		for await (const chunk of req) {
+			const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+			bytes += buf.length;
+			if (bytes > MAX_BODY) { over = true; chunks.length = 0; continue; }
+			chunks.push(buf);
+		}
+		if (over) {
+			res.writeHead(413, JSON_HEADERS);
+			res.end(JSON.stringify({ ok: false, error: "request body too large" }));
+			return;
+		}
+		const raw = Buffer.concat(chunks).toString("utf8");
 		const parsed = parseBody(raw);
 		if ("error" in parsed) {
 			res.writeHead(400, JSON_HEADERS);
@@ -1601,7 +1617,36 @@ function apply(ctx, config) {
 		}
 	});
 	const pricesHandler = createPricesHandler({ writePrices });
+	// The same loopback + same-origin fence the rest of the suite carries: POST /prices writes the
+	// price table, so a page on another origin must not be able to reach it.
+	const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
+	const hostOf = (req) => {
+		const h = String(req.headers.host ?? "").trim().toLowerCase();
+		const m = /^\[([^\]]+)\](?::\d+)?$/.exec(h);
+		return m ? `[${m[1]}]` : h.replace(/:\d+$/, "");
+	};
+	const rejectCrossSite = (req) => {
+		if (!LOOPBACK_HOSTS.has(hostOf(req))) return true;
+		const site = String(req.headers["sec-fetch-site"] ?? "");
+		if (site === "cross-site" || site === "same-site") return true;
+		const origin = req.headers.origin;
+		if (typeof origin === "string" && origin.length > 0) {
+			try {
+				if (new URL(origin).host.toLowerCase() !== String(req.headers.host ?? "").toLowerCase()) return true;
+			} catch {
+				return true;
+			}
+		}
+		if (req.method === "POST" && !/^application\/json/i.test(String(req.headers["content-type"] ?? ""))) return true;
+		return false;
+	};
 	const route = async (req, res) => {
+		if (rejectCrossSite(req)) {
+			req.resume?.();
+			res.writeHead(403, { "content-type": "application/json; charset=utf-8" });
+			res.end(JSON.stringify({ ok: false, message: "same-origin requests only" }));
+			return;
+		}
 		let url;
 		try {
 			url = new URL(req.url ?? "/", "http://dsh.internal");
@@ -1621,8 +1666,13 @@ function apply(ctx, config) {
 		handler: route
 	}), "dsh-token-usage: stats and prices routes");
 	ctx.logger.info("dsh-token-usage: host half loaded");
-	// fork:启动后把 cost-meter 已同步的 OpenRouter USD 价格自动填入本插件价格表(只补缺,峰谷同值)。
-	setTimeout(async () => {
+	// Fork addition: after boot, copy the OpenRouter USD prices that cost-meter
+	// already synced into this plugin's price table (fill missing entries only;
+	// peak and off-peak get the same value).
+	// Owned by the context and unref'd: a bare timer here held the event loop for eight seconds in
+	// every headless run and still fired — writing prices — after the plugin had been disposed.
+	ctx.effect(() => {
+		const priceSync = setTimeout(async () => {
 		try {
 			const { readFileSync: rf } = await import("node:fs");
 			const { homedir: hd } = await import("node:os");
@@ -1640,7 +1690,10 @@ function apply(ctx, config) {
 			const n = Object.keys(missing).length;
 			if (n > 0) { await writePrices("USD", missing); console.log("[dsh-token-usage] fork: auto-filled " + n + " OpenRouter USD prices from cost-meter"); }
 		} catch (error) { console.warn("[dsh-token-usage] fork price sync skipped: " + String(error).slice(0, 100)); }
-	}, 8000);
+		}, 8000);
+		priceSync.unref?.();
+		return () => clearTimeout(priceSync);
+	}, "dsh-token-usage: price sync");
 }
 
 //#endregion

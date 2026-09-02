@@ -1,0 +1,9 @@
+# The id stays `dsh-vision-bridge` on purpose: the fork keeps the upstream settings namespace and
+# routes, so an existing ~/.dsh configuration carries over unchanged.
+# dsh-vision-bridge bundle layer: applied automatically when the package is
+# installed as a profile bundle (package.json declares dsh.bundle.patch).
+# Override any field in the profile's own cordis.patch.yml or in
+# $DSH_HOME/settings.yaml under `dsh-vision-bridge:`.
+- insert:
+    - id: dsh-vision-bridge
+      name: 'dsh-vision-bridge-zh'

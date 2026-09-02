@@ -7,6 +7,6 @@
   "exports": { ".": { "default": "./lib/index.js" }, "./package.json": "./package.json" },
   "files": ["lib", "cordis.patch.yml"],
   "dsh": { "bundle": { "patch": "./cordis.patch.yml" } },
-  "scripts": { "test": "node --test tests/" },
+  "peerDependencies": { "@deepseek-ai/dsh-tools": "*" },
   "license": "MIT"
 }

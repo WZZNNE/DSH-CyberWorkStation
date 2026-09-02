@@ -1,0 +1,17 @@
+{
+  "name": "dsh-lan-fence",
+  "version": "0.1.0",
+  "description": "Deny unpaired LAN devices the bare /api when the DeepSeek Harness web server binds all interfaces: removes the auto-derived LAN IP authorities from the connection trust list in place, without any core change, so pairing-fronted remote access is safe by default and a core upgrade never reopens the hole.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "README.md"
+  ]
+}

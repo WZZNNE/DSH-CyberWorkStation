@@ -1,0 +1,4 @@
+# dsh-local-reasoning bundle patch: one host row.
+- insert:
+    - id: local-reasoning
+      name: dsh-local-reasoning

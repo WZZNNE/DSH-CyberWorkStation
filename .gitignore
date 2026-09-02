@@ -1,31 +1,33 @@
-# 依赖与构建产物
+# Dependencies and build outputs
 node_modules/
 *.tsbuildinfo
 
-# setup.cmd 克隆的上游本体(1.5GB,永不入库)
+# Upstream core cloned by setup.cmd when the bundled core/ is absent (never committed)
 deepseek-harness/
 
-# 运行时状态与日志(本地生成,不入库)
-launcher/logs/
-launcher/dsh.log
+# Everything local to this machine lives under .local/ and never ships:
+# maintainer tests, dev notes, maintainer scripts, runtime logs, caches.
+.local/
+
+# Runtime state written by the launcher
 launcher/skins/launcher/active.txt
 launcher/skins/frontend/active.txt
 
-# 市场下载的社区皮肤(含第三方版权美术资产,用户本机按需从 npm 拉取转换)
+# Community skins downloaded from the market (third-party artwork; converted from npm on the user's machine)
 launcher/skins/frontend/*.css
 !launcher/skins/frontend/cyberpunk-2077.css
+!launcher/skins/frontend/night-city-holo.css
 
-# 用户/AI 自制启动器皮肤(本机数据):只有套件自带的两款入库
+# User / AI-made launcher skins (local data): only the bundled skins below are committed
 launcher/skins/launcher/*.css
 !launcher/skins/launcher/cyberpunk-2077.css
 !launcher/skins/launcher/default.css
+!launcher/skins/launcher/night-city-holo.css
 
-# 未被 UI 引用的素材中间产物(bg-city/gen-banner/gen-icons-t/gen-logo-t 被引用,须入库)
-launcher/public/assets/gen-bgfront.png
-launcher/public/assets/gen-icons.png
-launcher/public/assets/gen-logo.png
-
-# 系统文件
+# OS files
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# per-workspace uploads made by dsh-drop-files
+.dsh-uploads/

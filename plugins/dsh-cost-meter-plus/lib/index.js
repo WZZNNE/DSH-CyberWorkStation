@@ -1,18 +1,18 @@
 /**
- * dsh-cost-meter 宿主插件。
- *
- * 单一 Loader 行(见 cordis.patch.yml)挂载本模块,职责:
- *  1. 打开/维护账本($DSH_HOME/storages/cost-meter/ledger.json);
- *  2. 包裹 `llm/stream` 瀑布,捕获每次模型调用的 usage 块并按官方价格计费;
- *  3. 注册 `costUsage` 会话投影(纯 token 桶 + 按模型拆分,客户端按价表计价);
- *  4. 提供 `costMeter` 服务(手写 typertRemote 绑定,配合 ./typert 清单走
- *     Typert 网关),客户端经 `remote.costMeter.*` 读写状态与配置。
- *
- * 不导入 cordis/dsh-* 运行时包中的 Service/Context 类:仅用 ctx API 与 Node
- * 内建能力,因此与宿主进程共享同一套运行时实例;dsh-credentials 只用于
- * 余额查询的凭证引用构造(credentialRef 为纯函数,无跨实例状态)。
+ * dsh-cost-meter-plus host plugin (fork of Han-1413141/dsh-cost-meter, MIT).
+ * One loader row (see cordis.patch.yml) mounts this module, which:
+ *  1. opens and maintains the ledger ($DSH_HOME/storages/cost-meter/ledger.json);
+ *  2. wraps the `llm/stream` waterfall to capture every usage chunk and bill it
+ *     against the official / synced price tables;
+ *  3. registers the `costUsage` session projection (pure token buckets split by
+ *     model; the client prices them);
+ *  4. provides the `costMeter` service (hand-written typertRemote binding backed
+ *     by ./typert.host.js) that the client reaches as remote.costMeter.*.
+ * Fork additions: provider-aware balances (OpenRouter / local endpoints) and
+ * OpenRouter price auto-sync. Only ctx APIs and Node built-ins are used so the
+ * plugin shares the host runtime instances; dsh-credentials is only used for the
+ * pure credentialRef() constructor.
  */
-
 import { z } from 'zod'
 import fs from 'node:fs'
 import { join } from 'node:path'
@@ -20,16 +20,15 @@ import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { Ledger, applyConfigPatch, localDayKey, pickBalanceInfo, reconcileBalanceDelta, zeroDay } from './store.js'
 import { backfillLegacyLedger, importLegacyHistory } from './backfill.js'
-import { OFFICIAL_PRICING_URL, normalizePrice, parsePricingHtml, costOf, priceEntryFor, providerPriceEntryFor, buildPriceCatalog } from './pricing.js'
+import { OFFICIAL_PRICING_URL, normalizePrice, parsePricingHtml, costOf, priceEntryFor, providerPriceEntryFor, buildPriceCatalog, paidVendorRoute } from './pricing.js'
 import { CODING_PLAN_PROVIDERS, CODING_PLAN_PROVIDER_IDS, queryCodingPlan, scnetTokenPlanWindows, emptyCustomBalance, queryCustomBalance } from './coding-plans.js'
 import { stateSchema } from './typert.host.js'
 import { detectProviders, queryOpenRouterBalance, fetchOpenRouterPriceEntries } from './provider-balance.js'
+import { isLocalProvider, markLocalProviders } from './pricing.js'
 
 export const name = 'cost-meter'
 
-// ── 多语言(中/英) ─────────────────────────────────────────────────────────
 
-/** 服务端用户可见文案(zh/en)。 */
 const SERVER_MESSAGES = {
   zh: {
     apiKeyMissing: '未配置 DeepSeek API Key(请在 设置→模型 中配置,或导出 {env} 环境变量)',
@@ -117,7 +116,6 @@ const SERVER_MESSAGES = {
   },
 }
 
-/** 取服务端文案(zh/en),支持 {var} 插值。 */
 function tmsg(locale, code, vars) {
   const dict = locale === 'en' ? SERVER_MESSAGES.en : SERVER_MESSAGES.zh
   let text = dict[code] ?? code
@@ -125,12 +123,10 @@ function tmsg(locale, code, vars) {
   return text
 }
 
-/** 从配置解析消息语言:'en' → en;auto/zh → zh(服务端无法探测浏览器)。 */
 function localeOf(config) {
   return config?.locale === 'en' ? 'en' : 'zh'
 }
 
-// ── costUsage 会话投影 ─────────────────────────────────────────────────────
 
 const usageProjectionSchema = z.object({
   input: z.number(),
@@ -157,9 +153,36 @@ const usageProjectionSchema = z.object({
   })).optional(),
 })
 
+const usageBucketsSchema = z.object({
+  input: z.number(),
+  output: z.number(),
+  cacheRead: z.number(),
+  cacheWrite: z.number(),
+  reasoning: z.number().optional(),
+  cost: z.number(),
+})
+
+/** Host fold state of the costUsage unit (validated before a persisted checkpoint seeds a fold). */
+const usageStateSchema = z.object({
+  provider: z.string(),
+  model: z.string(),
+  totals: usageBucketsSchema,
+  byModel: z.record(z.string(), usageBucketsSchema),
+  byProviderModel: z.record(z.string(), usageBucketsSchema).optional(),
+  last: z.object({
+    key: z.string(),
+    provider: z.string(),
+    model: z.string(),
+    buckets: z.object({ input: z.number(), output: z.number(), cacheRead: z.number(), cacheWrite: z.number(), reasoning: z.number() }),
+    cost: z.number(),
+  }).nullable(),
+})
+
 /**
- * costUsage 会话投影工厂:闭包账本,按事件时刻(event.time)用当时的价格档位
- * 逐次计费(峰谷时代前按 legacyBase,之后按峰谷两档),保证会话徽章历史正确。
+ * costUsage session projection. The definition carries both projection
+ * contracts: `schema`/`view` for dsh <= 0.1.0-rc.8 and `stateSchema`/`wire`
+ * for dsh >= 0.1.1-rc.1 (session-projection split host state from the client
+ * view); each host reads the fields it knows and ignores the rest.
  */
 function makeCostUsageProjection(ledger) {
   const zeroBuckets = () => ({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0, cost: 0 })
@@ -168,9 +191,25 @@ function makeCostUsageProjection(ledger) {
     effectiveAtMs: Date.parse(ledger.config?.peakEffectiveAt ?? ''),
     windows: ledger.config?.peakWindows,
   })
+  // Older checkpoints (same stateVersion) may lack the reasoning bucket; the wire
+  // schema requires it, so the view fills zeros instead of failing validation.
+  const withReasoning = buckets => Object.fromEntries(Object.entries(buckets ?? {}).map(([k, v]) => [k, { ...v, reasoning: v.reasoning ?? 0 }]))
+  const view = state => ({
+    input: state.totals.input,
+    output: state.totals.output,
+    cacheRead: state.totals.cacheRead,
+    cacheWrite: state.totals.cacheWrite,
+    reasoning: state.totals.reasoning ?? 0,
+    cost: state.totals.cost,
+    byModel: state.byModel,
+    byProviderModel: withReasoning(state.byProviderModel),
+  })
   return {
     key: 'costUsage',
     schema: usageProjectionSchema,
+    stateSchema: usageStateSchema,
+    wire: { viewSchema: usageProjectionSchema, view },
+    view,
     stateVersion: 3,
     init: () => ({ provider: 'deepseek', model: 'default', totals: zeroBuckets(), byModel: {}, byProviderModel: {}, last: null }),
     apply(state, event) {
@@ -210,7 +249,6 @@ function makeCostUsageProjection(ledger) {
         && prev.buckets.reasoning === buckets.reasoning) {
         return state
       }
-      // 按事件时刻计费(历史正确):峰谷时代前用 legacyBase,之后按峰谷两档。
       const atMs = Number.isFinite(Number(event.time)) && Number(event.time) > 0 ? Number(event.time) : Date.now()
       const resolved = providerPriceEntryFor(state.provider, state.model, ledger.config?.prices, {
         mode: ledger.config?.priceMatch === 'exact' ? 'exact' : 'auto',
@@ -219,7 +257,6 @@ function makeCostUsageProjection(ledger) {
       const peak = peakConfig()
       peak.enabled = resolved.billingMode === 'deepseek-peak' && peak.enabled
       const billed = resolved.priced ? costOf(buckets, resolved.entry, atMs, peak) : 0
-      // 同一 (turn, step) 的最终样本替换流式样本,先减后加,避免重复计数。
       const totals = { ...state.totals, reasoning: state.totals.reasoning ?? 0 }
       const byModel = { ...state.byModel }
       const byProviderModel = { ...(state.byProviderModel ?? {}) }
@@ -254,37 +291,20 @@ function makeCostUsageProjection(ledger) {
       shift(state.provider, state.model, buckets, billed, 1)
       return { provider: state.provider, model: state.model, totals, byModel, byProviderModel, last: { key, provider: state.provider, model: state.model, buckets, cost: billed } }
     },
-    view(state) {
-      return {
-        input: state.totals.input,
-        output: state.totals.output,
-        cacheRead: state.totals.cacheRead,
-        cacheWrite: state.totals.cacheWrite,
-        reasoning: state.totals.reasoning,
-        cost: state.totals.cost,
-        byModel: state.byModel,
-        byProviderModel: state.byProviderModel,
-      }
-    },
   }
 }
 
-// ── 服务 ───────────────────────────────────────────────────────────────────
 
-/** 余额占位(未开启显示或查询失败时的空值)。 */
 function emptyBalance() {
   return { status: 'off', message: '', fetchedAt: 0, currency: '', totalBalance: 0, grantedBalance: 0, toppedUpBalance: 0 }
 }
 
-/** OpenCode Go 订阅额度端点(官方固定域名)。 */
 const GO_QUOTA_URL = 'https://opencode.ai/zen/go/v1/usage'
 
-/** OpenCode Go 额度占位(未开启显示或查询失败时的空值)。 */
 function emptyGoQuota() {
   return { status: 'off', message: '', fetchedAt: 0, rolling: null, weekly: null, monthly: null }
 }
 
-/** 从 opencode auth.json 自动发现 opencode-go 的 API Key(与 opencode CLI 共用登录态)。 */
 function findGoKeyInAuthJson() {
   const home = process.env.USERPROFILE || process.env.HOME || ''
   const candidates = [
@@ -298,19 +318,11 @@ function findGoKeyInAuthJson() {
       const key = data?.['opencode-go']?.key
       if (typeof key === 'string' && key.length > 0) return key
     } catch {
-      // 文件不存在或不可读:继续尝试下一个位置。
     }
   }
   return null
 }
 
-/**
- * 解析 OpenCode Go API Key(与余额路径 queryBalance 同一套优先级):
- * 显式配置 → DSH 凭据库(OPENCODE_GO_API_KEY)→ 环境变量 OPENCODE_GO_API_KEY
- * → 兼容旧名环境变量 OPENCODE_API_KEY → opencode auth.json 兜底。
- * @param ctx - 宿主插件上下文(用于读取凭证服务)。
- * @param config - 插件配置(goQuota.apiKey)。
- */
 async function resolveGoKey(ctx, config) {
   const explicit = String(config?.goQuota?.apiKey ?? '').trim()
   if (explicit.length > 0) return explicit
@@ -320,7 +332,6 @@ async function resolveGoKey(ctx, config) {
       const hit = await credentials.resolve(credentialRef('OPENCODE_GO_API_KEY'))
       if (typeof hit?.value === 'string' && hit.value.length > 0) return hit.value
     } catch {
-      // 凭证解析失败时回退到环境变量。
     }
   }
   for (const name of ['OPENCODE_GO_API_KEY', 'OPENCODE_API_KEY']) {
@@ -330,7 +341,6 @@ async function resolveGoKey(ctx, config) {
   return findGoKeyInAuthJson()
 }
 
-/** 归一化单个额度窗口(percent + resetsAt)。 */
 function normalizeGoWindow(raw) {
   if (raw === null || typeof raw !== 'object') return null
   const percent = Number(raw.percent)
@@ -338,26 +348,16 @@ function normalizeGoWindow(raw) {
   return { percent, resetsAt: typeof raw.resetsAt === 'string' ? raw.resetsAt : '' }
 }
 
-/**
- * 查询 OpenCode Go 订阅额度(GET {GO_QUOTA_URL})。
- * 返回 rolling(滚动 5 小时)/ weekly(本周)/ monthly(本月) 三档用量百分比与重置时间。
- * 凭证只发往官方域名 opencode.ai;Key 解析顺序见 resolveGoKey。
- * 请求需携带浏览器 User-Agent,否则会被 opencode.ai 前置 Cloudflare 拦截(error 1010)。
- * @param ctx - 宿主插件上下文(用于解析 DSH 凭据库中的 Key)。
- * @param config - 插件配置(goQuota.apiKey / 消息语言)。
- * @param locale - 消息语言(zh/en)。
- */
 async function queryGoQuota(ctx, config, locale) {
   const key = await resolveGoKey(ctx, config)
   if (key === null) {
     const error = new Error(tmsg(locale, 'goQuotaKeyMissing'))
-    error.soft = true // 未登录/未配置 Key 属预期场景,面板以中性提示展示
+    error.soft = true
     throw error
   }
   const response = await fetch(GO_QUOTA_URL, {
     headers: {
       authorization: `Bearer ${key}`,
-      // 浏览器 UA:避免被 opencode.ai 前置 Cloudflare 以 error 1010 拦截。
       'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
     },
     signal: AbortSignal.timeout(15000),
@@ -365,7 +365,7 @@ async function queryGoQuota(ctx, config, locale) {
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
       const error = new Error(tmsg(locale, 'goQuotaNoSub', { code: String(response.status) }))
-      error.soft = true // 无订阅/Key 无效属预期场景,面板以中性提示展示
+      error.soft = true
       throw error
     }
     throw new Error(tmsg(locale, 'goQuotaHttp', { code: String(response.status) }))
@@ -380,12 +380,10 @@ async function queryGoQuota(ctx, config, locale) {
   }
 }
 
-/** Coding plan 额度占位(未启用/未查询/失败时的空值)。 */
 function emptyCodingPlan() {
   return { status: 'off', message: '', fetchedAt: 0, windows: {} }
 }
 
-/** 从 Claude Code 登录态文件自动发现 Anthropic OAuth access token。 */
 function findAnthropicOAuthToken() {
   const home = process.env.USERPROFILE || process.env.HOME || ''
   if (home.length === 0) return null
@@ -394,19 +392,10 @@ function findAnthropicOAuthToken() {
     const token = data?.claudeAiOauth?.accessToken
     if (typeof token === 'string' && token.length > 0) return token
   } catch {
-    // 文件不存在或不可读:视为未登录 Claude Code。
   }
   return null
 }
 
-/**
- * 解析单家 coding plan 凭据(与余额/Go 额度同一套优先级):
- * 显式配置(codingPlans[id].apiKey)→ DSH 凭据库(各家环境变量名)→ 环境变量
- * → CLI 登录态兜底(目前仅 Anthropic 的 ~/.claude/.credentials.json)。
- * @param ctx - 宿主插件上下文。
- * @param provider - anthropic | zai | minimax。
- * @param config - 插件配置。
- */
 async function resolveCodingPlanKey(ctx, provider, config) {
   const explicit = String(config?.codingPlans?.[provider]?.apiKey ?? '').trim()
   if (explicit.length > 0) return explicit
@@ -418,7 +407,6 @@ async function resolveCodingPlanKey(ctx, provider, config) {
         const hit = await credentials.resolve(credentialRef(name))
         if (typeof hit?.value === 'string' && hit.value.length > 0) return hit.value
       } catch {
-        // 凭证解析失败时继续尝试下一个候选名。
       }
     }
   }
@@ -430,7 +418,6 @@ async function resolveCodingPlanKey(ctx, provider, config) {
   return null
 }
 
-/** 官方余额端点:仅允许官方域名(api.deepseek.com),防止 API Key 被发往非官方端点;非法端点返回 null。 */
 function balanceEndpoint(baseURL) {
   let base = String(baseURL ?? '').trim().replace(/\/+$/, '')
   if (base.length === 0) base = String(process.env.DEEPSEEK_BASE_URL ?? '').trim().replace(/\/+$/, '')
@@ -442,16 +429,8 @@ function balanceEndpoint(baseURL) {
   return `${base}/user/balance`
 }
 
-/**
- * 调用官方开放平台余额接口(GET {base}/user/balance)。
- * 凭证与端点均取自 llm-deepseek 的设置段与凭证服务,与模型请求同一把 Key。
- * @param ctx - 宿主插件上下文。
- * @param locale - 消息语言(zh/en)。
- * @returns { currency, totalBalance, grantedBalance, toppedUpBalance }。
- */
 async function queryBalance(ctx, locale) {
   const settings = ctx.get('settings')
-  // 凭证解析:凭据库优先,环境变量兜底(与上游原行为一致)。
   const resolveKey = async apiKeyEnv => {
     let apiKey = null
     const credentials = ctx.get('credentials')
@@ -460,14 +439,12 @@ async function queryBalance(ctx, locale) {
         const hit = await credentials.resolve(credentialRef(apiKeyEnv))
         if (hit?.value !== undefined && hit.value.length > 0) apiKey = hit.value
       } catch {
-        // 凭证解析失败时回退到环境变量。
       }
     }
     if (apiKey === null && typeof process.env[apiKeyEnv] === 'string' && process.env[apiKeyEnv].length > 0) apiKey = process.env[apiKeyEnv]
     return apiKey
   }
   const providers = detectProviders(settings)
-  // 1) DeepSeek 官方(原行为保留):llm-deepseek 段的 key 可解析时走官方端点。
   const section = typeof settings?.get === 'function' ? settings.get('llm-deepseek') : undefined
   const dsEnv = typeof section?.apiKeyEnv === 'string' && section.apiKeyEnv.length > 0 ? section.apiKeyEnv : 'DEEPSEEK_API_KEY'
   const dsKey = await resolveKey(dsEnv)
@@ -482,7 +459,6 @@ async function queryBalance(ctx, locale) {
     })
     if (!response.ok) throw new Error(tmsg(locale, 'balanceHttp', { code: String(response.status) }))
     const data = await response.json()
-    // 多币种账号返回 CNY/USD 两条且顺序不稳定(#24/#25):按余额与币种挑选,不固定取首条。
     const info = pickBalanceInfo(data?.balance_infos)
     if (info === undefined) throw new Error(tmsg(locale, 'balanceNoInfos'))
     const num = value => {
@@ -496,34 +472,25 @@ async function queryBalance(ctx, locale) {
       toppedUpBalance: num(info.topped_up_balance),
     }
   }
-  // 2) OpenRouter(fork):检测到 openrouter provider 且 key 可解析时查询官方 credits 端点。
   const openrouter = providers.find(p => p.kind === 'openrouter')
   if (openrouter !== undefined) {
     const key = await resolveKey(openrouter.apiKeyEnv ?? 'OPENROUTER_API_KEY')
     if (key !== null) return queryOpenRouterBalance(key)
   }
-  // 3) 仅本地端点(fork):本地推理无余额概念,给中性提示(token 统计照常)。
   const effective = providers.filter(p => !(p.kind === 'deepseek' && dsKey === null))
   if (effective.length > 0 && effective.every(p => p.kind === 'local')) {
     throw new Error(tmsg(locale, 'balanceLocalOnly'))
   }
-  // 4) OpenAI(fork):官方无 API-Key 化余额端点,明确说明而非报密钥缺失。
   if (effective.some(p => p.kind === 'openai')) throw new Error(tmsg(locale, 'balanceOpenAiNoApi'))
   throw new Error(tmsg(locale, 'apiKeyMissing', { env: dsEnv }))
 }
 
-/**
- * Fork:按 llm-pi-ai 配置自动补齐 OpenRouter 模型价格(公开 models API,USD/1M,
- * 经 normalizePrice 规范化;幂等 —— 只补价格表中缺失的模型,不覆盖手动配置)。
- */
 async function syncOpenRouterPrices(ctx, ledger) {
-  // settings 服务可能晚于本插件挂载(本插件未声明 inject,动态 ctx.get):
-  // 就绪等待最多 2 分钟,超时告警退出。
   let settings
   for (let attempt = 0; attempt < 24; attempt++) {
     settings = ctx.get('settings')
     if (settings !== undefined) break
-    await new Promise(resolve => { const t = setTimeout(resolve, 5000); t.unref?.() }) // unref:不阻塞一次性进程退出
+    await new Promise(resolve => { const t = setTimeout(resolve, 5000); t.unref?.() })
   }
   if (settings === undefined) {
     console.warn('[dsh-cost-meter] OpenRouter price auto-sync skipped: settings service never became available')
@@ -562,15 +529,12 @@ async function syncOpenRouterPrices(ctx, ledger) {
   ledger.scheduleWrite()
   console.log(`[dsh-cost-meter] auto-synced ${Object.keys(normalized).length} OpenRouter model prices (USD/1M)`)
 }
-/** 扩展价格表目录(内置只读;provider → family → model → 价格)。 */
 const PRICE_CATALOG = buildPriceCatalog()
 
-/** 组装对客户端的完整账本快照。 */
 function buildState(ledger, balance = emptyBalance(), goQuota = emptyGoQuota(), codingPlans = {}, customBalance = emptyCustomBalance(), reconcile = { ok: true, message: '' }) {
   const now = Date.now()
   const dayKey = localDayKey(now)
   const monthKey = dayKey.slice(0, 7)
-  // 预算已用金额(美元):按配置周期聚合;custom 区间左闭右闭,结束为空 = 今日。
   const budget = ledger.config?.budget ?? {}
   let budgetUsed
   if (budget.period === 'day') budgetUsed = ledger.today().cost
@@ -588,7 +552,6 @@ function buildState(ledger, balance = emptyBalance(), goQuota = emptyGoQuota(), 
     balance,
     goQuota,
     customBalance,
-    // 余额差交叉校验提示(issue #18):本地今日合计与官方余额当日变动偏差超阈时 ok=false。
     reconcile,
     codingPlans,
     history: ledger.history(90),
@@ -601,13 +564,9 @@ function buildState(ledger, balance = emptyBalance(), goQuota = emptyGoQuota(), 
       monthKey,
     },
   }
-  // 可用性兑底:若快照与 strict codec 漂移(新增字段 schema 未同步等),
-  // 逐级降级(剔目录 → 空额度状态)重试,而不是让整个 getState 被拒导致「账本不可用」。
   const check = stateSchema.safeParse(state)
   if (check.success) return state
   console.warn('[dsh-cost-meter] state 与 codec 漂移,尝试降级恢复可用性:', JSON.stringify(check.error.issues?.slice(0, 3) ?? check.error))
-  // 注意剔除键必须用解构省略而非赋 undefined:priceCatalog 是 schema 声明的
-  // optional 键,显式 undefined 键会被网关 JSON 安全校验拒绝(值合法但属性不安全)。
   const { priceCatalog: _dropped, ...stateNoCatalog } = state
   const attempts = [
     stateNoCatalog,
@@ -620,7 +579,6 @@ function buildState(ledger, balance = emptyBalance(), goQuota = emptyGoQuota(), 
   return state
 }
 
-/** 带超时抓取官方定价页。 */
 async function fetchPricingHtml(locale) {
   const response = await fetch(OFFICIAL_PRICING_URL, {
     signal: AbortSignal.timeout(20000),
@@ -632,36 +590,28 @@ async function fetchPricingHtml(locale) {
   return text
 }
 
-/**
- * 创建 costMeter 服务对象。手写 `typertRemote` 绑定(service/serviceKey/namespace)
- * 满足 Typert 网关的 validateBinding 校验;方法按清单参数顺序位置调用。
- * @param ctx - 宿主插件上下文。
- * @param ledger - 账本。
- * @returns 服务对象。
- */
+// Set once the first balance answer has been seen: from then on the balance decides the currency.
+// Module level on purpose: the service (below) writes it, apply() reads it.
+let balanceSeen = false
+
 function createService(ctx, ledger) {
-  // 余额进程内缓存:display=off 时不清缓存但不下发;按 refreshMinutes 过期。
   let balanceCache = { fetchedAt: 0, value: emptyBalance() }
-  // OpenCode Go 订阅额度进程内缓存(同上策略)。
   let goQuotaCache = { fetchedAt: 0, value: emptyGoQuota() }
   let customBalanceCache = { fetchedAt: 0, value: emptyCustomBalance() }
-  // Coding plan 额度进程内缓存(每家一个条目,同上策略)。
   let codingPlanCaches = {}
-  // 余额差对账提示(drift 时 ok=false 携带文案,其余静默)。
   let reconcileNotice = { ok: true, message: '' }
 
   const balanceConfig = () => ledger.config?.balance ?? { display: 'both', refreshMinutes: 5 }
-  const goQuotaConfig = () => ledger.config?.goQuota ?? { enabled: false, display: 'off', refreshMinutes: 15, apiKey: '' } // fork:默认关(无 Go 订阅时不再占据费用页)
+  const goQuotaConfig = () => ledger.config?.goQuota ?? { enabled: false, display: 'off', refreshMinutes: 15, apiKey: '' }
   const customBalanceConfig = () => ledger.config?.customBalance ?? { enabled: false, display: 'off', refreshMinutes: 15, label: '', request: { url: '' }, extract: {} }
   const codingPlanConfigOf = id => ({
-    enabled: id === 'openrouter', // fork:OpenRouter 额度默认启用(与官方余额同源展示)
+    enabled: id === 'openrouter',
     display: 'settings',
     refreshMinutes: 15,
     apiKey: '',
     ...(ledger.config?.codingPlans?.[id] ?? {}),
   })
 
-  /** 按需刷新余额(过期或 force);失败落 error 状态,不影响其余状态字段。 */
   const ensureBalance = async (force = false) => {
     const config = balanceConfig()
     if (config.display === 'off') {
@@ -676,7 +626,8 @@ function createService(ctx, ledger) {
     }
     const task = queryBalance(ctx, localeOf(ledger.config)).then(result => {
       balanceCache = { fetchedAt: Date.now(), value: { status: 'ok', message: '', fetchedAt: Date.now(), ...result } }
-      // 余额差交叉校验(issue #18):官方余额当日变动 vs 本地账本今日合计,偏差超阈提示。
+      balanceSeen = true
+      if (typeof result?.currency === 'string' && ledger.followCurrency(result.currency)) console.log(`[dsh-cost-meter] display currency follows the balance: ${result.currency}`)
       if ((ledger.config?.balance?.reconcile ?? true) === true && balanceCache.value.status === 'ok') {
         const nowMs = Date.now()
         const usd = v => '$' + Number(v).toFixed(4)
@@ -706,7 +657,6 @@ function createService(ctx, ledger) {
     await task
   }
 
-  /** 按需刷新 OpenCode Go 额度(过期或 force);未启用/显示关闭/失败均落空或 error 状态。 */
   const ensureGoQuota = async (force = false) => {
     const config = goQuotaConfig()
     if (config.enabled === false || config.display === 'off') {
@@ -726,7 +676,6 @@ function createService(ctx, ledger) {
         fetchedAt: Date.now(),
         value: {
           ...emptyGoQuota(),
-          // 未登录/无订阅等预期场景降级为 off(中性提示);其余为 error(红色提示)。
           status: (error && error.soft === true) ? 'off' : 'error',
           message: error instanceof Error ? error.message : String(error),
           fetchedAt: Date.now(),
@@ -739,7 +688,6 @@ function createService(ctx, ledger) {
     await task
   }
 
-  /** 按需刷新自定义 Provider 余额(过期或 force)。 */
   const ensureCustomBalance = async (force = false) => {
     const config = customBalanceConfig()
     if (config.enabled !== true || config.display === 'off') {
@@ -775,7 +723,6 @@ function createService(ctx, ledger) {
     await task
   }
 
-  /** 合并配置与运行时额度状态,得到对客户端的 codingPlans 快照。 */
   const mergedCodingPlans = () => {
     const out = {}
     for (const id of CODING_PLAN_PROVIDER_IDS) {
@@ -793,15 +740,12 @@ function createService(ctx, ledger) {
     return out
   }
 
-  /** 按需刷新单家 coding plan 额度(过期或 force);未启用/显示关闭/失败均落空或 error 状态。 */
   const ensureCodingPlan = async (id, force = false) => {
     const config = codingPlanConfigOf(id)
     if (config.enabled !== true || config.display === 'off') {
       codingPlanCaches[id] = { fetchedAt: Date.now(), value: emptyCodingPlan() }
       return
     }
-    // SCNet 无 API 额度端点(issue #26):按官方 Credits 抵扣表对本地账本同步估算——
-    // 纯本地计算开销可忽略,跳过缓存间隔,每次状态组装都随账本最新数据重算。
     if (id === 'scnet') {
       const result = scnetTokenPlanWindows(ledger.days ?? {}, config, Date.now())
       codingPlanCaches[id] = {
@@ -830,7 +774,6 @@ function createService(ctx, ledger) {
         fetchedAt: Date.now(),
         value: {
           ...emptyCodingPlan(),
-          // 未配置凭据/无订阅等预期场景降级为 off(中性提示);其余为 error(红色提示)。
           status: (error && error.soft === true) ? 'off' : 'error',
           message: error instanceof Error ? error.message : String(error),
           fetchedAt: Date.now(),
@@ -843,7 +786,6 @@ function createService(ctx, ledger) {
     await task
   }
 
-  /** 按需刷新全部已启用 coding plan 额度(并行)。 */
   const ensureCodingPlans = async (force = false) => {
     await Promise.all(CODING_PLAN_PROVIDER_IDS.map(id => ensureCodingPlan(id, force)))
   }
@@ -864,7 +806,10 @@ function createService(ctx, ledger) {
         const locale = patch !== null && typeof patch === 'object' && patch.locale === 'en' ? 'en' : localeOf(ledger.config)
         throw new Error(tmsg(locale, 'configRejected', { errors: errors.join(locale === 'zh' ? ';' : '; ') }))
       }
-      ledger.config = config
+      // Touching the currency fields by hand is the choice to stop following the API.
+      const choseCurrency = patch !== null && typeof patch === 'object' && patch.currencySource === undefined
+        && ['currency', 'symbol', 'exchangeRate'].some(k => patch[k] !== undefined)
+      ledger.config = choseCurrency ? { ...config, currencySource: 'manual' } : config
       if (config.balance?.reconcile !== true) reconcileNotice = { ok: true, message: '' }
       ledger.scheduleWrite()
       return build(false)
@@ -964,7 +909,7 @@ function createService(ctx, ledger) {
           fetchedAt: new Date().toISOString(),
         }
         if (typeof parsed.effectiveAt === 'string') patch.peakEffectiveAt = parsed.effectiveAt
-        else patch.peakEffectiveAt = new Date().toISOString() // 页面已无生效时间:两档方案即时生效
+        else patch.peakEffectiveAt = new Date().toISOString()
         if (Array.isArray(parsed.peakWindows) && parsed.peakWindows.length > 0) {
           patch.peakWindows = parsed.peakWindows
         }
@@ -995,8 +940,6 @@ function createService(ctx, ledger) {
       return build(false)
     },
 
-    // 导入安装前历史(issue #27):回放宿主全部会话日志,为账本缺失的日期
-    // 重建费用条目(幂等:已有日期只追加未知会话,绝不与实时计费重复)。
     async importLegacyHistory() {
       const locale = localeOf(ledger.config)
       try {
@@ -1017,8 +960,6 @@ function createService(ctx, ledger) {
       }
     },
 
-    // 按需读取某一天的完整记录(含会话明细;issue #22):history() 输出为轻量副本
-    // 不含会话,历史各天的会话明细由本 RPC 展开时才拉取,避免 state 膨胀。
     async getDaySessions(date) {
       if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         throw new Error('invalid date')
@@ -1027,15 +968,12 @@ function createService(ctx, ledger) {
       return day === undefined ? zeroDay(date) : ledger.copyDay(day)
     },
 
-    // 跨全部日期返回前 N 个会话(issue #22 按会话视角,不分日期)。
-    // sort:cost(费用) | time(会话创建时间) | recent(实时顺序,即账本/侧边栏顺序);dir:asc | desc。
     async getTopSessions(limit, sort = 'cost', dir = 'desc') {
       const n = Math.max(1, Math.min(500, Math.floor(Number(limit)) || 100))
       const sortKey = sort === 'time' || sort === 'recent' ? sort : 'cost'
       const asc = dir === 'asc'
       const all = []
       const dateKeys = Object.keys(ledger.days)
-      // recent 的降序 = 侧边栏直觉的「新会话在前」:日期倒序 + 每日会话倒序。
       if (sortKey === 'recent' && !asc) dateKeys.reverse()
       for (const date of dateKeys) {
         const day = ledger.days[date]
@@ -1056,9 +994,6 @@ function createService(ctx, ledger) {
             cost: s.cost ?? 0,
             byProviderModel: s.byProviderModel ?? {},
           }
-          // title/at 缺席时不得写入 undefined 键:网关对返回值做 JSON 安全校验,
-          // 显式 undefined 属性会被「undefined is not JSON-safe」拒绝,整个 RPC
-          // result-invalid,会话排行面板加载失败(未命名/无时间戳会话即触发)。
           if (typeof s.title === 'string' && s.title.length > 0) row.title = s.title
           const at = Number(s.at)
           if (Number.isFinite(at) && at > 0) row.at = at
@@ -1067,14 +1002,12 @@ function createService(ctx, ledger) {
       }
       if (sortKey === 'cost') all.sort((a, b) => asc ? a.cost - b.cost : b.cost - a.cost)
       else if (sortKey === 'time') {
-        // 无时间戳的条目排末尾。
         all.sort((a, b) => {
           const ta = Number.isFinite(a.at) ? a.at : asc ? Number.MAX_SAFE_INTEGER : 0
           const tb = Number.isFinite(b.at) ? b.at : asc ? Number.MAX_SAFE_INTEGER : 0
           return asc ? ta - tb : tb - ta
         })
       }
-      // recent 已按构造顺序排好,不再重排。
       return { sessions: all.slice(0, n) }
     },
   }
@@ -1087,15 +1020,7 @@ function createService(ctx, ledger) {
   return service
 }
 
-// ── 插件主体 ───────────────────────────────────────────────────────────────
 
-/**
- * 启动期历史导入(issue #27):先做按模型回填,再在**本插件首次启动**(config
- * 标记 legacyAutoImportedAt 为 0)时自动导入一次安装前历史——用户无需手动触
- * 发;之后每次启动只跑回填,自动导入不再重复。导出供测试直接调用。
- * @param ledger - 已打开的账本。
- * @param sessionsRoot - 宿主会话根目录($DSH_HOME/sessions)。
- */
 export async function runStartupImports(ledger, sessionsRoot) {
   const filled = await backfillLegacyLedger(ledger, sessionsRoot)
   if (filled.days > 0 || filled.sessions > 0 || filled.titles > 0) {
@@ -1111,25 +1036,55 @@ export async function runStartupImports(ledger, sessionsRoot) {
     if (stats.days > 0 || stats.sessions > 0) {
       console.log(`[dsh-cost-meter] 安装前历史自动导入完成:${stats.days} 天 / ${stats.sessions} 个会话(扫描 ${stats.scanned} 份会话日志)`)
     }
-    // 无论是否有可导入内容都打标:空结果同样视为已完成,避免每次启动重扫。
     ledger.config.legacyAutoImportedAt = Date.now()
     ledger.scheduleWrite()
   }
 }
 
-/**
- * 挂载账本、llm/stream 计费包裹、会话投影与 costMeter 服务。
- * @param ctx - 宿主插件上下文。
- */
 export function apply(ctx) {
   const ledger = Ledger.open()
   console.log(`[dsh-cost-meter] 已加载,账本:${ledger.path}`)
 
-  // 卸载/退出前最终落盘。
+  // Local routes are free and the display currency follows the API: both need the settings
+  // service, which may arrive after this plugin, so they are refreshed on a timer as well.
+  const refreshRouteFacts = () => {
+    try {
+      const providers = detectProviders(ctx.get('settings'))
+      if (providers.length === 0) return
+      // A paid vendor's route pointed at a loopback gateway or proxy is still that vendor's bill —
+      // when it names the vendor AND carries the vendor's credential (pricing.js paidVendorRoute).
+      markLocalProviders(providers.filter(p => p.kind === 'local' && !paidVendorRoute(p)).map(p => p.id))
+      // Once per rule version: local rows come out free, and paid rows that an earlier local rule
+      // zeroed (tokens but no money) get their money back from the current tables. Rows that
+      // already carry a paid cost are never touched: their per-call tier (peak pricing) is not
+      // reconstructible from a day row.
+      if (ledger.config.repricedVersion < 1) {
+        const touched = ledger.repriceAll(isLocalProvider)
+        ledger.config = { ...ledger.config, repricedVersion: 1 }
+        ledger.scheduleWrite()
+        console.log(`[dsh-cost-meter] ledger repriced from tokens (rule v1): ${touched} row(s) changed`)
+      } else {
+        const zeroed = ledger.forgiveLocal(isLocalProvider)
+        if (zeroed > 0) console.log(`[dsh-cost-meter] local routes are free: ${zeroed} ledger row(s) zeroed`)
+      }
+      // The balance endpoint is the authority on currency; the guess below only stands in until
+      // the first balance answer has been seen.
+      if (ledger.config.currencySource !== 'manual' && !balanceSeen) {
+        const paid = providers.filter(p => p.kind !== 'local')
+        const guess = paid.length > 0 && paid.every(p => p.kind === 'deepseek') ? 'CNY' : 'USD'
+        if (ledger.followCurrency(guess)) console.log(`[dsh-cost-meter] display currency follows the API: ${guess}`)
+      }
+    } catch (error) {
+      console.warn(`[dsh-cost-meter] route facts skipped: ${String(error?.message ?? error)}`)
+    }
+  }
+  refreshRouteFacts()
+  const routeFactsTimer = setInterval(refreshRouteFacts, 60000)
+  routeFactsTimer.unref?.()
+  ctx.effect(() => () => clearInterval(routeFactsTimer), 'cost-meter: route facts')
+
   ctx.effect(() => () => ledger.close(), 'cost-meter: ledger close')
 
-  // 历史账本按模型回填 + 首次启动自动导入安装前历史(issue #27):
-  // 启动后延迟执行,避免拖慢宿主启动;均幂等,只补缺失,不重复计数。
   const backfillTimer = setTimeout(() => {
     runStartupImports(ledger, join(resolveDshHome(), 'sessions')).catch(error => {
       console.warn(`[dsh-cost-meter] 启动期历史导入失败: ${String(error?.message ?? error)}`)
@@ -1137,8 +1092,6 @@ export function apply(ctx) {
   }, 3000)
   backfillTimer.unref?.()
 
-  // 包裹 llm/stream:捕获 usage 块(位于 finish 之前),按官方价格计入账本。
-  // 本插件是链尾监听者,next() 即适配器流;仅透传数据块,不改变流协议。
   ctx.on('llm/stream', (options, next) => {
     const downstream = next()
     return (async function* costMeterStream() {
@@ -1160,9 +1113,6 @@ export function apply(ctx) {
               cacheWrite: usage.cacheWriteTokens ?? 0,
               reasoning: usage.reasoningTokens ?? 0,
             }, options?.model, options?.sessionId, Date.now(), options?.provider)
-            // rc.8 的 CLI 关机走 process.exit(不触发 beforeExit),2 秒延迟写盘
-            // 定时器在一次性(headless run)进程里等不到 —— 记账后立即落盘。
-            // flush 是幂等原子写(几 KB JSON),长驻 web 进程下代价可忽略。
             ledger.flush()
           } catch (error) {
             ctx.logger?.warn?.(`[dsh-cost-meter] 计费失败: ${String(error)}`)
@@ -1172,18 +1122,14 @@ export function apply(ctx) {
     })()
   })
 
-  // costUsage 投影:向会话历史页/推送帧提供 token 桶(客户端计价)。
   ctx.inject(['sessionProjections'], (projectionCtx) => {
     projectionCtx.sessionProjections.register(makeCostUsageProjection(ledger))
   })
 
-  // RPC 服务:客户端经 remote.costMeter.* 调用(./typert 清单由 typert-loader 注册)。
-  // Fork:OpenRouter 已配置且价格表缺条目时,启动后台自动同步官方目录价(失败仅告警)。
   syncOpenRouterPrices(ctx, ledger).catch(error => {
     console.warn(`[dsh-cost-meter] OpenRouter price auto-sync failed: ${error?.stack ?? String(error)}`)
   })
-  // fork:进程退出/插件卸载双兜底落盘(rc.8 起主要路径是 account 后的即时 flush)。
-  process.once('beforeExit', () => { try { if (ledger.pendingWrite) ledger.flush() } catch { /* 退出路径忽略 */ } })
-  ctx.effect(() => () => { try { ledger.close() } catch { /* 卸载路径忽略 */ } }, 'cost-meter: flush ledger on dispose')
+  process.once('beforeExit', () => { try { if (ledger.pendingWrite) ledger.flush() } catch { } })
+  ctx.effect(() => () => { try { ledger.close() } catch { } }, 'cost-meter: flush ledger on dispose')
   ctx.provide('costMeter', createService(ctx, ledger))
 }

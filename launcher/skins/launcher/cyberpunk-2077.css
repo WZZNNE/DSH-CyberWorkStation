@@ -1,6 +1,8 @@
-/* 启动器皮肤:cyberpunk-2077 v4.1 —— 2077 × 边缘行者
- * 性能约定:动画只用 transform/opacity/filter(合成器线程);背景大图走固定伪元素层;
- * backdrop-filter 仅 nav/hero/toast 三处。电流/闪电/冲击波特效见 .launch-big。 */
+/* Launcher skin: cyberpunk-2077 v4.2 — Cyberpunk 2077 × Edgerunners
+ * Performance contract: animations use only transform/opacity/filter (compositor thread);
+ * the large background image sits on a fixed pseudo-element layer; backdrop-filter is
+ * limited to nav/hero/toast. Electric arc / lightning / shockwave effects live on .launch-big.
+ * v4.2: the CRT scanline overlay and the roaming scan band were removed. */
 :root {
   --lc-font: 'Rajdhani', 'Segoe UI', 'Microsoft YaHei', sans-serif;
   --lc-bg: #05070d;
@@ -35,27 +37,20 @@
   --lc-hero-title: #ffffff;
   --lc-ease: cubic-bezier(.16, 1, .3, 1);
 }
-/* ══ 背景:固定伪元素层(避免 background-attachment:fixed 的滚动重绘) ══ */
+/* ══ Background: fixed pseudo-element layer (avoids the scroll repaint of background-attachment: fixed) ══ */
 body { background: #05070d }
 html::after {
   content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
   background: linear-gradient(rgba(5, 7, 13, .7), rgba(5, 7, 13, .85)), url('/assets/bg-city.jpg') center / cover no-repeat;
   will-change: transform;
 }
-body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
-  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .16) 0 1px, transparent 1px 3px) }
+/* Vignette overlay */
 body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9998;
   background: radial-gradient(ellipse at center, transparent 52%, rgba(0, 0, 0, .58) 100%) }
-/* 巡回光带:transform 动画(合成器) */
-.frame::after { content: ''; position: fixed; left: 0; right: 0; top: 0; height: 4px; z-index: 9997; pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, .75), rgba(252, 238, 10, .9), rgba(255, 45, 120, .75), transparent);
-  box-shadow: 0 0 18px rgba(0, 240, 255, .5); opacity: 0; transform: translateY(-10px);
-  animation: lc-sweep 8s linear infinite; will-change: transform, opacity }
-@keyframes lc-sweep { 0% { transform: translateY(-1vh); opacity: .7 } 46% { opacity: .7 } 50% { transform: translateY(101vh); opacity: 0 } 100% { transform: translateY(101vh); opacity: 0 } }
-/* ══ 毛玻璃:仅三处 ══ */
+/* ══ Frosted glass: three places only ══ */
 .nav { backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3); border-right: 1px solid rgba(0, 240, 255, .2) }
 .hero, .toast { backdrop-filter: blur(10px) saturate(1.2); -webkit-backdrop-filter: blur(10px) saturate(1.2) }
-/* ══ 军工 HUD 卡片 ══ */
+/* ══ Military HUD cards ══ */
 .card, .ucard, .qcard {
   clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
   border-left: 2px solid var(--lc-accent); position: relative;
@@ -66,24 +61,32 @@ body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-in
   border-bottom: 2px solid var(--lc-danger); border-left: 2px solid var(--lc-danger); opacity: .55 }
 .card:hover, .qcard:hover { animation: lc-jolt .22s steps(2) 1 }
 @keyframes lc-jolt { 25% { transform: translate(1px, -1px) } 75% { transform: translate(-1px, 0) } }
-/* ══ 品牌 ══ */
+/* ══ Brand ══ */
 .brand { text-shadow: 0 0 10px rgba(252, 238, 10, .6); animation: lc-flicker 7s infinite }
 .brand-logo { width: 38px; height: 38px; flex: none; object-fit: contain; border-radius: 0;
   filter: drop-shadow(0 0 7px rgba(252, 238, 10, .55)) }
 @keyframes lc-flicker { 0%, 92%, 100% { opacity: 1 } 93% { opacity: .5 } 94% { opacity: 1 } 96.5% { opacity: .7 } 97.5% { opacity: 1 } }
-/* ══ 导航 sprite(透明霓虹) ══ */
-.nav-glyph { color: transparent !important; overflow: hidden;
-  background-image: url('/assets/gen-icons-t.png'); background-size: 300% 300%;
-  filter: drop-shadow(0 0 5px rgba(0, 240, 255, .65)) }
-.nav-glyph[data-i="dash"] { background-position: 0% 0% }
-.nav-glyph[data-i="plugins"] { background-position: 50% 0% }
-.nav-glyph[data-i="skills"] { background-position: 100% 0% }
-.nav-glyph[data-i="sessions"] { background-position: 0% 50% }
-.nav-glyph[data-i="storage"] { background-position: 50% 50% }
-.nav-glyph[data-i="update"] { background-position: 100% 50% }
-.nav-glyph[data-i="tokens"] { background-position: 0% 100% }
-.nav-glyph[data-i="skins"] { background-position: 50% 100% }
-.nav-glyph[data-i="logs"] { background-position: 100% 100% }
+/* ══ Navigation icons — one vector per entry, colored by state ══
+ * The old 3×3 sprite had nine cells for thirteen entries, so four pages wore another page's icon,
+ * and a bitmap cell resampled to 20 px was soft. These are masks: crisp at any scale, and the neon
+ * is the mask's own color (a filter on a masked box is clipped away by the mask). */
+.nav-glyph { color: transparent !important; -webkit-mask: center / 20px 20px no-repeat; mask: center / 20px 20px no-repeat;
+  background-color: #7fd8e6; transition: background-color .2s var(--lc-ease), transform .2s var(--lc-ease) }
+.nav-btn:hover .nav-glyph { background-color: #00f0ff }
+.nav-btn.active .nav-glyph { background-color: var(--lc-accent); transform: translateX(1px) }
+.nav-glyph[data-i="dash"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M4 14a8 8 0 0 1 16 0'/><path d='M12 14l3.5-4.5'/><circle cx='12' cy='14' r='1.2' fill='%23000'/><path d='M4 18h16'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M4 14a8 8 0 0 1 16 0'/><path d='M12 14l3.5-4.5'/><circle cx='12' cy='14' r='1.2' fill='%23000'/><path d='M4 18h16'/></svg>") }
+.nav-glyph[data-i="plugins"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='9' width='16' height='11' rx='2'/><path d='M8 9V6a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3M13 9V6a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3'/><path d='M4 14h16'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='9' width='16' height='11' rx='2'/><path d='M8 9V6a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3M13 9V6a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3'/><path d='M4 14h16'/></svg>") }
+.nav-glyph[data-i="skills"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z'/><path d='M18.5 16.5l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z'/><path d='M18.5 16.5l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z'/></svg>") }
+.nav-glyph[data-i="sessions"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M5 6h14M5 12h14M5 18h9'/><circle cx='19' cy='18' r='1.5'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M5 6h14M5 12h14M5 18h9'/><circle cx='19' cy='18' r='1.5'/></svg>") }
+.nav-glyph[data-i="storage"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><ellipse cx='12' cy='6' rx='7' ry='2.6'/><path d='M5 6v12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6V6'/><path d='M5 12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><ellipse cx='12' cy='6' rx='7' ry='2.6'/><path d='M5 6v12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6V6'/><path d='M5 12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6'/></svg>") }
+.nav-glyph[data-i="update"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M20 12a8 8 0 0 1-13.7 5.6'/><path d='M4 12a8 8 0 0 1 13.7-5.6'/><path d='M17 3.5v3.3h-3.3M7 20.5v-3.3h3.3'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M20 12a8 8 0 0 1-13.7 5.6'/><path d='M4 12a8 8 0 0 1 13.7-5.6'/><path d='M17 3.5v3.3h-3.3M7 20.5v-3.3h3.3'/></svg>") }
+.nav-glyph[data-i="tokens"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6 5h12l-6 7 6 7H6'/><path d='M4 19h16'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6 5h12l-6 7 6 7H6'/><path d='M4 19h16'/></svg>") }
+.nav-glyph[data-i="deck"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='3.5' y='5' width='17' height='14' rx='2'/><path d='M7 9h4M7 12.5h7M7 16h5'/><circle cx='16.5' cy='9' r='1'/><circle cx='16.5' cy='16' r='1'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='3.5' y='5' width='17' height='14' rx='2'/><path d='M7 9h4M7 12.5h7M7 16h5'/><circle cx='16.5' cy='9' r='1'/><circle cx='16.5' cy='16' r='1'/></svg>") }
+.nav-glyph[data-i="local"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='5' y='5' width='14' height='14' rx='2'/><rect x='9' y='9' width='6' height='6' rx='1'/><path d='M9 3v2M15 3v2M9 19v2M15 19v2M3 9h2M3 15h2M19 9h2M19 15h2'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='5' y='5' width='14' height='14' rx='2'/><rect x='9' y='9' width='6' height='6' rx='1'/><path d='M9 3v2M15 3v2M9 19v2M15 19v2M3 9h2M3 15h2M19 9h2M19 15h2'/></svg>") }
+.nav-glyph[data-i="creds"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><circle cx='9' cy='10' r='4'/><path d='M12 12.5l8 0v3h-2.5v-2M15.5 15.5v-3'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><circle cx='9' cy='10' r='4'/><path d='M12 12.5l8 0v3h-2.5v-2M15.5 15.5v-3'/></svg>") }
+.nav-glyph[data-i="memory"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M9 4.5a3.5 3.5 0 0 0-3.5 3.5v1A3 3 0 0 0 4 12a3 3 0 0 0 1.5 3v1A3.5 3.5 0 0 0 9 19.5h1v-15z'/><path d='M15 4.5a3.5 3.5 0 0 1 3.5 3.5v1A3 3 0 0 1 20 12a3 3 0 0 1-1.5 3v1a3.5 3.5 0 0 1-3.5 3.5h-1v-15z'/><path d='M10 8h4M10 12h4M10 16h4'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M9 4.5a3.5 3.5 0 0 0-3.5 3.5v1A3 3 0 0 0 4 12a3 3 0 0 0 1.5 3v1A3.5 3.5 0 0 0 9 19.5h1v-15z'/><path d='M15 4.5a3.5 3.5 0 0 1 3.5 3.5v1A3 3 0 0 1 20 12a3 3 0 0 1-1.5 3v1a3.5 3.5 0 0 1-3.5 3.5h-1v-15z'/><path d='M10 8h4M10 12h4M10 16h4'/></svg>") }
+.nav-glyph[data-i="skins"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='8'/><circle cx='8.5' cy='10.5' r='1.2' fill='%23000'/><circle cx='12.5' cy='7.8' r='1.2' fill='%23000'/><circle cx='16' cy='10.8' r='1.2' fill='%23000'/><path d='M12 20a2.5 2.5 0 0 1 0-5h1.5a2 2 0 0 0 0-4'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='8'/><circle cx='8.5' cy='10.5' r='1.2' fill='%23000'/><circle cx='12.5' cy='7.8' r='1.2' fill='%23000'/><circle cx='16' cy='10.8' r='1.2' fill='%23000'/><path d='M12 20a2.5 2.5 0 0 1 0-5h1.5a2 2 0 0 0 0-4'/></svg>") }
+.nav-glyph[data-i="logs"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M7 3.5h7l4 4V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z'/><path d='M14 3.5v4h4'/><path d='M9 12h6M9 15.5h6M9 19h4'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M7 3.5h7l4 4V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z'/><path d='M14 3.5v4h4'/><path d='M9 12h6M9 15.5h6M9 19h4'/></svg>") }
 .nav-btn { transition: color .2s var(--lc-ease), background .2s var(--lc-ease) }
 .nav-btn:hover .nav-glyph { filter: drop-shadow(0 0 8px rgba(0, 240, 255, .95)) brightness(1.4) }
 .nav-btn.active { clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
@@ -92,7 +95,7 @@ body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-in
 .nav-foot::before { content: '● REC '; color: var(--lc-danger); margin-right: 4px; animation: lc-rec 1.6s steps(2) infinite }
 .nav-foot::after { content: ' // システム'; color: var(--lc-text-dim) }
 @keyframes lc-rec { 50% { opacity: .15 } }
-/* ══ 标题:微 glitch(残影弱化,无撕裂,不再像 bug) ══ */
+/* ══ Headings: subtle glitch (soft ghosting, no tearing) ══ */
 h1 { text-transform: uppercase; letter-spacing: 2px; position: relative;
   text-shadow: 0 0 12px rgba(0, 240, 255, .35); animation: lc-glitch 10s infinite }
 h1 .h-sub { color: var(--lc-danger); text-shadow: 0 0 8px rgba(255, 45, 120, .5) }
@@ -105,7 +108,7 @@ h1::before { content: '▮ '; color: var(--lc-accent); animation: lc-rec 1.1s st
 }
 h1::after { content: ''; display: block; margin-top: 6px; height: 2px; width: 220px;
   background: linear-gradient(90deg, var(--lc-accent), rgba(0, 240, 255, .7) 45%, rgba(255, 45, 120, .8) 75%, transparent) }
-/* ══ hero ══ */
+/* ══ Hero ══ */
 .hero { min-height: 214px; border: 1px solid rgba(0, 240, 255, .3);
   clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px)) }
 .hero-title { text-shadow: 0 2px 18px rgba(0, 0, 0, .8), 0 0 22px rgba(0, 240, 255, .25); animation: lc-glitch 6.5s infinite, lc-title-in 1s cubic-bezier(.16,1,.3,1) 1 }
@@ -116,7 +119,7 @@ h1::after { content: ''; display: block; margin-top: 6px; height: 2px; width: 22
 .hero-sub { color: rgba(255, 255, 255, .78) }
 .hero::before { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 7px; z-index: 1; opacity: .85;
   background: repeating-linear-gradient(-45deg, var(--lc-accent) 0 12px, #0a0a08 12px 24px) }
-/* ══ 按钮:2077 实心黄 ══ */
+/* ══ Buttons: 2077 solid yellow ══ */
 .btn { position: relative; overflow: hidden; text-transform: uppercase; letter-spacing: .5px;
   transition: color .2s var(--lc-ease), background .2s var(--lc-ease), border-color .2s var(--lc-ease), box-shadow .25s var(--lc-ease);
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)) }
@@ -129,11 +132,11 @@ h1::after { content: ''; display: block; margin-top: 6px; height: 2px; width: 22
 .btn.primary:hover { color: #000; background: #fff65e; box-shadow: 0 0 22px rgba(252, 238, 10, .6) }
 .btn.danger { color: var(--lc-danger); border-color: var(--lc-danger-dim) }
 .btn.danger:hover { border-color: var(--lc-danger); box-shadow: 0 0 12px rgba(255, 45, 120, .4) }
-/* ══ 一键启动:电流环绕 + 锯齿闪电 + 点击冲击波 ══ */
+/* ══ Launch button: electric arc + jagged lightning + click shockwave ══ */
 .launch-wrap { position: relative; display: inline-block }
 .btn.launch-big { border: 2px solid #0a0a08; outline: 2px solid var(--lc-accent); outline-offset: 2px;
   box-shadow: 0 0 24px rgba(252, 238, 10, .35) }
-/* 电流:conic 高亮弧沿边框旋转(mask 成环,transform 合成器动画,hover 才启动) */
+/* Arc: a conic highlight travelling along the border (masked to a ring, transform animation, hover only) */
 .launch-wrap::before { content: ''; position: absolute; inset: -6px; z-index: 0; pointer-events: none; border-radius: 4px;
   padding: 3px; opacity: 0;
   background: conic-gradient(from 0deg, transparent 0 70%, rgba(0, 240, 255, .9) 78%, #fff 82%, rgba(252, 238, 10, .9) 86%, transparent 94%);
@@ -142,7 +145,7 @@ h1::after { content: ''; display: block; margin-top: 6px; height: 2px; width: 22
   transition: opacity .15s; will-change: transform }
 .launch-wrap:hover::before { opacity: 1; animation: lc-arc 1.1s linear infinite }
 @keyframes lc-arc { to { transform: rotate(360deg) } }
-/* 闪电:两道锯齿(clip-path)随机闪烁 */
+/* Lightning: two jagged bolts (clip-path) flickering on hover */
 .launch-wrap::after { content: ''; position: absolute; left: -14px; top: 50%; width: 16px; height: 26px; z-index: 2; pointer-events: none;
   background: linear-gradient(#fff, var(--lc-ok)); opacity: 0; transform: translateY(-50%);
   clip-path: polygon(62% 0, 28% 44%, 52% 44%, 20% 100%, 34% 56%, 12% 56%, 40% 0);
@@ -154,7 +157,7 @@ h1::after { content: ''; display: block; margin-top: 6px; height: 2px; width: 22
   filter: drop-shadow(0 0 6px rgba(252, 238, 10, .9)) }
 .launch-wrap:hover .bolt-r { animation: lc-bolt .5s steps(2) .25s infinite }
 @keyframes lc-bolt { 0%, 100% { opacity: 0 } 50% { opacity: 1 } }
-/* 点击反馈:压缩 + 白闪 + 冲击波扩散(.zap 由 JS 加,动画结束移除) */
+/* Click feedback: squash + white flash + expanding shockwave (.zap is added by JS and removed when the animation ends) */
 .btn.launch-big:active { transform: scale(.955); filter: brightness(1.9) saturate(.6) }
 .launch-wrap .shock { position: absolute; inset: -4px; border: 2px solid var(--lc-accent); border-radius: 4px;
   opacity: 0; pointer-events: none; transform: scale(1); will-change: transform, opacity }
@@ -164,10 +167,10 @@ h1::after { content: ''; display: block; margin-top: 6px; height: 2px; width: 22
 .launch-bar { position: relative; padding-top: 18px }
 .launch-bar::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; opacity: .6;
   background: repeating-linear-gradient(-45deg, var(--lc-accent) 0 10px, transparent 10px 20px) }
-/* ══ 状态数字 ══ */
+/* ══ Status figures ══ */
 .stat-value.ok { text-shadow: 0 0 14px rgba(0, 240, 255, .75) }
 .stat-value.off { color: var(--lc-danger); text-shadow: 0 0 14px rgba(255, 45, 120, .7); animation: lc-rec 2s steps(2) infinite }
-/* ══ CRT 两段展开(transform/opacity/filter,合成器) ══ */
+/* ══ CRT two-stage open (transform/opacity/filter, compositor) ══ */
 .view.active { animation: lc-crt-open .55s var(--lc-ease); transform-origin: 50% 12% }
 @keyframes lc-crt-open {
   0% { opacity: 0; transform: scaleY(.015) scaleX(.55); filter: brightness(3.2) saturate(.2) }
@@ -196,24 +199,24 @@ h1::after { content: ''; display: block; margin-top: 6px; height: 2px; width: 22
 }
 .toast { transform-origin: 100% 50%; border-left: 3px solid var(--lc-danger); border-top: 1px solid var(--lc-accent);
   clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%) }
-/* ══ 控制台(内嵌终端) ══ */
+/* ══ Console (embedded terminal) ══ */
 .console-box { border-left: 2px solid var(--lc-ok); color: #00f0ff; text-shadow: 0 0 4px rgba(0, 240, 255, .25);
   background: rgba(3, 6, 8, .9) }
-/* ══ 表格 / 分段 / 快捷卡 ══ */
+/* ══ Tables / segments / shortcut cards ══ */
 .tbl th { color: var(--lc-ok); border-bottom: 1px solid rgba(0, 240, 255, .35) }
 .tbl tr:hover td { background: rgba(252, 238, 10, .05); box-shadow: inset 2px 0 0 var(--lc-accent) }
 .seg-btn { transition: color .2s var(--lc-ease), background .2s var(--lc-ease) }
 .seg-btn.active { color: var(--lc-accent); text-shadow: 0 0 8px rgba(252, 238, 10, .5) }
 .q-ico { color: var(--lc-danger); text-shadow: 0 0 8px rgba(255, 45, 120, .5) }
 .qcard:hover { box-shadow: 0 0 16px rgba(252, 238, 10, .18); border-left-color: var(--lc-danger) }
-/* ══ 滚动条 / 选区 ══ */
+/* ══ Scrollbars / selection ══ */
 ::-webkit-scrollbar { width: 8px; height: 8px }
 ::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, .25) }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255, 45, 120, .6) }
 ::-webkit-scrollbar-track { background: transparent }
 ::selection { background: rgba(255, 45, 120, .35); color: #eefcff }
 
-/* ══ OFFLINE→RUNNING 上线翻转特效:glitch 弹入 + 扫光 + 辉光爆发 ══ */
+/* ══ OFFLINE → RUNNING flip: glitch pop-in + sweep + glow burst ══ */
 .stat-value.ok.state-flip { animation: lc-online .9s cubic-bezier(.16, 1, .3, 1) 1 }
 @keyframes lc-online {
   0%   { opacity: 0; transform: translateX(-8px) scaleY(.2); filter: brightness(3); text-shadow: -4px 0 #ff2d78, 4px 0 #00f0ff }

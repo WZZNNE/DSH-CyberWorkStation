@@ -1,13 +1,13 @@
 /**
- * dsh-skin-studio 纯函数层:参数校验、图片内联、CSS 组装。
- * 与宿主(ctx/fetch)解耦,便于单元测试。
+ * dsh-skin-studio pure layer: argument validation, image inlining, CSS assembly.
+ * Decoupled from the host (ctx / fetch) so it is unit-testable.
  */
 import { readFileSync } from 'node:fs'
 import { extname } from 'node:path'
 
 export const BG_PLACEHOLDER = '__SKIN_BG__'
 
-/** 皮肤名白名单化(与启动器 importSkin 同规则,提前失败给模型明确报错) */
+/** Allow-list the skin name (same rule as the launcher's importSkin; fails early with a clear message for the model). */
 export function sanitizeSkinName(name) {
   const safe = String(name ?? '').replace(/[^\w一-龥-]/g, '').slice(0, 40)
   if (safe.length === 0) throw new Error('皮肤名为空或全为非法字符(允许:字母数字下划线中文连字符,≤40)')
@@ -21,7 +21,7 @@ export function assertTarget(target) {
   return target
 }
 
-/** 本地图片 → dataURI(魔数校验,拒绝非图片;上限 25MB 防止 CSS 失控) */
+/** Local image → data URI (magic-number check rejects non-images; 25 MB cap keeps the CSS bounded). */
 export function imageToDataUri(path, readFile = readFileSync) {
   const buf = readFile(path)
   if (buf.length > 25 * 1048576) throw new Error('图片超过 25MB,请换更小的图或压缩后重试')
@@ -38,10 +38,10 @@ export function imageToDataUri(path, readFile = readFileSync) {
 }
 
 /**
- * 组装最终 CSS:
- * - CSS 里写了 url(__SKIN_BG__) 占位符 → 全部替换为 dataURI;
- * - 没写占位符但给了图 → 按 target 追加默认背景规则
- *   (frontend 按 skin-center 原版层级直写 body;launcher 直接铺 body)。
+ * Assemble the final CSS:
+ * - the CSS contains url(__SKIN_BG__) placeholders → every one is replaced by the data URI;
+ * - no placeholder but an image was given → a default background rule is appended per target
+ *   (frontend writes body directly, like the original skin-center layering; launcher covers body).
  */
 export function buildCss(css, target, dataUri) {
   let out = String(css ?? '')

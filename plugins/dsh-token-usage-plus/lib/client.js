@@ -25,11 +25,14 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 
 //#endregion
 const react = __toESM(require("react"));
-// rc.8 起 @deepseek-ai/dsh-client-web-react 不在平台种子表(seed 只剩 react 系/
-// cordis/ui-slots/ui-primitives,platform.ts),require 会 miss 导致整个 loader
-// entry 失败。本插件只用其 bindSnapshotSelector(5 行 uSES-with-selector 包装,
-// 见本体 packages/client/web-react lib/types/bind.js),用种子词 react 的
-// useSyncExternalStore 等价内联:equal 时返回缓存引用保证 getSnapshot 稳定。
+// Since dsh rc.8 `@deepseek-ai/dsh-client-web-react` is no longer in the client
+// platform seed table (only the react family, cordis, ui-slots and ui-primitives
+// remain; see packages/client/.../platform.ts), so requiring it misses and the
+// whole loader entry fails. This plugin only needs its bindSnapshotSelector (a
+// five-line useSyncExternalStore-with-selector wrapper, see the core's
+// packages/client/web-react lib/types/bind.js), so an equivalent is inlined on
+// top of the seeded react: when the selected value is equal, the cached
+// reference is returned so getSnapshot stays stable.
 const __deepseek_ai_dsh_client_web_react = { bindSnapshotSelector: (w) => {
 	const subscribe = (fn) => w.subscribe(fn);
 	return function useSelector(sel, eq) {

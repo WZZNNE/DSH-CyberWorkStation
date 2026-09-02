@@ -1,0 +1,4 @@
+# dsh-credentials-center bundle patch: one host row (the aggregator routes); the browser half rides ./client.
+- insert:
+    - id: credentials-center
+      name: dsh-credentials-center

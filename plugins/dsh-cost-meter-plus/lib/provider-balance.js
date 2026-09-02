@@ -1,12 +1,7 @@
 /**
- * Fork addition (MIT, upstream Han-1413141/dsh-cost-meter 1.5.19):
- * provider-aware balance + OpenRouter price auto-sync.
- *
- * 纯函数与网络助手分离:detectProviders/classifyProvider/isLocalEndpoint/
- * openRouterPriceEntry/perMillion 为纯函数(毫秒级可测),两个 query/fetch
- * 助手只对官方固定域名发起请求(openrouter.ai),凭据永不发往其他主机。
+ * Fork module: provider detection from the llm-pi-ai settings (OpenRouter, OpenAI,
+ * local endpoints such as LM Studio / Ollama), OpenRouter balance and price lookups.
  */
-
 const LOCAL_HOST_PATTERNS = [
   /^localhost$/i,
   /^127\./,
@@ -20,7 +15,6 @@ const LOCAL_HOST_PATTERNS = [
   /^host\.docker\.internal$/i,
 ]
 
-/** 判断 baseURL 是否指向本地/内网端点(LM Studio、Ollama、vLLM 等)。 */
 export function isLocalEndpoint(baseURL) {
   try {
     const host = new URL(String(baseURL)).hostname
@@ -30,10 +24,6 @@ export function isLocalEndpoint(baseURL) {
   }
 }
 
-/**
- * 按 provider id 与 baseURL 归类:deepseek | openrouter | openai | local | custom。
- * 主机名优先于 id(自定义 id 也能按域名识别);无 baseURL 时按知名 id 兜底。
- */
 export function classifyProvider(id, baseURL) {
   let host = ''
   try { host = new URL(String(baseURL ?? '')).hostname.toLowerCase() } catch { host = '' }
@@ -51,11 +41,6 @@ export function classifyProvider(id, baseURL) {
   return 'custom'
 }
 
-/**
- * 从 DSH settings 读取全部已配置 provider(llm-deepseek 段 + llm-pi-ai.providers 表)。
- * @param settings - 宿主 settings 服务(可为 undefined)。
- * @returns [{ id, kind, baseURL, apiKeyEnv, modelIds }],deepseek 恒在首位(若配置)。
- */
 export function detectProviders(settings) {
   const get = name => (typeof settings?.get === 'function' ? settings.get(name) : undefined)
   const out = []
@@ -88,15 +73,9 @@ export function detectProviders(settings) {
   return out
 }
 
-/** OpenRouter 官方固定端点(凭据只发往这里)。 */
 export const OPENROUTER_CREDITS_URL = 'https://openrouter.ai/api/v1/credits'
 export const OPENROUTER_MODELS_URL = 'https://openrouter.ai/api/v1/models'
 
-/**
- * 查询 OpenRouter 预付 credits(GET /api/v1/credits,官方文档端点)。
- * @param apiKey - OpenRouter API Key(sk-or-*)。
- * @returns 与官方余额同构:{ currency, totalBalance(剩余), grantedBalance(已用), toppedUpBalance(总充值) }。
- */
 export async function queryOpenRouterBalance(apiKey) {
   const response = await fetch(OPENROUTER_CREDITS_URL, {
     headers: { authorization: `Bearer ${apiKey}` },
@@ -111,8 +90,6 @@ export async function queryOpenRouterBalance(apiKey) {
     throw new Error('OpenRouter credits response is missing total_credits/total_usage')
   }
   const round2 = v => Math.round(v * 100) / 100
-  // totalBalance=剩余,toppedUpBalance=总充值;grantedBalance 固定 0(客户端把该字段
-  // 显示为「赠送」,OpenRouter 无此概念;已用 = 充值 − 剩余,且账本另有今日/预算显示)。
   return {
     currency: 'USD',
     totalBalance: round2(Math.max(0, total - used)),
@@ -121,17 +98,12 @@ export async function queryOpenRouterBalance(apiKey) {
   }
 }
 
-/** USD/token(字符串或数字)→ USD/1M tokens;非法 → null。 */
 export function perMillion(perToken) {
   const n = Number(perToken)
   if (!Number.isFinite(n) || n < 0) return null
   return Math.round(n * 1e6 * 1e6) / 1e6
 }
 
-/**
- * 把 OpenRouter models API 的一行映射为价格表条目(input/cachedInput/output,
- * USD per 1M;经上游 normalizePrice 转成 cacheHit/cacheMiss/output 计费字段)。
- */
 export function openRouterPriceEntry(row) {
   const pricing = row?.pricing
   if (pricing === null || typeof pricing !== 'object') return null
@@ -150,11 +122,6 @@ export function openRouterPriceEntry(row) {
   }
 }
 
-/**
- * 拉取 OpenRouter 全模型目录(公开端点,无需凭据),取出 wanted 模型的价格条目。
- * @param modelIds - 需要定价的模型 id 列表(如 'ai21/jamba-large-1.7')。
- * @returns { entries: { [id]: rawEntry }, missing: string[] }。
- */
 export async function fetchOpenRouterPriceEntries(modelIds) {
   const wanted = new Set(modelIds)
   const response = await fetch(OPENROUTER_MODELS_URL, { signal: AbortSignal.timeout(20000) })

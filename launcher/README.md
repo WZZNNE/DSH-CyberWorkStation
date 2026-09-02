@@ -1,27 +1,41 @@
-# DSH Launcher — DeepSeek Harness 可视化管理工作台
+# DSH Launcher — the DeepSeek Harness visual workbench
 
-参考秋叶(秋葉aaaki)ComfyUI 整合包启动器的功能形态(一键启动/版本与插件管理/更新/界面美化)为 dsh 定制。零依赖(仅 Node ≥18),双击 `start-launcher.cmd` 或 `node server.mjs` 启动,浏览器打开 http://127.0.0.1:3090。
+Modelled on the feature shape of Aki (秋葉aaaki)'s ComfyUI launcher (one-click start, version and plugin management, updates, skinning) and built for dsh. Zero dependencies — the server itself runs on any current Node, while the dsh core it launches requires Node `^22.19 || >=24` (24 LTS recommended): double-click `DSH启动器.exe`, or `start-launcher.cmd` / `node server.mjs`, then open http://127.0.0.1:3090.
 
-## 功能
+## Features
 
-| 分节 | 内容 |
+| Section | Content |
 |---|---|
-| 仪表盘 | dsh 一键启动 / 退出 / 打开 Web UI / 实时状态 / dsh 输出尾巴 |
-| 插件管理 | profile 插件列表(版本/来源/bundle 层)、npm 或 link: 一键安装、卸载 |
-| Skill 管理 | 用户 Skills(~/.dsh/skills)+ 仓库官方 skills 列表、一键打开文件夹 |
-| 对话管理 | 会话日志列表(大小/时间)、一键跳转文件夹 |
-| 存储空间 | 9 个关键目录占用统计(60s 缓存)+ 资源管理器一键跳转 |
-| 更新推送 | 本体(git pull+install+build)与插件(pnpm update)一键后台更新 + 实时输出 |
-| Tokens 统计 | 按日 / 按模型表格(调用、命中、未命中、输出、费用;数据源 cost-meter 账本) |
-| 外观皮肤 | 启动器皮肤与前端皮肤**分开**导入 / 切换;前端可一键恢复原生 |
-| 内部日志 | 启动器日志(logs/launcher-日期.log,全动作记录)、dsh 输出、两路更新日志 |
+| Dashboard | one-click start / stop, open the Web UI, live status, dsh output tail, quick workspace |
+| Plugins | profile plugin list (version / source / bundle layer) + built-in capability rows, npm or link: install, remove, npm market, one-click update |
+| Skills | user skills (~/.dsh/skills) + repo skills, GitHub market, open folder |
+| Sessions | sessions grouped by workspace (newest first), filter, one-click ZIP export through the core endpoint, open folder |
+| Storage | sizes of 9 key directories (60 s cache) + Explorer shortcuts; **config backup / restore** (one JSON bundle of the suite's ~/.dsh configuration — settings.yaml as-is, deck + presets, web search, safety rules, model params, memory, profile patches, skills, hooks, frontend skin; restore copies the current files to ~/.dsh/backups first, lists the files before confirming and flags hooks / profiles / settings.yaml; the credential store and session logs are never included) |
+| Self-check | Node, core build, peer links, the profile's plugin roster read from `plugins/` (every `dsh-*` package unless its package.json says `suiteDefault: false`), ports, config files |
+| Updates | local vs latest upstream release, core (git pull + install + build:lib + build:web), upgrade the vendored core to any upstream tag, plugins (pnpm update), launcher self-check panel — all in the background with live output |
+| Tokens | Claude-Code-style overview, ≈26-week heatmap (Monday-aligned, 26–27 columns), per-model and per-day tables (data: the cost-meter-plus ledger) |
+| Control Deck | Prompts / Regex / World Info / Sampling & context / Web search / Safety rules / Quick start tabs, presets, SillyTavern import/export, one Save button writing all three files. The Web search tab now offers the fourth mode (the API provider's own search, billed per search), the `web_fetch` page-reader switch, and writes the same file as the dsh Settings section |
+| Model parameters | Every route (DeepSeek official / OpenRouter / local) and model: context window, max output, thinking levels; local models are probed and auto-taught; OpenRouter `<model>:online` web-search variants added / removed per row (routes that carry their own `models` list) |
+| Memory & context | Session list (open and cold); per session: context pressure vs the compaction threshold, the active compaction summary in an editable box (saved as a real compaction record through the dsh-memory-lite plugin), compaction history, compact-now, store-in-memory; long-term memory items (search / pin / scope / edit / delete / export / import / clear), plugin settings (deposit, extraction, injection mode, tools, optional local embeddings) and a recall test |
+| Credentials | every credential reference with bindings / status / source, alias and note, set / replace / delete through the core store; **spare keys** per reference (add / keep the current one / use / rename / delete; a switch keeps the secret it replaces); **refresh model list** (provider-sync) and **dsh default model** (route → model) |
+| Appearance | launcher skins and frontend skins imported / switched **separately**; community skin market; "(none)" restores the stock look |
+| Logs | launcher log (`.local/logs/launcher-<date>.log`, every action), dsh output, both update logs |
 
-## 皮肤机制
+## How dsh is launched
 
-- **启动器皮肤**:`skins/launcher/*.css`,覆盖 `--lc-*` 变量;切换即时生效。内置 `default` 与 `cyberpunk-2077`(骇客风:霓虹黄 #fcee0a × 电子青 #00f0ff、扫描线、切角卡片、故障动画)。
-- **前端皮肤**:`skins/frontend/*.css`,覆盖 dsh 的 `--dsw-alias-*` 令牌(浅色 `:root` + 深色 `body[data-ds-dark-theme]` 双组,依据 `packages/client/ui-theme/src/styles/design-platform.css`)。切换 = 拷贝到 `~/.dsh/frontend-skin.css`,由 `dsh-skin-loader` 插件(H:\dsh-plugins\dsh-skin-loader)经 `ctx.webServer.register` 路由 + 浏览器 style 注入加载;刷新 dsh 页面生效,「(无)」恢复原生。
+`server.mjs` boots the core from its built CLI (`core/apps/cli/lib/bin.js`) under plain Node — cold start ≈ 1.5 s. When the core has not been built yet it falls back to the source launch (`corepack pnpm dsh web`, tsx, ≈ 20 s). Before every start it runs `peer-links.mjs`, which links the core packages the suite plugins import (`@deepseek-ai/dsh-tools`, `dsh-settings`, …) into `plugins/node_modules/` so plain Node can resolve them. `dsh plugin …` operations (install / remove / market) also use the built CLI; because that command forwards to a bare `pnpm`, they fall back to `corepack pnpm dsh plugin …` when `pnpm` is not on PATH (corepack not enabled system-wide).
 
-## 安全边界
+## Skin mechanism
 
-- 仅绑 127.0.0.1;文件夹跳转走白名单;插件安装参数过滤 shell 元字符;皮肤名清洗、CSS ≤500KB。
-- 不提供会话删除(只读列表 + 跳转,删除请自行在资源管理器操作)。
+- **Launcher skins**: `skins/launcher/*.css`, override the `--lc-*` variables; switching applies instantly. Built-in: `default` (light / dark / system), `cyberpunk-2077` (neon yellow #fcee0a × electric cyan #00f0ff, chamfered cards, glitch animations) and `night-city-holo` (graphite base, holographic cyan hairlines, 2077 gold for the active state, vector navigation icons, one easing and short distances — no flicker, no scanlines).
+- **Frontend skins**: `skins/frontend/*.css`, override dsh's `--dsw-alias-*` tokens (light `:root` + dark `body[data-ds-dark-theme]`, see the core's `packages/client/ui-theme/src/styles/design-platform.css`). Switching = copy to `~/.dsh/frontend-skin.css`, served by the `dsh-skin-loader` plugin (`ctx.webServer.register` route + a browser-side style tag); refresh the dsh page to apply, "(none)" restores the stock look.
+
+## Security boundary
+
+- **The API needs this launcher's own token.** It is minted on first boot and reused across restarts (delete `~/.dsh/launcher.token` to rotate it), handed to the page through a one-time `?t=` query (sent only to this loopback server, scrubbed from the address bar immediately; `#t=` also accepted for hand-opened links — but Edge's `--app` handoff drops fragments, so the launcher itself uses the query), and kept in that owner-only file. Without it every `/api/` request is refused — the origin check alone only ever stopped a web page, and several routes install packages, spawn Explorer or write under `~/.dsh`. Scripts of your own can read the token file; anything else on the machine cannot drive the launcher just by knowing the port.
+
+- Binds 127.0.0.1 only; folder shortcuts use an allow-list; plugin install arguments are filtered for shell metacharacters; skin names are sanitised and CSS is capped at 500 KB.
+- Every suite router that accepts a write carries the same loopback + same-origin fence (a foreign `Host`, a cross-site or same-site fetch, a mismatched Origin, or a non-JSON POST is refused with 403). The read-only routes — `dsh-control-deck`, `dsh-price-hint`, `dsh-skin-loader` — serve derived data over GET and also refuse a foreign `Host`, which is what a DNS-rebinding page presents.
+- Nine suite plugins put their panels inside dsh itself rather than here: `dsh-chat-editor` (edit / delete messages), `dsh-temp-chat` (project-less chats), `dsh-media-lab` (image / video / voice APIs), `dsh-desktop-pet` (the desktop companion), `dsh-provider-sync` (model-list sync card), `dsh-drop-files` (no panel: a drop handler), `dsh-credentials-center` (also a launcher page), `dsh-vision-bridge-zh` (a card under Plugins) and `dsh-import-note` (a card under Plugins). The launcher only registers them and checks they are mounted.
+- No session deletion (read-only list + folder shortcut; delete in Explorer yourself). Summary edits and compaction go through the dsh-memory-lite plugin inside the core (append-only compaction bracket under `agent.runMaintenance`), never by rewriting session files.
+- Backup restore accepts only whitelisted relative paths under ~/.dsh (no traversal, no absolute paths, depth-limited directories by extension) and keeps a copy of every overwritten file.

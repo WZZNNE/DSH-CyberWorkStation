@@ -1,6 +1,7 @@
 /**
- * dsh-price-hint 浏览器半:拉取 名称→价格 映射,用 MutationObserver 在模型选择
- * 弹层出现时给每个模型条目挂原生 title(悬停即显输入/输出价)。零布局影响。
+ * dsh-price-hint browser half: fetch the name → price map and, through a
+ * MutationObserver, give every model entry in the model picker a native title
+ * attribute (hover shows input / output prices). Zero layout impact.
  */
 window.__ModuleLoader__.load({
   id: 'dsh-price-hint',
@@ -39,7 +40,7 @@ window.__ModuleLoader__.load({
           })
           mo.observe(document.body, { childList: true, subtree: true })
         })
-        .catch(() => { /* 无价格数据 = 不注解 */ })
+        .catch(() => { /* no price data = no annotations */ })
     }
 
     exports.apply = apply

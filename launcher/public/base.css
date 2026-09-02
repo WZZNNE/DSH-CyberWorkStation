@@ -1,4 +1,4 @@
-/* DSH Launcher 结构样式:布局/组件骨架。全部颜色走 --lc-* 变量,由皮肤定义。 */
+/* DSH Launcher structural styles: layout and component skeleton. Every colour comes from a --lc-* variable defined by the active skin. */
 * { box-sizing: border-box; margin: 0; padding: 0 }
 body { font-family: var(--lc-font, 'Segoe UI', system-ui, sans-serif); background: var(--lc-bg); color: var(--lc-text); font-size: 14px }
 .frame { display: flex; min-height: 100vh }
@@ -11,27 +11,27 @@ body { font-family: var(--lc-font, 'Segoe UI', system-ui, sans-serif); backgroun
 .nav-btn:hover { color: var(--lc-text); background: var(--lc-hover) }
 .nav-btn.active { color: var(--lc-accent); background: var(--lc-active-bg); border-color: var(--lc-accent-dim) }
 .nav-foot { margin-top: auto; font-size: 11px; letter-spacing: 1px; color: var(--lc-accent); padding: 8px }
-.stage { flex: 1; padding: 26px 30px; max-width: 1100px }
+.stage { flex: 1; min-width: 0; padding: 26px 30px; max-width: 1100px }
 h1 { font-size: 20px; margin-bottom: 18px; color: var(--lc-title); letter-spacing: .5px }
 h2 { font-size: 14px; margin: 18px 0 8px; color: var(--lc-text-dim) }
 .h-sub { font-size: 11px; color: var(--lc-accent); letter-spacing: 2px; vertical-align: middle }
 .view { display: none } .view.active { display: block; animation: fade .18s ease }
 @keyframes fade { from { opacity: 0; transform: translateY(4px) } to { opacity: 1 } }
-/* ── 绘世式 hero banner ── */
+/* ── Hero banner (Aki-launcher style) ── */
 .hero { position: relative; display: flex; align-items: flex-end; justify-content: space-between; min-height: 190px; margin-bottom: 16px; padding: 20px 24px; border-radius: var(--lc-radius, 10px); overflow: hidden; border: 1px solid var(--lc-border); background: var(--lc-hero-bg, linear-gradient(120deg, #16203a, #0b0f1a)) center / cover no-repeat; box-shadow: var(--lc-card-glow, none) }
 .hero::after { content: ''; position: absolute; inset: 0; background: var(--lc-hero-veil, linear-gradient(90deg, rgba(0,0,0,.55), transparent 55%)); pointer-events: none }
 .hero-text, .hero-status { position: relative; z-index: 1 }
 .hero-kicker { font-size: 11px; letter-spacing: 4px; color: var(--lc-ok) }
 .hero-title { font-size: 34px; font-weight: 800; color: var(--lc-hero-title, #fff); letter-spacing: 2px; text-shadow: var(--lc-hero-title-shadow, 0 2px 18px rgba(0,0,0,.55)) }
 .hero-sub { font-size: 13px; color: var(--lc-hero-sub, rgba(255,255,255,.75)); margin-top: 4px }
-/* ── 文件夹快捷卡片行(绘世式) ── */
+/* ── Folder shortcut cards ── */
 .quick-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 14px }
 .qcard { display: flex; align-items: center; gap: 10px; padding: 13px 14px; background: var(--lc-card-bg); border: 1px solid var(--lc-border); border-radius: var(--lc-radius, 8px); color: var(--lc-text); cursor: pointer; font-family: inherit; font-size: 13.5px; text-align: left; transition: all .15s; box-shadow: var(--lc-card-glow, none) }
 .qcard:hover { border-color: var(--lc-accent); transform: translateY(-2px) }
 .q-ico { font-size: 18px; color: var(--lc-ok) }
 .q-name { flex: 1; display: flex; flex-direction: column } .q-name small { color: var(--lc-text-dim); font-size: 11px }
 .q-arrow { color: var(--lc-text-dim); font-size: 18px }
-/* ── 底部一键启动条(绘世式右下超大主按钮) ── */
+/* ── Bottom launch bar (oversized primary button bottom-right) ── */
 .launch-bar { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--lc-border-dim) }
 .ver-line { font-size: 11.5px; color: var(--lc-text-dim) }
 .btn.launch-big { font-size: 17px; font-weight: 700; padding: 14px 44px; letter-spacing: 2px }
@@ -52,6 +52,16 @@ h2 { font-size: 14px; margin: 18px 0 8px; color: var(--lc-text-dim) }
 .input { width: 100%; max-width: 460px; padding: 9px 12px; background: var(--lc-input-bg); color: var(--lc-text); border: 1px solid var(--lc-border); border-radius: var(--lc-radius, 6px); font-family: inherit; font-size: 13px; margin: 6px 0 }
 .input.area { min-height: 110px; font-family: Consolas, monospace; font-size: 12px }
 .input:focus { outline: none; border-color: var(--lc-accent) }
+select.input option, select.input optgroup { background: var(--lc-input-bg); color: var(--lc-text) }
+select.input option:checked { background: var(--lc-active-bg); color: var(--lc-accent) }
+.tbl tr.creds-spares-row:hover td, .tbl tr.creds-spares-row td { background: transparent }
+/* The three row actions wrap inside their column instead of forcing the table wider than the card. */
+.creds-actions { min-width: 140px }
+.creds-actions .creds-edit { display: inline-flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end }
+.creds-actions .btn.mini { margin: 0 }
+#creds-list .tbl td:nth-child(4) { max-width: 240px }
+#creds-list .tbl td:nth-child(2) { max-width: 190px }
+input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color: var(--lc-accent) }
 .tbl { width: 100%; border-collapse: collapse; margin-top: 8px }
 .tbl th { text-align: left; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--lc-text-dim); padding: 8px 10px; border-bottom: 1px solid var(--lc-border) }
 .tbl td { padding: 8px 10px; border-bottom: 1px solid var(--lc-border-dim); font-variant-numeric: tabular-nums }
@@ -65,7 +75,7 @@ details { margin-top: 10px } summary { cursor: pointer; color: var(--lc-text-dim
 .toast { position: fixed; right: 22px; bottom: 22px; max-width: 420px; padding: 12px 18px; background: var(--lc-card-bg); border: 1px solid var(--lc-accent); border-radius: var(--lc-radius, 6px); color: var(--lc-text); font-size: 13px; opacity: 0; transform: translateY(8px); transition: all .25s; pointer-events: none; white-space: pre-wrap; box-shadow: var(--lc-card-glow, 0 4px 24px rgba(0,0,0,.4)) }
 .toast.show { opacity: 1; transform: none; animation: var(--lc-toast-anim, none) }
 
-/* ── Tokens 统计(CC 风格) ── */
+/* ── Token usage (Claude-Code style) ── */
 .usage-bar { justify-content: space-between; margin-bottom: 14px }
 .seg { display: inline-flex; gap: 2px; background: var(--lc-input-bg); border: 1px solid var(--lc-border); border-radius: var(--lc-radius, 6px); padding: 3px }
 .seg-btn { padding: 5px 14px; background: transparent; border: none; color: var(--lc-text-dim); border-radius: calc(var(--lc-radius, 6px) - 2px); cursor: pointer; font-size: 13px; font-family: inherit }
@@ -84,28 +94,28 @@ details { margin-top: 10px } summary { cursor: pointer; color: var(--lc-text-dim
 .fun-fact { margin-top: 10px; font-size: 13px; color: var(--lc-text-dim) }
 @media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr) } }
 
-/* ── 品牌 logo 与导航图标骨架(皮肤可替换) ── */
+/* ── Brand logo and navigation glyph skeleton (skins may replace them) ── */
 .brand-logo { width: 30px; height: 30px; object-fit: cover; vertical-align: -9px; display: inline-block; border-radius: 4px }
 .nav-glyph { display: inline-block; width: 20px; height: 20px; margin-right: 8px; text-align: center; vertical-align: -4px; line-height: 20px }
 .nav-text { vertical-align: 0 }
 
-/* 左下角语言切换小图标 */
+/* Bottom-left language toggle */
 .lang-btn { margin-top: auto; align-self: flex-start; padding: 4px 10px; font-size: 11px; letter-spacing: 1px; background: transparent; color: var(--lc-text-dim); border: 1px solid var(--lc-border); border-radius: var(--lc-radius, 6px); cursor: pointer; font-family: inherit; transition: all .15s }
 .lang-btn:hover { color: var(--lc-accent); border-color: var(--lc-accent) }
 .nav-foot { margin-top: 6px }
 
-/* 内嵌控制台(秋叶式) */
+/* Embedded console (Aki-launcher style) */
 .console-box { background: #05080a; border: 1px solid var(--lc-border); border-radius: var(--lc-radius,6px); padding: 12px; font-family: Consolas, 'Cascadia Mono', monospace; font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; overflow-y: auto; height: 260px; color: #29d69c }
 .console-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px }
 
-/* 控制甲板 v2 卡片 */
+/* Control Deck cards */
 .deck-card { border: 1px solid var(--lc-border); border-radius: var(--lc-radius,6px); padding: 10px 12px; margin-bottom: 8px; background: var(--lc-input-bg) }
 .deck-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 6px; font-size: 12px; color: var(--lc-text-dim) }
 .deck-line .input { margin: 0 }
 .deck-cb { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: var(--lc-text-dim) }
 .deck-card textarea.input { margin-top: 2px }
 
-/* 皮肤条目:切换键 + 非内置删除键 */
+/* Skin entries: switch button + delete button for non-built-in skins */
 .skin-wrap { display: inline-flex; align-items: stretch; margin: 0 6px 6px 0 }
 .skin-wrap .btn.skin { margin: 0; border-radius: 6px 0 0 6px }
 .skin-wrap .btn.skin:only-child { border-radius: 6px }
@@ -113,5 +123,49 @@ details { margin-top: 10px } summary { cursor: pointer; color: var(--lc-text-dim
 .btn.skin-del:hover { opacity: 1; color: #ff5c72; border-color: #ff5c72 }
 .mkt-repo { text-decoration: none; margin-left: 4px }
 
-/* ?noanim:禁用全部动画/过渡(无头截图与录屏用) */
-html.noanim *, html.noanim *::before, html.noanim *::after { animation: none !important; transition: none !important; opacity: 1 }
+/* ?noanim: disable every animation and transition (headless screenshots and recordings) */
+html.noanim *, html.noanim *::before, html.noanim *::after { animation: none !important; transition: none !important }
+html.noanim *:not(:disabled):not(.toast) { opacity: 1 }
+/* …except the toast, whose only hidden state IS opacity: forcing it to 1 pastes an empty box into every capture */
+html.noanim .toast:not(.show) { opacity: 0; visibility: hidden }
+
+/* ── Tabs, help boxes, deck toolbar, check lists, session groups (v1.2) ── */
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--lc-border); margin: 10px 0 12px }
+.tab-btn { padding: 8px 14px; background: transparent; border: 1px solid transparent; border-bottom: none; color: var(--lc-text-dim); cursor: pointer; font-family: inherit; font-size: 13px; border-radius: var(--lc-radius, 6px) var(--lc-radius, 6px) 0 0 }
+.tab-btn:hover { color: var(--lc-text) }
+.tab-btn.active { color: var(--lc-accent); border-color: var(--lc-border); background: var(--lc-card-bg) }
+.tab-pane { display: none } .tab-pane.active { display: block }
+.help-box { background: var(--lc-input-bg); border-left: 3px solid var(--lc-accent); border-radius: var(--lc-radius, 6px); padding: 10px 12px; margin-bottom: 10px; font-size: 12.5px; color: var(--lc-text-dim); line-height: 1.6; white-space: pre-line }
+.deck-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-bottom: 4px }
+.spacer { flex: 1 }
+.check-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 6px 14px; font-size: 12.5px }
+.check-item { display: flex; gap: 8px; align-items: flex-start } .check-item .ok { color: var(--lc-ok) } .check-item .bad { color: var(--lc-danger) }
+.ws-group { margin-bottom: 10px } .ws-group summary { cursor: pointer; color: var(--lc-title); font-size: 13px; padding: 6px 0 }
+.ws-group summary small { color: var(--lc-text-dim); margin-left: 8px }
+.local-route { margin-bottom: 14px }
+.local-route .route-head { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 6px }
+.tbl input.input { margin: 0 }
+.tag { display: inline-block; padding: 1px 7px; border: 1px solid var(--lc-border); border-radius: 10px; font-size: 11px; color: var(--lc-text-dim); margin-right: 4px }
+.tag.ok { color: var(--lc-ok); border-color: var(--lc-ok) } .tag.warn { color: var(--lc-warn); border-color: var(--lc-warn) }
+
+/* ── Memory & context page (v1.3) ── */
+.mem-split { display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 12px; align-items: start }
+@media (max-width: 980px) { .mem-split { grid-template-columns: 1fr } }
+.mem-list { max-height: 72vh; overflow-y: auto; padding: 6px }
+.mem-row { padding: 8px 10px; border-bottom: 1px solid var(--lc-border-dim); cursor: pointer; border-radius: var(--lc-radius, 6px) }
+.mem-row:hover { background: var(--lc-hover) } .mem-row.active { background: var(--lc-accent-bg); border-color: var(--lc-accent) }
+.mem-row-title { font-size: 13px; color: var(--lc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.mem-bar { position: relative; height: 8px; background: var(--lc-input-bg); border: 1px solid var(--lc-border-dim); border-radius: 4px; overflow: hidden; margin: 6px 0 4px }
+.mem-bar > i { display: block; height: 100%; background: var(--lc-accent) }
+.mem-bar > b { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--lc-warn) }
+.mem-pre { white-space: pre-wrap; word-break: break-word; font-size: 12px; max-height: 320px; overflow: auto; background: var(--lc-input-bg); padding: 8px; border-radius: var(--lc-radius, 6px) }
+.mem-item { margin-bottom: 8px; padding: 10px 12px } .mem-item-text { white-space: pre-wrap; word-break: break-word; font-size: 13px }
+.mem-ul { margin: 6px 0 0 18px; font-size: 12.5px; max-height: 240px; overflow: auto }
+
+/* credentials page: binding chips, no-wrap action cells, small inputs inside table rows */
+.chip { display: inline-block; margin: 2px 4px 2px 0; padding: 2px 8px; border: 1px solid var(--lc-border-dim); border-radius: 999px; font-size: 11px; color: var(--lc-text-dim); background: var(--lc-input-bg); white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; vertical-align: middle }
+.nowrap { white-space: nowrap }
+.input.mini { padding: 3px 8px; font-size: 12px; min-height: 0; width: 160px }
+.bad { color: var(--lc-danger) }
+.btn:disabled { opacity: .45; cursor: not-allowed }   /* no pointer-events:none — a disabled button may still carry a title */
+#creds-list { overflow-x: auto }

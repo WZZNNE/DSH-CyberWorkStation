@@ -1,0 +1,4 @@
+# dsh-provider-sync bundle patch: one host row (the OpenRouter model-list sync).
+- insert:
+    - id: provider-sync
+      name: dsh-provider-sync

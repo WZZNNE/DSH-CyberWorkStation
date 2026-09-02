@@ -1,0 +1,27 @@
+{
+  "name": "dsh-local-reasoning",
+  "version": "0.1.1",
+  "description": "Per-model context window, max output and thinking levels for every DeepSeek Harness route (DeepSeek official, OpenRouter, local LM Studio / Ollama …); probes local backends and auto-teaches their levels. Managed from the DSH Launcher \"Model parameters\" page; OpenRouter :online web-search variants on the Model parameters page.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-credentials": "*"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "dsh-credentials-keyring",
+  "version": "0.1.0",
+  "description": "Windows Credential Manager backend for DeepSeek Harness credentials: the stock local provider with its reference half stored in the system keyring instead of a plaintext file. Secrets migrate on write; every keyring failure falls back to the inherited behavior.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "ps",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/dsh-credentials": "*",
+    "@deepseek-ai/dsh-credentials-local": "*"
+  }
+}

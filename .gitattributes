@@ -1,0 +1,3 @@
+# Batch files must be CRLF on disk regardless of the user autocrlf setting; cmd.exe misparses some LF-only constructs.
+*.cmd text eol=crlf
+*.bat text eol=crlf

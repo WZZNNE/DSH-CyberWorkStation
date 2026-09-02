@@ -1,15 +1,8 @@
 /**
- * 历史账本按模型回填:按模型统计(byProviderModel)上线之前的账本只有
- * 每日/会话合计,没有 provider:model 拆分。本模块回放宿主会话日志
- * ($DSH_HOME/sessions/<项目>/<会话>/session.jsonl[.zstd]),按与 costUsage
- * 投影一致的逻辑逐次重建用量,并按事件时刻的档位(峰谷时代前按
- * legacyBase 历史价)计算费用,回填到账本中 byProviderModel 为空的
- * 日期与会话条目。
- *
- * 幂等:只填补空 byProviderModel 的日期/会话;已有记录的日期不改动,
- * 避免与实时计费重复计数。会话日志是宿主的只读数据,本模块从不写入。
+ * Ledger backfill: rebuild daily totals from session logs recorded before the
+ * plugin was installed (legacy JSONL / gzip session files), and import that
+ * history into the ledger without double counting.
  */
-
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import * as zlib from 'node:zlib'
@@ -17,16 +10,8 @@ import { costOf, providerPriceEntryFor } from './pricing.js'
 import { localDayKey, zeroDay } from './store.js'
 
 const ZSTD_MAGIC = 4247762216
-/** 打包行(文本/推理/工具调用增量游程)不含 header 与 usage,回放时跳过。 */
 const PACKED_ROW_TYPES = new Set(['text-chunks', 'reasoning-chunks', 'tool-call-chunks'])
 
-/**
- * 结构化扫描拼接的 Zstandard frame 边界(不解压块内容),与宿主
- * dsh-session-persistence-jsonl 的容器格式一致:每个追加批次一个独立
- * 带校验和的 frame。残缺尾帧(崩溃截断)直接忽略。
- * @param buffer - 会话日志原始字节。
- * @returns 完整 frame 的字节区间数组。
- */
 export function scanZstdFrames(buffer) {
   const frames = []
   let offset = 0
@@ -38,7 +23,7 @@ export function scanZstdFrames(buffer) {
     if (offset === buffer.length) return frames
     const descriptor = buffer.readUInt8(offset)
     offset += 1
-    if ((descriptor & 24) !== 0) return frames // 保留位:结构非法,停止扫描
+    if ((descriptor & 24) !== 0) return frames
     const contentSizeFlag = descriptor >>> 6
     const singleSegment = (descriptor & 32) !== 0
     const checksum = (descriptor & 4) !== 0
@@ -55,7 +40,7 @@ export function scanZstdFrames(buffer) {
       const lastBlock = (blockHeader & 1) !== 0
       const blockType = (blockHeader >>> 1) & 3
       const blockSize = blockHeader >>> 3
-      if (blockType === 3) return frames // 保留块类型:结构非法
+      if (blockType === 3) return frames
       const payloadBytes = blockType === 1 ? 1 : blockSize
       if (buffer.length - offset < payloadBytes) return frames
       offset += payloadBytes
@@ -70,11 +55,6 @@ export function scanZstdFrames(buffer) {
   return frames
 }
 
-/**
- * 读取一份会话日志的全部事件行(zstd 逐 frame 解压;明文直接按行)。
- * @param path - session.jsonl.zstd 或 session.jsonl 路径。
- * @returns 逐行 JSON.parse 后的记录数组(坏行跳过)。
- */
 export function readSessionRecords(path) {
   const buffer = readFileSync(path)
   let text
@@ -93,13 +73,11 @@ export function readSessionRecords(path) {
     try {
       records.push(JSON.parse(line))
     } catch {
-      // 坏行跳过:回放是尽力而为,不让单行损坏阻断整个会话。
     }
   }
   return records
 }
 
-/** 枚举会话根目录下全部会话日志路径(<root>/<项目>/<会话>/session.jsonl[.zstd])。 */
 export function listSessionLogs(root) {
   const paths = []
   let projects
@@ -123,10 +101,9 @@ export function listSessionLogs(root) {
         try {
           if (statSync(path).isFile()) {
             paths.push(path)
-            break // 同一会话两种编码互斥,取先命中者
+            break
           }
         } catch {
-          // 不存在:继续尝试另一后缀。
         }
       }
     }
@@ -134,15 +111,6 @@ export function listSessionLogs(root) {
   return paths
 }
 
-/**
- * 回放单个会话的事件流,重建逐次用量。与 costUsage 投影同规则:
- * request/header 切换当前 provider/model;usage 块按 (turn, step) 去重,
- * 同键最终样本替换流式样本(先减后加);按事件时刻计价。
- * @param records - readSessionRecords 的输出。
- * @param config - 账本配置(prices / peak* / priceMatch / priceOverrides)。
- * @param wantDates - 只统计这些日期键(YYYY-MM-DD)内的调用;null = 全部。
- * @returns { sessionId, title, createdAt, days: { date: { providerKey: 桶 } } }。
- */
 export function replaySessionRecords(records, config, wantDates = null) {
   const zeroBuckets = () => ({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0, calls: 0, cost: 0 })
   const num = value => {
@@ -177,7 +145,6 @@ export function replaySessionRecords(records, config, wantDates = null) {
       if (Number.isFinite(created) && created > 0) createdAt = created
       continue
     }
-    // 会话标题(宿主生成的 session/title 事件;同名多次时取最后一次)。
     if (event.type === 'session/title') {
       const nextTitle = event.data?.title
       if (typeof nextTitle === 'string' && nextTitle.trim().length > 0) title = nextTitle.trim()
@@ -224,7 +191,6 @@ export function replaySessionRecords(records, config, wantDates = null) {
       && prev.buckets.reasoning === buckets.reasoning) {
       continue
     }
-    // 按事件时刻计费(历史正确):峰谷时代前用 legacyBase,之后按峰谷两档。
     const resolved = providerPriceEntryFor(provider, model, config?.prices, {
       mode: config?.priceMatch === 'exact' ? 'exact' : 'auto',
       overrides: config?.priceOverrides,
@@ -244,22 +210,12 @@ export function replaySessionRecords(records, config, wantDates = null) {
   return { sessionId, title, createdAt, days }
 }
 
-/**
- * 扫描会话日志并回填账本中缺失的按模型统计。
- *  - 日期级:byProviderModel 为空且 calls > 0 的日期,整体写入回放聚合;
- *  - 会话级:byProviderModel 为空且 calls > 0 的会话条目,按会话 id + 日期
- *    写入该会话当日的回放拆分。
- * @param ledger - 已打开的账本。
- * @param sessionsRoot - 宿主会话根目录($DSH_HOME/sessions)。
- * @returns { days, sessions, scanned, titles } 实际填补的日期/会话数、扫描文件数与补齐的会话标题数。
- */
 export async function backfillLegacyLedger(ledger, sessionsRoot) {
   const result = { days: 0, sessions: 0, scanned: 0, titles: 0 }
   const needDates = new Set()
   for (const [date, day] of Object.entries(ledger.days ?? {})) {
     if ((day?.calls ?? 0) > 0 && Object.keys(day?.byProviderModel ?? {}).length === 0) needDates.add(date)
   }
-  // 日期级不缺的,会话级可能仍缺(补记录上线后当天更早的会话段)。
   let needSessionLevel = false
   for (const day of Object.values(ledger.days ?? {})) {
     for (const session of day?.sessions ?? []) {
@@ -270,7 +226,6 @@ export async function backfillLegacyLedger(ledger, sessionsRoot) {
       }
     }
   }
-  // 会话标题/时间戳补齐:任一字段缺失则需扫描(日志里的 session/title / createdAt 是权威来源)。
   let needTitles = false
   for (const day of Object.values(ledger.days ?? {})) {
     for (const session of day?.sessions ?? []) {
@@ -287,14 +242,13 @@ export async function backfillLegacyLedger(ledger, sessionsRoot) {
   const createdAts = new Map()
   let scannedCount = 0
   for (const path of listSessionLogs(sessionsRoot)) {
-    // 会话日志多时逐份解压会长时间占住事件循环:每 8 份让出一次,不卡宿主 UI。
     if ((scannedCount += 1) % 8 === 0) await new Promise(resolve => setImmediate(resolve))
     result.scanned += 1
     let replayed
     try {
       replayed = replaySessionRecords(readSessionRecords(path), ledger.config, needDates.size > 0 ? needDates : new Set(['-']))
     } catch {
-      continue // 单文件损坏不阻断整体回填。
+      continue
     }
     if (replayed.sessionId.length === 0) continue
     if (replayed.title.length > 0 && !titles.has(replayed.sessionId)) titles.set(replayed.sessionId, replayed.title)
@@ -306,7 +260,6 @@ export async function backfillLegacyLedger(ledger, sessionsRoot) {
   }
   for (const [date, day] of Object.entries(ledger.days ?? {})) {
     const dayIsEmpty = (day?.calls ?? 0) > 0 && Object.keys(day?.byProviderModel ?? {}).length === 0
-    // 日期级聚合:跨全部会话汇总当日拆分(仅在日期级为空时写入)。
     if (dayIsEmpty) {
       const aggregate = {}
       for (const days of bySession.values()) {
@@ -324,17 +277,12 @@ export async function backfillLegacyLedger(ledger, sessionsRoot) {
         acc.cost += b.cost ?? 0
         return acc
       }, { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0, calls: 0, cost: 0 })
-      // 回放完整覆盖当日全部调用与 token 时,按回放结果重算当日总额(issue #18):
-      // 旧版本曾把订阅制模型模糊匹配到同家族付费价实时误计费,回放按事件时刻
-      // 正确计价,重算可修正历史虚高;仅部分覆盖时保留原始记录,差额入 legacy 行。
       if (replayed.calls === (day.calls ?? 0)
         && replayed.input === (day.input ?? 0) && replayed.output === (day.output ?? 0)
         && replayed.cacheRead === (day.cacheRead ?? 0) && replayed.cacheWrite === (day.cacheWrite ?? 0)) {
         day.cost = replayed.cost
         result.recosted = (result.recosted ?? 0) + 1
       }
-      // 会话日志已被清理等无法回放的调用:用账本合计与回放结果的差额
-      // 归入 deepseek:legacy 行(客户端有专门文案),保证按模型合计与总量对齐。
       if (replayed.calls < (day.calls ?? 0)) {
         aggregate['deepseek:legacy'] = {
           input: Math.max(0, (day.input ?? 0) - replayed.input),
@@ -351,7 +299,6 @@ export async function backfillLegacyLedger(ledger, sessionsRoot) {
         result.days += 1
       }
     }
-    // 会话级:按会话 id + 日期定向填补空条目;完整覆盖时同步重算会话金额。
     for (const session of day?.sessions ?? []) {
       if ((session?.calls ?? 0) <= 0) continue
       const pm = bySession.get(session.id)?.[date]
@@ -377,7 +324,6 @@ export async function backfillLegacyLedger(ledger, sessionsRoot) {
       }
     }
   }
-  // 会话标题/时间戳补齐:只填缺失字段,不覆盖已有(幂等;实时新建的会话下次启动补齐)。
   if (titles.size > 0 || createdAts.size > 0) {
     for (const day of Object.values(ledger.days ?? {})) {
       for (const session of day?.sessions ?? []) {
@@ -400,7 +346,6 @@ export async function backfillLegacyLedger(ledger, sessionsRoot) {
   return result
 }
 
-/** 找到某会话在账本中出现过的全部日期(会话可跨天,每日一行)。 */
 function collectSessionDates(ledger, sessionId) {
   const dates = new Set()
   for (const [date, day] of Object.entries(ledger.days ?? {})) {
@@ -409,7 +354,6 @@ function collectSessionDates(ledger, sessionId) {
   return dates
 }
 
-/** 深合并回放结果(同会话出现在多个文件时)。 */
 function mergeDayMaps(target, source) {
   for (const [date, pm] of Object.entries(source)) {
     const current = target[date]
@@ -449,7 +393,6 @@ function cloneDayMap(pm) {
   return out
 }
 
-/** 汇总一组 provider:model 桶的合计(input/output/…/calls/cost)。 */
 function sumDayMap(pm) {
   return Object.values(pm).reduce((acc, b) => {
     acc.input += b.input ?? 0
@@ -463,7 +406,6 @@ function sumDayMap(pm) {
   }, { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0, calls: 0, cost: 0 })
 }
 
-/** 把合计桶累加到日期/会话条目的顶层字段上。 */
 function addTotalsTo(target, totals) {
   target.input += totals.input
   target.output += totals.output
@@ -474,7 +416,6 @@ function addTotalsTo(target, totals) {
   target.cost += totals.cost
 }
 
-/** 由回放结果构造账本会话条目(title/at 缺席时不写键,与 Typert schema 一致)。 */
 function sessionEntryOf(sessionId, info, totals, pm) {
   const entry = {
     id: sessionId,
@@ -492,21 +433,6 @@ function sessionEntryOf(sessionId, info, totals, pm) {
   return entry
 }
 
-/**
- * 导入安装前历史(issue #27):回放全部会话日志,为账本中缺失的日期重建
- * 费用条目。与 backfillLegacyLedger 的区别:后者只补账本已有日期的按模型
- * 拆分,本函数面向「插件未运行时期」的日期,由设置页显式触发。
- *
- * 边界(幂等,绝不与实时计费重复计数):
- *  - 缺失日期(账本无条目,或为无任何用量的空日)→ 整日重建(合计 + 会话
- *    明细 + 按模型拆分),金额按事件时刻计价(replaySessionRecords 内完成);
- *  - 已有日期 → 只追加账本完全未知的会话(id 不在当日条目中),既有会话
- *    条目与合计结构不动,追加桶并入日期合计与 byProviderModel;
- *  - 同一会话跨安装时刻:实时条目已存在,安装前用量不计入(无法安全拆分)。
- * @param ledger - 已打开的账本。
- * @param sessionsRoot - 宿主会话根目录($DSH_HOME/sessions)。
- * @returns { days, sessions, scanned } 重建/追加的日期数、新增会话数与扫描文件数。
- */
 export async function importLegacyHistory(ledger, sessionsRoot) {
   const result = { days: 0, sessions: 0, scanned: 0 }
   const bySession = new Map()
@@ -518,7 +444,7 @@ export async function importLegacyHistory(ledger, sessionsRoot) {
     try {
       replayed = replaySessionRecords(readSessionRecords(path), ledger.config, null)
     } catch {
-      continue // 单文件损坏不阻断整体导入。
+      continue
     }
     if (replayed.sessionId.length === 0) continue
     const existing = bySession.get(replayed.sessionId)
@@ -529,7 +455,6 @@ export async function importLegacyHistory(ledger, sessionsRoot) {
     mergeDayMaps(existing.days, replayed.days)
   }
   if (bySession.size === 0) return result
-  // 汇总每个日期下有实际用量的会话(桶 calls>0 才参与)。
   const dateSessions = new Map()
   for (const [sessionId, info] of bySession) {
     for (const [date, pm] of Object.entries(info.days)) {
@@ -546,7 +471,6 @@ export async function importLegacyHistory(ledger, sessionsRoot) {
       || ((day.calls ?? 0) === 0
         && (Array.isArray(day.sessions) ? day.sessions.every(s => (s?.calls ?? 0) === 0) : true))
     if (dayEmpty) {
-      // 缺失/空日:整日重建(合计 + 每会话明细;空日残留的旧 sessions 一并丢弃)。
       const target = zeroDay(date)
       const aggregate = {}
       for (const entry of list) {
@@ -560,7 +484,6 @@ export async function importLegacyHistory(ledger, sessionsRoot) {
       result.days += 1
       continue
     }
-    // 已有日期:只追加账本完全未知的会话(幂等;已知会话的安装前用量不计)。
     const known = new Set((Array.isArray(day.sessions) ? day.sessions : []).map(s => s?.id))
     for (const entry of list) {
       if (known.has(entry.sessionId)) continue
@@ -573,7 +496,6 @@ export async function importLegacyHistory(ledger, sessionsRoot) {
     }
   }
   if (result.days > 0 || result.sessions > 0) {
-    // 日期键按升序重建(账本原序即升序,保证历史记录视图整洁)。
     const ordered = {}
     for (const key of Object.keys(ledger.days).sort()) ordered[key] = ledger.days[key]
     ledger.days = ordered

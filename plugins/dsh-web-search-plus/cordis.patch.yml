@@ -1,0 +1,4 @@
+# dsh-web-search-plus bundle patch: one host row.
+- insert:
+    - id: web-search-plus
+      name: dsh-web-search-plus

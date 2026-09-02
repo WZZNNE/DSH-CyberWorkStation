@@ -7,7 +7,7 @@ Second development of the official permission-gate shape (`docs/cookbook/extensi
 ## Install
 
 ```sh
-dsh plugin --profile web add link:H:/dsh-plugins/dsh-safe-guard
+dsh plugin --profile web add link:<suite-root>/plugins/dsh-safe-guard
 ```
 
 The `dsh.bundle` manifest appends this package to the profile's bundle list; its patch mounts one host row (`id: safe-guard`).
@@ -24,15 +24,21 @@ The `dsh.bundle` manifest appends this package to the profile's bundle list; its
 
 Patterns are case-insensitive regex over the whole command text; an invalid pattern fails at load.
 
+### Hot-loaded user rules (`$DSH_HOME/safe-guard.json`)
+
+```json
+{ "denyPatterns": ["curl[^|;&]*\\|\\s*sh"], "askPatterns": ["docker\\s+system\\s+prune"] }
+```
+
+Edited from the DSH Launcher Control Deck → Safety rules tab and re-read every 1.5 s. `denyPatterns` deny outright; `askPatterns` return `{ kind: 'ask' }`, so the dsh web UI asks for approval before the command runs. Invalid entries in this file are skipped (the guard never goes down because of a typo); the built-in rules and `extraDenyPatterns` are evaluated first and are unaffected.
+
 ## Guarded surfaces
 
 `bash.command`, `pwsh.command`, `terminal_send.text`. All other tools delegate untouched. Denials return `{ kind: 'deny', reason }` and never call `next()`; every allow delegates, so downstream policy (sandbox, permission, plan mode) still runs.
 
 ## Test
 
-```sh
-node --test tests/rules.test.mjs
-```
+The unit suite (38 rule cases + 6 bypass-adversarial cases + user-rules file cases) is maintained in the suite author's local `.local/tests/dsh-safe-guard/` directory and is not shipped with the package.
 
 ## Model Experience
 

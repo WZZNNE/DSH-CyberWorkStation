@@ -1,0 +1,30 @@
+{
+  "name": "dsh-drop-files",
+  "version": "0.1.1",
+  "description": "Drop any file onto the DeepSeek Harness chat: non-image files are saved into the session workspace's .dsh-uploads/ folder and referenced from the composer as @.dsh-uploads/<name>, so the agent reads them with its file tools. Images keep going to the core's own attachment rail.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json",
+    "./client": {
+      "default": "./lib/client.js"
+    }
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "license": "MIT"
+}

@@ -1,10 +1,13 @@
 /**
- * dsh-skin-studio host 插件 —— 模型侧一键皮肤工坊。
+ * dsh-skin-studio host plugin — the model-facing one-click skin studio.
  *
- * 注册 skin_studio 工具:agent 按需求写好 CSS 后调用,插件负责本地图片
- * dataURI 内联,并经 DSH 启动器 API(/api/skins/import + /api/skins/apply)
- * 落盘、即时启用。交互流程由 systemPrompt 段约束:先问需求;用户没给图且
- * 模型不能生图时向用户要图(不虚构);有图像生成工具时直接调用生成。
+ * Registers the skin_studio tool: once the agent has written the CSS for the
+ * requested skin it calls the tool, which inlines local images as data URIs
+ * and persists + applies the skin through the DSH Launcher API
+ * (/api/skins/import + /api/skins/apply). The interaction flow is constrained
+ * by a systemPrompt section: ask for requirements first; when the user gave no
+ * image and the model cannot generate one, ask the user for an image (never
+ * fabricate one); when an image-generation tool exists, call it.
  */
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { assertTarget, buildCss, imageToDataUri, sanitizeSkinName } from './studio.js'

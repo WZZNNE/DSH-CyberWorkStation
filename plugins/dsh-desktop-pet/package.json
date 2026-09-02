@@ -1,0 +1,45 @@
+{
+  "name": "dsh-desktop-pet",
+  "version": "0.2.2",
+  "description": "A desktop companion for DeepSeek Harness: its own persona, lorebook and multimodal API, a user profile distilled from the harness's own chat history, awareness of the running task, proactive chatter, reminders, voice, 8-24 frame sprite animations, screen reading and computer control behind a three-level permission, and a click-to-talk desktop window (WinForms sprite or Edge app window) next to the in-app floating pet.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./pet": {
+      "default": "./lib/pet.js"
+    },
+    "./chat": {
+      "default": "./lib/chat.js"
+    },
+    "./history": {
+      "default": "./lib/history.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "assets",
+    "host",
+    "tools",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/dsh-credentials": "*"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "license": "MIT"
+}

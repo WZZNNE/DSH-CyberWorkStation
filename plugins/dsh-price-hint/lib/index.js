@@ -1,9 +1,10 @@
 /**
- * dsh-price-hint host 半:把「模型显示名 → 价格提示文本」映射经
- * GET /dsh-price-hint/prices.json 提供给浏览器半。
- * 名称来自 settings 的 llm-pi-ai providers.models(id+name),
- * 价格来自 cost-meter 账本 config.prices.providers(USD/1M,cacheMiss=输入,output=输出)。
- * 每次请求现读,价格表更新即生效。
+ * dsh-price-hint host half: expose a "model display name → price hint" map at
+ * GET /dsh-price-hint/prices.json for the browser half.
+ * Names come from the llm-pi-ai providers.models settings (id + name); prices
+ * come from the cost-meter ledger config.prices.providers (USD per 1M tokens,
+ * cacheMiss = input, output = output). Read on every request, so a refreshed
+ * price table applies immediately.
  */
 import { readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
@@ -12,14 +13,14 @@ import { join } from 'node:path'
 export const name = 'price-hint'
 export const inject = ['webServer']
 
-const LEDGER = join(homedir(), '.dsh', 'storages', 'cost-meter', 'ledger.json')
+const LEDGER = join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'storages', 'cost-meter', 'ledger.json')
 
 /** @param {import('@deepseek-ai/cordis').Context} ctx */
 export function apply(ctx) {
   const buildMap = () => {
     const map = {}
     let prices = {}
-    try { prices = JSON.parse(readFileSync(LEDGER, 'utf8')).config?.prices?.providers ?? {} } catch { /* 无账本 */ }
+    try { prices = JSON.parse(readFileSync(LEDGER, 'utf8')).config?.prices?.providers ?? {} } catch { /* no ledger yet */ }
     const settings = ctx.get('settings')
     const providers = typeof settings?.get === 'function' ? settings.get('llm-pi-ai')?.providers : undefined
     if (providers !== null && typeof providers === 'object') {
@@ -36,7 +37,12 @@ export function apply(ctx) {
     }
     return map
   }
+  // A GET-only, no-CORS route still answers a DNS-rebinding page, which is same-origin to the
+  // browser: the Host header is what tells us the request really came to a loopback address.
+  const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
+  const hostOf = req => { const h = String(req.headers.host ?? '').trim().toLowerCase(); const m = /^\[([^\]]+)\](?::\d+)?$/.exec(h); return m ? `[${m[1]}]` : h.replace(/:\d+$/, '') }
   const route = (req, res) => {
+    if (!LOOPBACK_HOSTS.has(hostOf(req))) { req.resume?.(); res.writeHead(403); return res.end() }
     const url = new URL(req.url, 'http://127.0.0.1')
     if (req.method === 'GET' && url.pathname === '/dsh-price-hint/prices.json') {
       res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' })

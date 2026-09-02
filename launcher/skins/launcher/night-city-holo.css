@@ -1,0 +1,104 @@
+/* DSH Launcher skin: NIGHT CITY / HOLO v4 — the same palette and rules as the dsh frontend skin.
+ * Graphite-black base, holographic cyan lines, 2077 gold for the brand, amber for warnings. */
+:root {
+  --lc-bg: #06090e;
+  --lc-nav-bg: rgba(6, 10, 15, .86);
+  --lc-card-bg: rgba(10, 16, 23, .84);
+  --lc-btn-bg: #0f1821;
+  --lc-input-bg: #080d13;
+  --lc-hover: #122230;
+  --lc-active-bg: #163040;
+  --lc-text: #e8f2f6;
+  --lc-text-dim: #7fa1ac;
+  --lc-title: #ffd60a;
+  --lc-accent: #ffd60a;
+  --lc-accent-dim: #8c7600;
+  --lc-accent-bg: rgba(255, 214, 10, .12);
+  --lc-border: rgba(53, 230, 255, .28);
+  --lc-border-dim: rgba(53, 230, 255, .14);
+  --lc-ok: #37f0a0;
+  --lc-warn: #ffb547;
+  --lc-danger: #ff3b6b;
+  --lc-danger-dim: rgba(255, 59, 107, .35);
+  /* hero, glows and the usage heat ramp: base.css reads these, the stock blue gradient shows otherwise */
+  --lc-hero-bg: url('/assets/bg-holo.jpg');
+  --lc-hero-veil: linear-gradient(90deg, rgba(6, 9, 14, .25), rgba(6, 9, 14, .82) 62%);
+  --lc-hero-title: #ffd60a;
+  --lc-hero-sub: #9cbcc6;
+  --lc-hero-title-shadow: 0 0 18px rgba(255, 214, 10, .35);
+  --lc-card-glow: 0 0 18px rgba(53, 230, 255, .08), inset 0 1px 0 rgba(53, 230, 255, .16);
+  --lc-btn-glow: 0 0 12px rgba(255, 214, 10, .35);
+  --lc-heat-0: rgba(6, 9, 14, .8);
+  --lc-heat-1: #0f3542; --lc-heat-2: #0b6b80; --lc-heat-3: #17b4cf; --lc-heat-4: #35e6ff;
+  --lc-heat-glow: 0 0 8px rgba(53, 230, 255, .6);
+}
+html::after {
+  content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background: linear-gradient(180deg, rgba(6, 9, 14, .5) 0%, rgba(6, 9, 14, .8) 60%, rgba(6, 9, 14, .94) 100%), url(/assets/bg-holo.jpg) center / cover no-repeat;
+}
+body {
+  background: #06090e;
+  color-scheme: dark;
+}
+/* HUD ruling and vignette — the launcher's own pair (the frontend skin's differ in mask and stops) */
+html::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: -1;
+  background-image: linear-gradient(rgba(53, 230, 255, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(53, 230, 255, .035) 1px, transparent 1px);
+  background-size: 96px 96px;
+}
+.toast { z-index: 2147483001 }   /* above the vignette */
+body::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 2147483000;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, .45) 100%), linear-gradient(180deg, rgba(53, 230, 255, .22) 0, rgba(53, 230, 255, 0) 2px);
+}
+.card, .nav, .view h1 { box-shadow: inset 0 1px 0 rgba(53, 230, 255, .16) }
+
+/* ══ Navigation icons — vector, masked, colored by the theme (crisp at 20 px; the color follows the state:
+   dim cyan, cyan on hover, gold when active — a filter on a masked box would be clipped by the mask) ══ */
+.nav-glyph { color: transparent !important; -webkit-mask: center / 20px 20px no-repeat; mask: center / 20px 20px no-repeat;
+  background-color: rgba(127, 161, 172, .95); transition: background-color .22s cubic-bezier(.2, .8, .2, 1), transform .22s cubic-bezier(.2, .8, .2, 1) }
+.nav-btn:hover .nav-glyph { background-color: #35e6ff }
+.nav-btn.active .nav-glyph { background-color: #ffd60a; transform: translateX(1px) }
+.nav-glyph[data-i="dash"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M4 14a8 8 0 0 1 16 0'/><path d='M12 14l3.5-4.5'/><circle cx='12' cy='14' r='1.2' fill='%23000'/><path d='M4 18h16'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M4 14a8 8 0 0 1 16 0'/><path d='M12 14l3.5-4.5'/><circle cx='12' cy='14' r='1.2' fill='%23000'/><path d='M4 18h16'/></svg>") }
+.nav-glyph[data-i="plugins"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='9' width='16' height='11' rx='2'/><path d='M8 9V6a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3M13 9V6a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3'/><path d='M4 14h16'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='9' width='16' height='11' rx='2'/><path d='M8 9V6a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3M13 9V6a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3'/><path d='M4 14h16'/></svg>") }
+.nav-glyph[data-i="skills"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z'/><path d='M18.5 16.5l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z'/><path d='M18.5 16.5l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z'/></svg>") }
+.nav-glyph[data-i="sessions"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M5 6h14M5 12h14M5 18h9'/><circle cx='19' cy='18' r='1.5'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M5 6h14M5 12h14M5 18h9'/><circle cx='19' cy='18' r='1.5'/></svg>") }
+.nav-glyph[data-i="storage"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><ellipse cx='12' cy='6' rx='7' ry='2.6'/><path d='M5 6v12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6V6'/><path d='M5 12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><ellipse cx='12' cy='6' rx='7' ry='2.6'/><path d='M5 6v12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6V6'/><path d='M5 12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6'/></svg>") }
+.nav-glyph[data-i="update"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M20 12a8 8 0 0 1-13.7 5.6'/><path d='M4 12a8 8 0 0 1 13.7-5.6'/><path d='M17 3.5v3.3h-3.3M7 20.5v-3.3h3.3'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M20 12a8 8 0 0 1-13.7 5.6'/><path d='M4 12a8 8 0 0 1 13.7-5.6'/><path d='M17 3.5v3.3h-3.3M7 20.5v-3.3h3.3'/></svg>") }
+.nav-glyph[data-i="tokens"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6 5h12l-6 7 6 7H6'/><path d='M4 19h16'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6 5h12l-6 7 6 7H6'/><path d='M4 19h16'/></svg>") }
+.nav-glyph[data-i="deck"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='3.5' y='5' width='17' height='14' rx='2'/><path d='M7 9h4M7 12.5h7M7 16h5'/><circle cx='16.5' cy='9' r='1'/><circle cx='16.5' cy='16' r='1'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='3.5' y='5' width='17' height='14' rx='2'/><path d='M7 9h4M7 12.5h7M7 16h5'/><circle cx='16.5' cy='9' r='1'/><circle cx='16.5' cy='16' r='1'/></svg>") }
+.nav-glyph[data-i="local"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='5' y='5' width='14' height='14' rx='2'/><rect x='9' y='9' width='6' height='6' rx='1'/><path d='M9 3v2M15 3v2M9 19v2M15 19v2M3 9h2M3 15h2M19 9h2M19 15h2'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='5' y='5' width='14' height='14' rx='2'/><rect x='9' y='9' width='6' height='6' rx='1'/><path d='M9 3v2M15 3v2M9 19v2M15 19v2M3 9h2M3 15h2M19 9h2M19 15h2'/></svg>") }
+.nav-glyph[data-i="creds"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><circle cx='9' cy='10' r='4'/><path d='M12 12.5l8 0v3h-2.5v-2M15.5 15.5v-3'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><circle cx='9' cy='10' r='4'/><path d='M12 12.5l8 0v3h-2.5v-2M15.5 15.5v-3'/></svg>") }
+.nav-glyph[data-i="memory"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M9 4.5a3.5 3.5 0 0 0-3.5 3.5v1A3 3 0 0 0 4 12a3 3 0 0 0 1.5 3v1A3.5 3.5 0 0 0 9 19.5h1v-15z'/><path d='M15 4.5a3.5 3.5 0 0 1 3.5 3.5v1A3 3 0 0 1 20 12a3 3 0 0 1-1.5 3v1a3.5 3.5 0 0 1-3.5 3.5h-1v-15z'/><path d='M10 8h4M10 12h4M10 16h4'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M9 4.5a3.5 3.5 0 0 0-3.5 3.5v1A3 3 0 0 0 4 12a3 3 0 0 0 1.5 3v1A3.5 3.5 0 0 0 9 19.5h1v-15z'/><path d='M15 4.5a3.5 3.5 0 0 1 3.5 3.5v1A3 3 0 0 1 20 12a3 3 0 0 1-1.5 3v1a3.5 3.5 0 0 1-3.5 3.5h-1v-15z'/><path d='M10 8h4M10 12h4M10 16h4'/></svg>") }
+.nav-glyph[data-i="skins"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='8'/><circle cx='8.5' cy='10.5' r='1.2' fill='%23000'/><circle cx='12.5' cy='7.8' r='1.2' fill='%23000'/><circle cx='16' cy='10.8' r='1.2' fill='%23000'/><path d='M12 20a2.5 2.5 0 0 1 0-5h1.5a2 2 0 0 0 0-4'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='8'/><circle cx='8.5' cy='10.5' r='1.2' fill='%23000'/><circle cx='12.5' cy='7.8' r='1.2' fill='%23000'/><circle cx='16' cy='10.8' r='1.2' fill='%23000'/><path d='M12 20a2.5 2.5 0 0 1 0-5h1.5a2 2 0 0 0 0-4'/></svg>") }
+.nav-glyph[data-i="logs"] { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M7 3.5h7l4 4V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z'/><path d='M14 3.5v4h4'/><path d='M9 12h6M9 15.5h6M9 19h4'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M7 3.5h7l4 4V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z'/><path d='M14 3.5v4h4'/><path d='M9 12h6M9 15.5h6M9 19h4'/></svg>") }
+/* the active entry carries a hairline that slides in from the left; the hover state a soft lift */
+.nav-btn { position: relative; transition: color .2s cubic-bezier(.2, .8, .2, 1), background .2s cubic-bezier(.2, .8, .2, 1), border-color .2s cubic-bezier(.2, .8, .2, 1), transform .2s cubic-bezier(.2, .8, .2, 1) }
+.nav-btn::before { content: ''; position: absolute; left: -1px; top: 22%; bottom: 22%; width: 2px; border-radius: 2px; background: #ffd60a; box-shadow: 0 0 8px rgba(255, 214, 10, .55); transform: scaleY(0); transform-origin: 50% 50%; transition: transform .26s cubic-bezier(.2, .8, .2, 1) }
+.nav-btn.active::before { transform: scaleY(1) }
+.nav-btn:hover:not(.active) { transform: translateX(2px) }
+
+/* ══ Motion — the same easing everywhere; entry rises 8 px, cards lift 1 px, toasts slide up ══ */
+@keyframes lc-holo-in { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+.view.active { animation: lc-holo-in .32s cubic-bezier(.2, .8, .2, 1) 1 both }
+.card { transition: transform .22s cubic-bezier(.2, .8, .2, 1), box-shadow .22s cubic-bezier(.2, .8, .2, 1), border-color .22s cubic-bezier(.2, .8, .2, 1) }
+.card:not(#creds-list):not(.creds-spares-row .card):hover { transform: translateY(-1px); border-color: rgba(53, 230, 255, .42); box-shadow: 0 0 22px rgba(53, 230, 255, .1), inset 0 1px 0 rgba(53, 230, 255, .22) }
+.tbl td { transition: background .18s cubic-bezier(.2, .8, .2, 1) }
+.brand-logo { filter: drop-shadow(0 0 6px rgba(255, 214, 10, .35)); transition: filter .3s cubic-bezier(.2, .8, .2, 1) }
+.brand:hover .brand-logo { filter: drop-shadow(0 0 10px rgba(255, 214, 10, .6)) }
+.toast { transition: opacity .26s cubic-bezier(.2, .8, .2, 1), transform .26s cubic-bezier(.2, .8, .2, 1); transform: translateY(8px) }
+.toast.show { transform: none }
+.chip { transition: border-color .2s cubic-bezier(.2, .8, .2, 1), color .2s cubic-bezier(.2, .8, .2, 1) }
+.chip:hover { border-color: rgba(53, 230, 255, .5); color: #e8f2f6 }
+@media (prefers-reduced-motion: reduce) {
+  .view.active { animation: none }
+  .card, .nav-btn, .nav-btn::before, .nav-glyph, .toast, .btn, .chip, .brand-logo, .tbl td, .qcard, .mem-row, .tab-btn, .lang-btn { transition: none !important }
+  .nav-btn:hover:not(.active), .card:hover, .qcard:hover { transform: none !important }
+}
+.btn { transition: box-shadow .22s cubic-bezier(.2, .8, .2, 1), transform .22s cubic-bezier(.2, .8, .2, 1); letter-spacing: .02em }
+.btn:not(:disabled):hover { box-shadow: 0 0 0 1px rgba(53, 230, 255, .3), 0 0 14px rgba(53, 230, 255, .14) }
+.btn:active { transform: translateY(1px) }
+::selection { background: rgba(255, 214, 10, .88); color: #06090e }   /* 88 % gold under near-black ink: 11:1 */
+::-webkit-scrollbar { width: 8px; height: 8px }
+::-webkit-scrollbar-thumb { background: rgba(53, 230, 255, .22) }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 214, 10, .55) }

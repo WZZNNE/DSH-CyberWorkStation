@@ -1,7 +1,7 @@
 {
   "name": "dsh-safe-guard",
-  "version": "0.1.0",
-  "description": "Deny destructive shell commands (rm -rf /, git push --force, raw-device writes, drive formats) at the dsh tools/pre-execute gate before they run.",
+  "version": "0.2.0",
+  "description": "Deny destructive shell commands (rm -rf /, git push --force, raw-device writes, drive formats) at the dsh tools/pre-execute gate before they run; extra deny / ask-first regexes hot-load from ~/.dsh/safe-guard.json.",
   "type": "module",
   "main": "lib/index.js",
   "files": [
@@ -12,9 +12,6 @@
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
-  },
-  "scripts": {
-    "test": "node --test tests/"
   },
   "license": "MIT"
 }

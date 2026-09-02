@@ -1,0 +1,4 @@
+# dsh-media-lab bundle patch: one host row (the browser half rides the package's dsh.client entry).
+- insert:
+    - id: media-lab
+      name: dsh-media-lab

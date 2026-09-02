@@ -1,0 +1,31 @@
+{
+  "name": "dsh-temp-chat",
+  "version": "0.1.1",
+  "description": "Temporary DeepSeek Harness conversations that belong to no project: a scratch directory under $DSH_HOME/scratch, its own workspace, and a shipped chat-only agent preset with no file, shell, job, subagent or workflow tools.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "presets",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "license": "MIT"
+}

@@ -1,12 +1,37 @@
 {
   "name": "dsh-control-deck",
-  "version": "0.1.0",
-  "description": "Control Deck for DeepSeek Harness: multi-entry leveled system-prompt injection, regex rewrite of user messages, keyword lorebook injection (SillyTavern-style), sampling overrides (temperature/maxTokens/stop/reasoningEffort), and tool disable switches. Configured live from DSH Launcher via ~/.dsh/control-deck.json (hot reload).",
+  "version": "0.3.1",
+  "description": "Control Deck for DeepSeek Harness (v3): SillyTavern-grade multi-entry leveled system-prompt injection (roles, intervals, macros), regex scripts (user input / world info / display-only AI output), World Info lorebooks (full field set incl. group scoring, prioritize, minActivations, includeNames, per-entry scanDepth), sampling overrides with a master switch, tool disable switches, presets and SillyTavern JSON import/export. Configured live from DSH Launcher via ~/.dsh/control-deck.json (hot reload).",
   "type": "module",
   "main": "lib/index.js",
-  "exports": { ".": { "default": "./lib/index.js" }, "./package.json": "./package.json" },
-  "files": ["lib", "cordis.patch.yml"],
-  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } },
-  "scripts": { "test": "node --test tests/" },
-  "license": "MIT"
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-llm": "*"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-llm": {
+      "optional": true
+    }
+  }
 }

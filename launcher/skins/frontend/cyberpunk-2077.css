@@ -1,8 +1,10 @@
-/* dsh 前端皮肤:cyberpunk-2077 v3 —— 与启动器同水准的 2077×边缘行者
- * 原则:只用零布局风险手段 —— 令牌调色、纯 overlay 特效层、通用控件描边辉光、
- * 动画不改盒模型。不使用 backdrop-filter 通配(曾致设置面板塌陷,见启动器日志)。 */
+/* dsh frontend skin: cyberpunk-2077 v3.1 — the same 2077 × Edgerunners look as the launcher
+ * Principles: zero layout risk only — token recolouring, pure overlay effect layers, generic
+ * control outlines/glow, animations that never touch the box model. No blanket backdrop-filter
+ * (it once collapsed the settings panel; see the launcher log).
+ * v3.1: the CRT scanline overlay and the roaming scan band were removed. */
 
-/* ══ 令牌:夜之城配色(浅/深两组同值,亮暗模式统一骇客风) ══ */
+/* ══ Tokens: Night City palette (light and dark share the same values — one hacker look in both modes) ══ */
 html:root, html:root body[data-ds-dark-theme] {
   --dsw-alias-bg-base: #05070d;
   --dsw-alias-bg-layer-1: rgba(9, 14, 19, .92);
@@ -28,36 +30,26 @@ html:root, html:root body[data-ds-dark-theme] {
   --dsw-alias-button-floating-hover: rgba(252, 238, 10, .14);
 }
 
-/* ══ 背景:夜之城大图(launcher 供图,断供自动回落渐变) ══ */
+/* ══ Background: Night City artwork served by the launcher (falls back to the gradient when the launcher is down) ══ */
 body {
   background: linear-gradient(rgba(4, 6, 11, .78), rgba(4, 6, 11, .88)), url('http://127.0.0.1:3090/assets/bg-city.jpg') center / cover fixed no-repeat, #05070d !important;
   color-scheme: dark;
 }
 
-/* ══ 特效层(纯 overlay,pointer-events:none,零布局影响) ══ */
-/* 扫描线 + 暗角 */
+/* ══ Effect layers (pure overlays, pointer-events: none, zero layout impact) ══ */
+/* Vignette */
 body::after {
   content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 2147483000;
-  background:
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, .14) 0 1px, transparent 1px 3px),
-    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, .5) 100%);
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, .5) 100%);
 }
-/* 青色网格底纹 */
+/* Cyan grid texture */
 html::before {
   content: ''; position: fixed; inset: 0; pointer-events: none; z-index: -1;
   background-image: linear-gradient(rgba(0, 240, 255, .045) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 240, 255, .045) 1px, transparent 1px);
   background-size: 36px 36px;
 }
-/* 巡回三色扫描光带(边缘行者) */
-body::before {
-  content: ''; position: fixed; left: 0; right: 0; top: -6%; height: 3px; pointer-events: none; z-index: 2147483001;
-  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, .6), rgba(252, 238, 10, .75), rgba(255, 45, 120, .6), transparent);
-  box-shadow: 0 0 16px rgba(0, 240, 255, .45); opacity: .6;
-  animation: dsk-sweep 12s linear infinite;
-}
-@keyframes dsk-sweep { 0% { top: -2% } 46% { opacity: .6 } 50% { top: 102%; opacity: 0 } 100% { top: 102%; opacity: 0 } }
-/* 页面载入:CRT 拉伸展开(一次性,transform 不改布局) */
+/* Page load: CRT stretch-open (one shot; transform only, no layout change) */
 @keyframes dsk-boot {
   0% { opacity: 0; transform: scaleY(.01); filter: brightness(3) saturate(.2) }
   45% { opacity: 1; transform: scaleY(.01); filter: brightness(2.4) }
@@ -66,7 +58,7 @@ body::before {
 }
 body { animation: dsk-boot .6s cubic-bezier(.16, 1, .3, 1) 1; transform-origin: 50% 30% }
 
-/* ══ 通用控件:霓虹化(不改尺寸/布局) ══ */
+/* ══ Generic controls: neon treatment (no size or layout change) ══ */
 button { transition: box-shadow .2s cubic-bezier(.16, 1, .3, 1), filter .2s !important }
 button:hover { box-shadow: 0 0 10px rgba(0, 240, 255, .25) !important }
 button:active { filter: brightness(1.25) saturate(1.2) }
@@ -77,12 +69,12 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, [contentedita
 }
 a { color: #00f0ff }
 a:hover { text-shadow: 0 0 8px rgba(0, 240, 255, .6) }
-/* 代码块霓虹左条 */
+/* Code blocks: neon left rule */
 pre { border-left: 2px solid rgba(0, 240, 255, .55) !important; box-shadow: inset 0 0 18px rgba(0, 240, 255, .04) }
-/* 图片/头像轻描边 */
+/* Images / avatars: keep native rendering */
 img { image-rendering: auto }
 
-/* ══ 滚动条 / 选区 ══ */
+/* ══ Scrollbars / selection ══ */
 ::-webkit-scrollbar { width: 9px; height: 9px }
 ::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, .25); border-radius: 0 }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255, 45, 120, .6) }

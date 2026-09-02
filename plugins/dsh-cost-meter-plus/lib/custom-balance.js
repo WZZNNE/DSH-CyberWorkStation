@@ -1,6 +1,7 @@
 /**
- * 自定义 Provider 余额查询 adapter(用户可配置 HTTP 端点 + 声明式 extract)。
- * 与 coding-plans.js 固定端点 adapter 互补:共用 index.js 侧的 refresh/cache 模式。
+ * Custom provider balance: query an arbitrary HTTP endpoint configured by the
+ * user (URL, method, headers, JSON path) and normalise the answer into the
+ * balance shape the UI renders.
  */
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
 
@@ -32,7 +33,7 @@ export function extractByRule(data, rule) {
   if (typeof rule === 'object' && !Array.isArray(rule)) {
     const op = rule.op
     if (op === 'subtract' && Array.isArray(rule.paths)) {
-      if (rule.paths.length === 0) return null // 空 paths 防 Reduce of empty array 报错(与 add 的空数组返 0 区分:减法无中性初值)
+      if (rule.paths.length === 0) return null
       const values = rule.paths.map(path => Number(getPath(data, path)))
       if (!values.every(Number.isFinite)) return null
       return values.reduce((acc, value) => acc - value)

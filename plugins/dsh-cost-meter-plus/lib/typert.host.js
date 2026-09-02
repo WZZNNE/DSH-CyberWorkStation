@@ -1,9 +1,7 @@
 /**
- * dsh-cost-meter 的 Host 面 Typert 清单(由 typert-loader 自动扫描注册)。
- * 手写清单,结构与 @deepseek-ai/dsh-typert-generator 产物一致:
- * `./typert` 导出 TYPERT,invocations 的 codec 必须是 zod v4 实例。
+ * Typert state schema for the costMeter service: the zod shape of everything the
+ * client can read (balances, quotas, history, config) through remote.costMeter.*.
  */
-
 import { z } from 'zod'
 
 const num = z.number()
@@ -35,7 +33,6 @@ const daySchema = z.object({
   sessions: z.array(sessionSchema),
 })
 
-// 带所属日期的会话条目(issue #22 按会话排行:不分日期视角)。
 const datedSessionSchema = sessionSchema.extend({ date: z.string() })
 
 const topSessionsSchema = z.object({
@@ -65,7 +62,6 @@ const providerPriceSchema = z.object({
   notes: z.string().optional(),
 })
 
-/** 拓展价格目录条目:兼容三桶价(DeepSeek,含峰谷子档)与两档简写/未核价(第三方)。 */
 const catalogEntrySchema = providerPriceSchema.extend({
   cacheHit: num.optional(),
   cacheMiss: num.optional(),
@@ -103,14 +99,12 @@ const configSchema = z.object({
   peakEffectiveAt: z.string(),
   peakWindows: z.array(z.object({ start: num, end: num })),
   peakNotice: z.boolean().optional(),
-  // 峰/谷切换前弹窗提醒:开关(默认开)/提前分钟数(1-30)/类型(峰|谷|两者)。
   peakAlertEnabled: z.boolean().optional(),
   peakAlertAhead: num.optional(),
   peakAlertTarget: z.enum(['peak', 'offpeak', 'both']).optional(),
   peakAlertPosition: z.enum(['corner', 'center']).optional(),
   peakAlertWebNotify: z.boolean().optional(),
   showSessionId: z.boolean().optional(),
-  // 安装前历史自动导入完成时刻(issue #27,内部标记;0/缺席 = 尚未跑过)。
   legacyAutoImportedAt: num.optional(),
   peakStyle: z.enum(['compact', 'classic']).optional(),
   priceMatch: z.enum(['auto', 'exact']).optional(),
@@ -134,7 +128,6 @@ const configSchema = z.object({
     display: z.enum(['sidebar', 'settings', 'both', 'off']).optional(),
     refreshMinutes: num.optional(),
     apiKey: z.string().optional(),
-    // SCNet 本地计量专用(issue #26):月度 Credits 额度与订阅起始日;其余厂商无此二键。
     planCredits: num.optional(),
     planStart: z.string().optional(),
   })).optional(),
@@ -215,7 +208,6 @@ const customBalanceSchema = z.object({
   spend: z.union([num, z.null()]),
 })
 
-// Coding plan 额度状态条目(运行时合并配置与查询结果;windows 为各用量窗口)。
 const codingPlanSchema = z.object({
   enabled: z.boolean(),
   display: z.enum(['sidebar', 'settings', 'both', 'off']),
@@ -234,9 +226,7 @@ export const stateSchema = z.object({
   budgetUsed: num,
   balance: balanceSchema,
   goQuota: goQuotaSchema,
-  // optional:兼容旧快照/降级路径(与 codingPlans/priceCatalog 同策略,避免 strict codec 击穿)。
   customBalance: customBalanceSchema.optional(),
-  // 余额差交叉校验提示(issue #18):旧快照无此字段,optional 防击穿。
   reconcile: z.object({ ok: z.boolean(), message: z.string() }).optional(),
   codingPlans: z.record(z.string(), codingPlanSchema),
   history: z.array(daySchema),
@@ -351,7 +341,6 @@ export const TYPERT = {
       result: _state$codec,
     },
     {
-      // 导入安装前历史(issue #27):回放全部会话日志,只补账本缺失的日期/会话。
       id: 'dsh-cost-meter#costMeter/importLegacyHistory',
       service: 'costMeter',
       namespace: 'costMeter',
@@ -379,9 +368,6 @@ export const TYPERT = {
       invocation: { kind: 'direct' },
       parameters: [
         { name: 'limit', wire: 'limit', source: 'json', codec: _limit$codec },
-        // sort/dir 与服务端函数默认值(sort='cost', dir='desc')对应,声明可缺省:
-        // 网关对 args 字段做精确匹配,不声明 acceptsUndefined 时旧客户端单参数调用
-        // 会因 missing "sort"/"dir" 被拒,会话排行面板直接加载失败。
         { name: 'sort', wire: 'sort', source: 'json', codec: _sort$codec, acceptsUndefined: true },
         { name: 'dir', wire: 'dir', source: 'json', codec: _dir$codec, acceptsUndefined: true },
       ],

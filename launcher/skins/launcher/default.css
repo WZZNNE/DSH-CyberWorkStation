@@ -1,6 +1,6 @@
-/* 启动器皮肤:default —— 明/暗/跟随系统 三态(html[data-theme] 由界面设置控制) */
+/* Launcher skin: default — light / dark / follow-system (html[data-theme] is set by the interface settings) */
 
-/* 暗黑(默认基准) */
+/* Dark (the baseline) */
 :root {
   --lc-font: 'Segoe UI', system-ui, sans-serif;
   --lc-bg: #14161a;
@@ -25,7 +25,7 @@
   --lc-radius: 8px;
 }
 
-/* 明亮变量组(复用:显式 light 与 auto+系统亮色两处) */
+/* Light variable set (used twice: explicit light, and auto + light system scheme) */
 :root[data-theme="light"] {
   --lc-bg: #f2f4f7;
   --lc-nav-bg: #ffffff;
@@ -71,13 +71,13 @@
   }
 }
 
-/* hero 与 logo 适配(明/暗都协调) */
+/* Hero and logo tuned for both light and dark */
 :root { --lc-hero-bg: linear-gradient(120deg, #1b2a4a, #0d1322); --lc-hero-title: #ffffff }
 :root[data-theme="light"] { --lc-hero-bg: linear-gradient(120deg, #dbe7fb, #f2f6fd); --lc-hero-title: #10161d; --lc-hero-veil: linear-gradient(90deg, rgba(255,255,255,.2), transparent 55%) }
 @media (prefers-color-scheme: light) { :root[data-theme="auto"] { --lc-hero-bg: linear-gradient(120deg, #dbe7fb, #f2f6fd); --lc-hero-title: #10161d; --lc-hero-veil: linear-gradient(90deg, rgba(255,255,255,.2), transparent 55%) } }
 .brand-logo { background: #10161d; border-radius: 6px; padding: 2px }
 .hero-sub, .hero-kicker { color: var(--lc-text-dim) }
 
-/* OFFLINE→RUNNING 上线反馈(轻量) */
+/* OFFLINE → RUNNING feedback (lightweight) */
 .stat-value.ok.state-flip { animation: lc-online-lite .6s ease 1 }
 @keyframes lc-online-lite { 0% { opacity: 0; transform: scale(.7) } 55% { transform: scale(1.12) } 100% { opacity: 1; transform: none } }

@@ -1,0 +1,4 @@
+# dsh-drop-files bundle patch: one host row (the upload route); the browser half rides ./client.
+- insert:
+    - id: drop-files
+      name: dsh-drop-files

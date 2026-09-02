@@ -1,0 +1,63 @@
+# The `temp-chat` agent preset shipped by dsh-temp-chat: a conversation that touches no
+# project. It keeps the ordinary chat machinery — persona, project instructions, skills,
+# todo / ask-user, the web tool and context compaction — and mounts NO file, shell, job,
+# subagent or workflow tools, so a temp session cannot edit or run anything on the machine.
+#
+# Copied to $DSH_HOME/.agent-presets/temp-chat/ on first load (never overwritten: edit the
+# copy freely). Row names are the ones the standard preset uses in this core version.
+
+- id: persona
+  name: '@deepseek-ai/dsh-persona'
+  config:
+    text: >-
+      You are a helpful assistant powered by the {{model}} model, in a temporary
+      conversation with no project attached. You have no file, shell or delegation tools
+      here: answer, explain and draft directly in the chat. Your scratch directory is
+      {{cwd}}; nothing outside it is in scope.
+
+- id: agent-instructions
+  name: '@deepseek-ai/dsh-agent-instructions'
+  config:
+    maxBytes: 65536
+
+- id: skill-filesystem
+  name: '@deepseek-ai/dsh-skill-filesystem'
+
+- id: tool-skill
+  name: '@deepseek-ai/dsh-tool-skill'
+
+- id: tool-ask-user
+  name: '@deepseek-ai/dsh-tool-ask-user'
+
+- id: tool-todo
+  name: '@deepseek-ai/dsh-tool-todo'
+  config:
+    allowParallelInProgress: true
+
+- id: tool-web
+  name: '@deepseek-ai/dsh-tool-web'
+  config:
+    fetch: false
+    searchTimeoutMs: 60000
+
+# Context compaction, exactly as the shipped presets mount it: the engine and the
+# tool-result pruner share one isolate realm so `compaction-basic` finds the pruner.
+- id: compaction
+  name: cordis:group
+  group: true
+  isolate:
+    compaction: true
+    toolResultPruner: true
+  config:
+    - id: compaction-basic
+      name: '@deepseek-ai/dsh-compaction-basic'
+
+    - id: command-compact
+      name: '@deepseek-ai/dsh-command-compact'
+
+    - id: tool-result-pruner
+      name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+      config:
+        thresholdChars: 8192
+        headChars: 4096
+        tailChars: 1024

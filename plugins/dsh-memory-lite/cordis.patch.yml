@@ -1,0 +1,4 @@
+# dsh-memory-lite bundle patch: one host row.
+- insert:
+    - id: memory-lite
+      name: dsh-memory-lite
