@@ -21,9 +21,6 @@
 
 启动器「自检」按 profile 的 patch 文件识别它(bundles 列表里不会有它,这是正常的)。
 
-## 测试
-
-`node --test .local/tests/dsh-credentials-keyring/*.mjs` — 分层(环境变量 / 钥匙串 / 文件继承)与传输用例。
 
 ---
 

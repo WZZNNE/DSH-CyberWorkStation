@@ -62,6 +62,41 @@ the profile cannot resolve (the launcher's peer links add them), `reason` says w
 Control Deck's "disabled tools" list is a separate, per-call denial; this switch removes the tool and
 its prompt section altogether.
 
+## Page visiting in tool mode (`toolVisit`)
+
+Snippets from any search API are one or two sentences. With `toolVisit.links > 0` the plugin opens
+that many of the top results **inside the same `web_search` call** and appends their article text to
+the tool output — the equivalent of a paid API's `content` field, without a second `web_fetch` round
+trip the model has to decide to take (a local model often does not).
+
+| Knob | Default | What it means |
+|---|---|---|
+| `toolVisit.links` | `0` | how many top results to open, 0–5. `0` keeps the old snippet-only behaviour |
+| `toolVisit.chars` | `2000` | per-page text budget, 200–20000 |
+| `extractorUrl` | `''` | optional local extraction service; empty uses the built-in stripper |
+
+The pages ride the **same guarded transport as `web_fetch`** (public addresses only, address pinning,
+blacklist, byte and character caps), each with its own 12 s deadline inside a 15 s budget for the
+whole visit phase; a page that will not open is dropped, never an error — a search must not fail
+because one of its results does. Article text is stored with any search-provider answer in the
+canonical result's `content` field, retaining each page's title and URL. The core therefore includes
+it in model output, structured tool values and the result card. Multiple queries contribute sources
+in rank order across queries, with duplicate URLs removed before the shared result cap is applied.
+
+### The extractor service
+
+`extractorUrl` points at a local `dsh-extract` service (trafilatura behind a
+100-line ASGI app). **The plugin fetches the page itself and posts only the HTML** — the service
+never receives a URL to fetch, so the decision to open a model-supplied address stays inside the
+guard. Any failure (down, slow, empty answer) falls back to the built-in `htmlToText` silently.
+
+Why bother: on `docs.sglang.ai` the built-in stripper yields 2 210 characters that begin with the
+nav menu; trafilatura yields 17 866 characters of the actual article in 210 ms. On a GitHub repo page
+it is 561 characters of "You signed in with another tab" versus 1 542 characters of the README
+(measured 2026-09-03). The service also reports a date, which is deliberately dropped: htmldate falls
+back to a last-modified or crawl date, and a confident wrong date in front of the model is worse than
+none.
+
 ## Sources
 
 Serper · SerpApi · Tavily · Brave · SearXNG (self-hosted) · DeepSeek official. Keys are credential
@@ -100,10 +135,3 @@ message simply does not trigger a search, and the pattern is named once in the d
 (`the trigger regex took too long and was abandoned`). Catastrophic backtracking therefore costs one
 killed worker instead of a frozen harness — but a legitimately heavy pattern on a loaded machine can
 be dropped too. Keep trigger patterns simple.
-
-
-## Tests
-
-`node --test .local/tests/dsh-web-search-plus/*.mjs` — 53 maintainer cases: the four modes, provider-native
-incl. the per-agent flag, conflict retry and cache invalidation, and the page reader (mount, guard,
-address pinning, switch, disposal).

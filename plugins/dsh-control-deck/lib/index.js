@@ -19,7 +19,7 @@
  *    message at agent/pre-step (the user's words are never rewritten and the
  *    row renders as context, not as a user bubble);
  *  - user_input regex scripts rewrite only the user-typed messages of the step;
- *  - the lorebook scan reads user / assistant turns from the session log (plugin
+ *  - the lorebook scan reads current surface user / assistant turns from the session log (plugin
  *    context rows and earlier injections are not scanned, so an injection never
  *    re-triggers itself).
  *
@@ -29,17 +29,18 @@
  * are kept in memory per agent id. The browser half (client.js) applies
  * display-only (ai_output) regex rules served at GET /dsh-control-deck/display-regex.json.
  */
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { readFileSync, watchFile, unwatchFile } from 'node:fs'
-import { homedir } from 'node:os'
 import { join, basename } from 'node:path'
 import { normalizeDeck, compileRules, brokenRules, expandMacros, neutralizeBraces, displayRules, requiredHistoryDepth } from './deck.js'
 import { createDeckRunner } from './deck-runner.js'
+import { visibleConversationHistory } from './history.js'
 
 export const name = 'control-deck'
 // webServer is NOT required: a headless profile has none, and the deck's prompts/tools still apply there.
 export const inject = ['systemPrompt', 'tools']
 
-const DECK_FILE = join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'control-deck.json')
+const DECK_FILE = join(resolveDshHome(), 'control-deck.json')
 
 /** @param {import('@deepseek-ai/cordis').Context} ctx */
 export function apply(ctx) {
@@ -121,12 +122,20 @@ export function apply(ctx) {
    * also the core's own variables, so they are read from the request header the agent recorded when
    * there is one and from its options otherwise.
    */
-  const macroVars = agent => {
-    const header = typeof agent?.session?.requestHeader === 'function' ? agent.session.requestHeader() : undefined
+  const assembledVars = new WeakMap()
+  ctx.on('system-prompt/assemble', async (_assembly, context, next) => {
+    const result = await next()
+    if (context?.agent) assembledVars.set(context.agent, { signal: context.signal, variables: { ...result.variables } })
+    return result
+  }, { prepend: true })
+  const macroVars = (agent, signal) => {
+    const header = typeof agent?.session?.requestHeader === 'function' ? agent.session.requestHeader()?.config : undefined
+    const captured = agent && assembledVars.get(agent)
+    const current = captured && captured.signal === signal ? captured.variables : undefined
     const cwd = agent?.session?.header?.cwd
     return {
-      provider: header?.provider ?? agent?.options?.provider ?? '',
-      model: header?.model ?? agent?.options?.model ?? '',
+      provider: current?.provider ?? header?.provider ?? agent?.options?.provider ?? '',
+      model: current?.model ?? header?.model ?? agent?.options?.model ?? '',
       cwd: typeof cwd === 'string' ? cwd : '',
       workspace: typeof cwd === 'string' ? basename(cwd) : '',
     }
@@ -163,7 +172,10 @@ export function apply(ctx) {
       const text = context => {
         const agent = context?.agent
         if (!deck.settings.macros) return neutralizeBraces(p.text) // macros off: only the core's own {{provider}} / {{model}} / {{cwd}} stay live
-        return neutralizeBraces(expandMacros(p.text, agent ? macroVars(agent) : {}), [])
+        // The model picker finalizes these variables after section providers run.
+        // Keep them for the core's final interpolation, including on the first request.
+        const vars = { ...(agent ? macroVars(agent) : {}), provider: '{{provider}}', model: '{{model}}', cwd: '{{cwd}}' }
+        return neutralizeBraces(expandMacros(p.text, vars))
       }
       try {
         promptDisposers.push(ctx.systemPrompt.section({ name: 'control-deck:' + p.name, order: p.order, text }))
@@ -196,7 +208,7 @@ export function apply(ctx) {
     const decision = await next()
     if (decision.kind !== 'enter') return decision
     let messages = decision.messages
-    const vars = macroVars(payload.agent)
+    const vars = macroVars(payload.agent, payload.signal)
     const mac = t => (deck.settings.macros ? expandMacros(t, vars) : t)
 
     // user_input regex scripts: only the user's own messages of this step (never context snapshots / tool results).
@@ -238,17 +250,8 @@ export function apply(ctx) {
       // (earlier injections, snapshots) are skipped so an injection can never re-trigger itself.
       const current = messages.filter(isUserTyped).map(m => textOf(m.content)).join('\n')
       const needed = requiredHistoryDepth(deck)
-      const history = []
       const events = payload.agent?.session?.events ?? []
-      for (let i = events.length - 1; i >= 0 && history.length < needed; i--) {
-        const ev = events[i]
-        if (ev?.type !== 'user/message' && ev?.type !== 'assistant/message') continue
-        const data = ev.data?.message ?? ev.data
-        if (ev.type === 'user/message' && data?.source !== undefined && data.source?.kind !== 'user') continue
-        const text = textOf(data?.content)
-        if (text.length === 0) continue
-        history.unshift(deck.settings.includeNames ? `${ev.type === 'user/message' ? 'User' : 'Assistant'}: ${text}` : text)
-      }
+      const history = visibleConversationHistory(events, needed, deck.settings.includeNames)
       // The whole scan runs in the worker: a key is matched against the constant entries and the
       // recursion buffer too, which is text no measurement of the message could have covered.
       // Parked like a rule: the scan is one job, so a key that overruns would otherwise cost a

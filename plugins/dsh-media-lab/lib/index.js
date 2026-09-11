@@ -12,9 +12,9 @@
  * the browser half swaps the marker for a real <img>/<video>/<audio> element pointing at
  * `/dsh-media-lab/file/<id>`.
  */
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, watchFile, unwatchFile, writeFileSync, createReadStream } from 'node:fs'
 import { pipeline } from 'node:stream'
-import { homedir } from 'node:os'
 import { extname, join, isAbsolute, resolve as resolvePath } from 'node:path'
 import { randomBytes } from 'node:crypto'
 import { defineTool } from '@deepseek-ai/dsh-tools'
@@ -25,7 +25,7 @@ import { scoutModels } from './model-scout.js'
 export const name = 'media-lab'
 export const inject = ['tools', 'systemPrompt', 'webServer']
 
-const DSH_HOME = process.env.DSH_HOME ?? join(homedir(), '.dsh')
+const DSH_HOME = resolveDshHome()
 const CONFIG_FILE = join(DSH_HOME, 'media-lab.json')
 const MEDIA_DIR = join(DSH_HOME, 'media')
 const MAX_BODY = 256 * 1024

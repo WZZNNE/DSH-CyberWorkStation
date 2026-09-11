@@ -19,9 +19,6 @@
 
 启动器「自检」按 patch 文件识别它。
 
-## 测试
-
-`node --test .local/tests/dsh-lan-fence/*.mjs` — 授信列表剥离用例(loopback 保留、LAN 字面量移除、显式 trustedHosts 不动)。
 
 ---
 

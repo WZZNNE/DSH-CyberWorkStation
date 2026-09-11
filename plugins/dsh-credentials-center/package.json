@@ -27,7 +27,8 @@
     }
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-credentials": "*"
+    "@deepseek-ai/dsh-credentials": "*",
+    "@deepseek-ai/dsh-home-paths": "*"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-credentials": {

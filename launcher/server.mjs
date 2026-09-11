@@ -19,6 +19,11 @@ import path from 'node:path'
 import os from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { ensurePeerLinks } from './peer-links.mjs'
+import { serverPorts } from './runtime-config.mjs'
+import { normalizeDshHome } from './home-paths.mjs'
+import { assertPluginRemovable, readProfilePatchStatus } from './profile-patches.mjs'
+import { listeningPids, isDshWebProcess, sameProcess } from './process-identity.mjs'
+import { mergeWebSearchPatch } from './websearch-patch.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const SUITE = path.join(ROOT, '..')
@@ -26,13 +31,12 @@ const SUITE = path.join(ROOT, '..')
 const REPO = process.env.DSH_REPO
   ?? [path.join(SUITE, 'core'), path.join(SUITE, 'deepseek-harness')].find(p => fs.existsSync(path.join(p, 'package.json')))
   ?? path.join(SUITE, 'core')
-const DSH_HOME = process.env.DSH_HOME ?? path.join(os.homedir(), '.dsh')
+const DSH_HOME = normalizeDshHome()
 const PLUGINS_DIR = process.env.DSH_SUITE_PLUGINS ?? path.join(SUITE, 'plugins')
 const PROFILE = path.join(DSH_HOME, 'profiles/web')
 const LEDGER = process.env.DSH_LAUNCHER_LEDGER ?? path.join(DSH_HOME, 'storages/cost-meter/ledger.json')
 const FRONTEND_SKIN_TARGET = path.join(DSH_HOME, 'frontend-skin.css')
-const PORT = Number(process.env.DSH_LAUNCHER_PORT ?? 3090)
-const DSH_PORT = Number(process.env.DSH_WEB_PORT ?? 3080)
+const { launcher: PORT, dsh: DSH_PORT } = serverPorts()
 const DSH_URL = `http://127.0.0.1:${DSH_PORT}`
 // Built CLI entry: launching it under plain Node boots dsh in ~1.5 s; the
 // source launch through corepack + pnpm + tsx takes ~20 s on the same machine.
@@ -120,36 +124,34 @@ function dshCommand(args) {
  * source launch whenever bare pnpm is missing. Checked once per process.
  */
 let pnpmOnPath = null
-async function runDsh(args, opts = {}) {
+async function resolveDshCommand(args) {
   let c = dshCommand(args)
   if (args[0] === 'plugin' && c.mode === 'built') {
     if (pnpmOnPath === null) pnpmOnPath = (await run('cmd.exe', ['/c', 'where', 'pnpm'])).ok
     if (!pnpmOnPath) c = { cmd: 'cmd.exe', args: ['/c', 'corepack', 'pnpm', 'dsh', ...args], mode: 'source' }
   }
+  return c
+}
+async function runDsh(args, opts = {}) {
+  const c = await resolveDshCommand(args)
   return run(c.cmd, c.args, { cwd: REPO, ...opts })
 }
 
 /** PID listening on the dsh web port (Windows netstat). */
-async function dshPid() {
+async function dshPids() {
   const r = await run('netstat', ['-ano'])
-  if (!r.ok) return null
-  for (const line of r.stdout.split('\n')) {
-    if (line.includes(`:${DSH_PORT}`) && /LISTENING/.test(line)) {
-      const pid = Number(line.trim().split(/\s+/).pop())
-      if (Number.isFinite(pid) && pid > 0) return pid
-    }
-  }
-  return null
+  if (!r.ok) throw new Error('Cannot inspect listening processes (netstat failed)')
+  return listeningPids(r.stdout, DSH_PORT)
 }
 
 /** One CIM query → pid → { ppid, name } for every process (walking parent chains is then local). */
 async function processTable() {
-  const r = await run('powershell', ['-NoProfile', '-Command', 'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name | ConvertTo-Json -Compress'])
+  const r = await run('powershell', ['-NoProfile', '-Command', 'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine,CreationDate | ConvertTo-Json -Compress'])
   const table = new Map()
   try {
     const rows = JSON.parse(r.stdout)
     for (const p of Array.isArray(rows) ? rows : [rows]) {
-      table.set(Number(p.ProcessId), { ppid: Number(p.ParentProcessId), name: String(p.Name ?? '').toLowerCase().replace(/\.exe$/, '') })
+      table.set(Number(p.ProcessId), { ppid: Number(p.ParentProcessId), name: String(p.Name ?? '').toLowerCase().replace(/\.exe$/, ''), commandLine: String(p.CommandLine ?? ''), created: p.CreationDate ? String(p.CreationDate) : '' })
     }
   } catch { /* an unreadable table just disables console reaping */ }
   return table
@@ -183,57 +185,85 @@ async function dirSize(p) {
 }
 
 // ── dsh process management ──────────────────────────────────────────────────
-let dshChild = null
+let dshState = null
+let dshActionBusy = false
+async function withDshAction(lang, action) {
+  if (dshActionBusy) return { ok: false, message: pick(lang, 'dsh 启动/停止正在处理中，请稍候', 'A dsh start/stop operation is in progress; please wait') }
+  dshActionBusy = true
+  try { return await action() } catch (error) {
+    log('ERROR', 'dsh process operation failed', { error: String(error.message ?? error) })
+    return { ok: false, message: String(error.message ?? error) }
+  } finally { dshActionBusy = false }
+}
 async function startDsh(lang) {
+  return withDshAction(lang, async () => {
   if (await checkPort(DSH_PORT)) return { ok: false, message: pick(lang, `dsh 已在运行(端口 ${DSH_PORT})`, `dsh is already running (port ${DSH_PORT})`) }
+  if (dshState?.pending) return { ok: false, message: pick(lang, '先前启动的进程仍在准备；请等待或先停止它', 'The previous process is still starting; wait or stop it before retrying') }
   const links = ensurePeerLinks({ repo: REPO, pluginsDir: PLUGINS_DIR })
   if (links.linked.length > 0 || links.failed.length > 0) log(links.failed.length > 0 ? 'ERROR' : 'INFO', 'plugin peer links', links)
   const out = fs.openSync(DSH_LOG, 'a')
-  fs.writeSync(out, `\n===== launcher start ${new Date().toISOString()} =====\n`)
-  const c = dshCommand(['web', '--no-open'])
-  // detached + unref: the launcher never waits on dsh; the port check below owns readiness.
-  dshChild = spawn(c.cmd, c.args, { cwd: REPO, windowsHide: true, stdio: ['ignore', out, out], detached: true })
-  dshChild.unref()
-  log('INFO', 'dsh start requested', { spawnPid: dshChild.pid, mode: c.mode })
+  const c = dshCommand(['web', '--no-open', '--port', String(DSH_PORT)])
+  let state
+  try {
+    fs.writeSync(out, `\n===== launcher start ${new Date().toISOString()} =====\n`)
+    const child = spawn(c.cmd, c.args, { cwd: REPO, windowsHide: true, stdio: ['ignore', out, out], detached: true })
+    state = { child, mode: c.mode, pending: true, error: null, identity: null }
+    dshState = state
+    const clear = () => { state.pending = false; if (dshState === state) dshState = null }
+    child.on('error', error => { state.error = error; clear() })
+    child.on('exit', clear)
+    child.unref()
+  } finally { fs.closeSync(out) }
+  log('INFO', 'dsh start requested', { spawnPid: state.child.pid, mode: c.mode })
+  state.identity = (await processTable()).get(state.child.pid) ?? null
   const started = Date.now()
   for (let i = 0; i < 120; i++) {
+    if (state.error) return { ok: false, message: pick(lang, '启动失败：', 'Failed to start: ') + state.error.message }
+    if (state.child.exitCode !== null || state.child.signalCode) break
     await new Promise(r => setTimeout(r, 500))
     if (await checkPort(DSH_PORT)) {
+      state.pending = false
       const secs = ((Date.now() - started) / 1000).toFixed(1)
       log('INFO', 'dsh is up', { seconds: secs, mode: c.mode })
       return { ok: true, message: pick(lang, `dsh 已启动(${secs}s):${DSH_URL}`, `dsh is up (${secs}s): ${DSH_URL}`) }
     }
-    if (dshChild.exitCode !== null) break
   }
-  log('ERROR', 'dsh did not come up within 60s', { exitCode: dshChild.exitCode, mode: c.mode })
-  return { ok: false, message: pick(lang, '60 秒内未监听 3080,请查看 dsh 输出日志', 'dsh did not listen on 3080 within 60 s — check the dsh output log') }
+  log('ERROR', 'dsh did not become ready', { exitCode: state.child.exitCode, mode: c.mode, port: DSH_PORT })
+  return { ok: false, message: pick(lang, `60 秒内未监听 ${DSH_PORT},请查看 dsh 输出日志`, `dsh did not listen on ${DSH_PORT} within 60 s — check the dsh output log`) }
+  })
 }
 async function stopDsh(lang) {
-  const pid = await dshPid()
-  if (pid === null) return { ok: false, message: pick(lang, 'dsh 未在运行', 'dsh is not running') }
+  return withDshAction(lang, async () => {
+  const pids = await dshPids()
   const table = await processTable()
-  const parentOf = p => { const e = table.get(p); return e !== undefined && Number.isFinite(e.ppid) && e.ppid > 4 ? e.ppid : null }
-  // Never kill the launcher itself or anything above it (the EXE shell, the user's terminal).
-  const protectedPids = new Set([process.pid])
-  for (let cur = process.pid, i = 0; i < 6; i++) { const pp = parentOf(cur); if (pp === null) break; protectedPids.add(pp); cur = pp }
-  // Reap the console hosts wrapping a manually started dsh (cmd/conhost/node, at most 3 levels up).
-  const parents = []
-  let cur = pid
-  for (let i = 0; i < 3; i++) {
-    const ppid = parentOf(cur)
-    if (ppid === null || protectedPids.has(ppid)) break
-    const pname = table.get(ppid)?.name ?? ''
-    if (pname === 'cmd' || pname === 'conhost' || pname === 'node') { parents.push(ppid); cur = ppid } else break
+  const state = dshState
+  const owned = state && state.child.exitCode === null && !state.child.signalCode
+    && sameProcess(state.identity, table.get(state.child.pid)) ? state.child.pid : null
+  const identity = { repo: REPO, ownedSourcePid: state?.mode === 'source' ? owned : null }
+  const refused = () => ({ ok: false, message: pick(lang,
+    '无法确认端口进程属于此 dsh，未结束任何进程。手动以相对路径启动的源码进程在启动器重启后无法确认，请在其原终端停止。',
+    'Cannot verify this port belongs to this dsh; no process was stopped. A manually launched relative source path cannot be verified after launcher restart; stop it in its original terminal.') })
+  if (pids.length === 0) {
+    if (!state?.pending) return { ok: false, message: pick(lang, 'dsh 未在运行', 'dsh is not running') }
+    if (!owned) return refused()
+    pids.push(owned)
+  } else if (pids.some(pid => pid === process.pid || !isDshWebProcess(pid, table, identity))) return refused()
+  const fresh = await processTable()
+  if (pids.some(pid => !sameProcess(table.get(pid), fresh.get(pid)))) return refused()
+  const results = []
+  for (const pid of pids) {
+    results.push(await run('taskkill', ['/PID', String(pid), '/T', '/F']))
   }
-  const r = await run('taskkill', ['/PID', String(pid), '/T', '/F'])
-  for (const pp of parents) await run('taskkill', ['/PID', String(pp), '/T', '/F'])
-  log(r.ok ? 'INFO' : 'ERROR', 'dsh stop', { pid, parents, ok: r.ok })
+  const ok = results.every(result => result.ok)
+  if (ok && state === dshState) dshState = null
+  log(ok ? 'INFO' : 'ERROR', 'dsh stop', { pids, ok })
   return {
-    ok: r.ok,
-    message: r.ok
-      ? pick(lang, `已退出(PID ${pid}${parents.length ? ' + 控制台' : ''})`, `Stopped (PID ${pid}${parents.length ? ' + console' : ''})`)
-      : pick(lang, `taskkill 失败:${r.stderr || r.stdout}`, `taskkill failed: ${r.stderr || r.stdout}`),
+    ok,
+    message: ok
+      ? pick(lang, `已退出(PID ${pids.join(', ')})`, `Stopped (PID ${pids.join(', ')})`)
+      : pick(lang, '结束进程失败，请查看日志', 'Failed to stop the process; check the logs'),
   }
+  })
 }
 
 // ── Background update jobs (core / plugins) ─────────────────────────────────
@@ -260,21 +290,24 @@ function startUpdate(kind, lang, opts = {}) {
     ? [{ cmd: 'git', args: ['-C', gitRoot, 'pull', '--ff-only'], cwd: gitRoot }, ...build]
     : kind === 'core-tag'
       ? [{ cmd: process.execPath, args: [path.join(ROOT, 'vendor-core.mjs'), String(opts.tag)], cwd: ROOT, env: { ...process.env, DSH_REPO: REPO } }, ...build]
-      : [{ cmd: 'cmd.exe', args: ['/c', 'corepack', 'pnpm', 'update'], cwd: PROFILE }]
-  log('INFO', `update ${kind} started`, { steps: steps.map(s => [s.cmd, ...s.args].join(' ')) })
+      : [{ resolve: () => resolveDshCommand(['plugin', '--profile', 'web', 'update']), label: 'dsh plugin --profile web update', cwd: REPO }]
+  log('INFO', `update ${kind} started`, { steps: steps.map(s => s.label ?? [s.cmd, ...s.args].join(' ')) })
   const append = c => { job.log += String(c); if (job.log.length > 400000) job.log = job.log.slice(-200000) }
   // Watchdog: a hung step (a prompt waiting for input, a stuck download) is
   // killed after 30 minutes so the job can never stay "running" forever.
   const STEP_TIMEOUT_MS = 30 * 60 * 1000
-  const runStep = step => new Promise(resolve => {
-    append(`\n$ ${[step.cmd, ...step.args].join(' ')}\n`)
-    const child = spawn(step.cmd, step.args, { cwd: step.cwd, windowsHide: true, ...(step.env ? { env: step.env } : {}) })
+  const runStep = async step => {
+    const command = step.resolve ? await step.resolve() : step
+    return new Promise(resolve => {
+    append(`\n$ ${[command.cmd, ...command.args].join(' ')}\n`)
+    const child = spawn(command.cmd, command.args, { cwd: step.cwd, windowsHide: true, ...(step.env ? { env: step.env } : {}) })
     const timer = setTimeout(() => { append(`\n[launcher] step timed out after ${STEP_TIMEOUT_MS / 60000} min — killed\n`); run('taskkill', ['/PID', String(child.pid), '/T', '/F']) }, STEP_TIMEOUT_MS)
     child.stdout.on('data', append)
     child.stderr.on('data', append)
     child.on('error', error => { clearTimeout(timer); append(String(error) + '\n'); resolve(1) })
     child.on('close', code => { clearTimeout(timer); resolve(code ?? 1) })
-  })
+    })
+  }
   ;(async () => {
     let code = 0
     for (const step of steps) { code = await runStep(step); if (code !== 0) break }
@@ -692,8 +725,7 @@ async function selfCheck() {
   const bundles = profile?.dsh?.profile?.bundles ?? []
   // Plugins without a bundle patch (dsh-credentials-keyring, dsh-lan-fence) are layers of the
   // profile's own cordis.patch.yml; their names appear there as `name: '<pkg>'` insert entries.
-  let patched = []
-  try { patched = [...fs.readFileSync(path.join(PROFILE, 'cordis.patch.yml'), 'utf8').matchAll(/^\s*name:\s*['"]?([^'"\s]+)['"]?\s*$/gm)].map(m => m[1]) } catch { /* no patch file yet */ }
+  const { names: patched, error: patchError } = readProfilePatchStatus({ profile: PROFILE, repo: REPO })
   const present = new Set([...bundles, ...patched])
   // The roster is the plugins directory itself. When it cannot be read there is nothing to compare
   // against, and a stale hand-written list would report the wrong thing: say the roster is unknown.
@@ -705,7 +737,7 @@ async function selfCheck() {
     core: { path: REPO, version: coreVersion, builtCli: exists(BUILT_CLI), launchMode: dshCommand([]).mode, gitRoot: exists(path.join(REPO, '.git')) ? REPO : SUITE },
     pnpmOnPath: pnpm,
     peerLinks: links,
-    profile: { path: PROFILE, bundles, patched, missing: expected === null ? [] : expected.filter(n => !present.has(n)), rosterReadable: expected !== null, outdated: communityBelowFloor() },
+    profile: { path: PROFILE, bundles, patched, patchError, missing: expected === null || patchError ? [] : expected.filter(n => !present.has(n)), rosterReadable: expected !== null, outdated: communityBelowFloor() },
     ports: { launcher: PORT, dsh: DSH_PORT, dshRunning: await checkPort(DSH_PORT) },
     files: { deck: exists(DECK_FILE), webSearch: exists(WEBSEARCH_FILE), safeGuard: exists(SAFEGUARD_FILE), frontendSkin: exists(FRONTEND_SKIN_TARGET) },
   }
@@ -823,6 +855,12 @@ async function api(req, res, url) {
     const { op, spec } = await readBody(req)
     const safe = String(spec ?? '').trim()
     if (!['add', 'remove'].includes(op) || safe.length === 0 || /[&|;<>`"']/.test(safe)) return send(400, { ok: false, message: pick(lang, '非法参数', 'Invalid arguments') })
+    if (op === 'remove') {
+      if (!/^(?:@[a-z0-9._-]+\/)?[a-z0-9._-]+$/i.test(safe)) return send(400, { ok: false, message: pick(lang, '卸载时请只填写一个插件包名', 'Specify one package name to uninstall') })
+      try { assertPluginRemovable(safe, { profile: PROFILE, repo: REPO }) } catch (error) {
+        return send(409, { ok: false, message: error.message })
+      }
+    }
     log('INFO', 'plugin op', { op, spec: safe })
     const r = await runDsh(['plugin', '--profile', 'web', op, safe], { timeout: 300000 })
     log(r.ok ? 'INFO' : 'ERROR', 'plugin op done', { op, ok: r.ok })
@@ -1186,10 +1224,22 @@ async function api(req, res, url) {
   if (p === '/api/deck/status') return send(200, await dshJson('/dsh-control-deck/status'))
 
   // ── Web search (dsh-web-search-plus) ──
-  if (p === '/api/websearch') {
+  if (p === '/api/websearch' || (p === '/api/websearch/patch' && req.method === 'POST')) {
     const { ws } = await loadDeckModules()
     if (req.method === 'POST') {
-      const body = await readBody(req)
+      let body = await readBody(req)
+      if (p === '/api/websearch/patch') {
+        let current = {}
+        try {
+          current = JSON.parse(fs.readFileSync(WEBSEARCH_FILE, 'utf8'))
+          if (!current || typeof current !== 'object' || Array.isArray(current)) throw new Error('web-search.json must contain an object')
+        } catch (error) {
+          if (error.code !== 'ENOENT') return send(400, { ok: false, message: pick(lang, '现有联网搜索配置无效，未覆盖：', 'Existing web search configuration is invalid; nothing changed: ') + error.message })
+        }
+        try { body = mergeWebSearchPatch(current, body) } catch (error) {
+          return send(400, { ok: false, message: error.message })
+        }
+      }
       const problems = typeof ws.validateConfig === 'function' ? ws.validateConfig(body) : []
       if (problems.length > 0) return send(400, { ok: false, message: pick(lang, '配置有误:', 'Invalid config: ') + problems.join('; ') })
       const cfg = ws.normalizeConfig(body)
@@ -1461,5 +1511,5 @@ server.listen(PORT, '127.0.0.1', () => {
   writeTokenFile()
   // The fragment is never sent to a server: this is the URL to open, and the only place the token
   // is handed out. `start-launcher.cmd` and the .exe read the token file and open exactly this.
-  log('INFO', `DSH Launcher listening on http://127.0.0.1:${PORT}/?t=${API_TOKEN}`, { repo: REPO, launchMode: dshCommand([]).mode, token: TOKEN_FILE })
+  log('INFO', `DSH Launcher listening on http://127.0.0.1:${PORT}/`, { repo: REPO, launchMode: dshCommand([]).mode, tokenFile: TOKEN_FILE })
 })

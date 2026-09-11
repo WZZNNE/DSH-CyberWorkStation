@@ -10,37 +10,66 @@ window.__ModuleLoader__.load({
     var exports = module.exports
     Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
 
-    let priceMap = {}
-    let names = []
+    function apply(ctx) {
+      let priceMap = {}
+      let active = true
+      let loading = false
+      const owned = new Map()
+      const changedElsewhere = new WeakSet()
+      const controller = new AbortController()
 
-    function annotate(root) {
-      if (names.length === 0) return
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
-      let n
-      while ((n = walker.nextNode())) {
-        const t = n.textContent.trim()
-        if (t.length < 3 || t.length > 60) continue
-        if (priceMap[t] === undefined) continue
-        const host = n.parentElement?.closest('[role="option"], li, [class*="item"], [class*="Item"], [class*="option"]') ?? n.parentElement
-        if (host && host.title !== priceMap[t]) host.title = priceMap[t]
+      function restore(host, state) {
+        if (host.title === state.written) {
+          if (state.original === null) host.removeAttribute('title')
+          else host.setAttribute('title', state.original)
+        } else changedElsewhere.add(host)
+        owned.delete(host)
       }
-    }
 
-    function apply() {
-      fetch('/dsh-price-hint/prices.json', { cache: 'no-store' })
-        .then(r => (r.ok ? r.json() : {}))
-        .then(map => {
-          priceMap = map ?? {}
-          names = Object.keys(priceMap)
-          annotate(document.body)
-          const mo = new MutationObserver(muts => {
-            for (const m of muts) for (const node of m.addedNodes) {
-              if (node.nodeType === 1) annotate(node)
-            }
-          })
-          mo.observe(document.body, { childList: true, subtree: true })
-        })
-        .catch(() => { /* no price data = no annotations */ })
+      function annotate() {
+        for (const [host, state] of owned) restore(host, state)
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+        let node
+        while ((node = walker.nextNode())) {
+          const label = node.textContent.trim()
+          if (!Object.hasOwn(priceMap, label) || typeof priceMap[label] !== 'string') continue
+          // Actual core ModelSelect uses menuitemradio. Do not annotate arbitrary
+          // body text or class-name matches elsewhere in the application.
+          const host = node.parentElement?.closest('[role="menuitemradio"], [role="option"]')
+          if (!host || owned.has(host) || changedElsewhere.has(host)) continue
+          // Model descriptions also contain text. The native title is the model's
+          // actual display name; matching it avoids treating a description as a name.
+          if (host.getAttribute('title')?.trim() !== label) continue
+          owned.set(host, { original: host.getAttribute('title'), written: priceMap[label] })
+          host.title = priceMap[label]
+        }
+      }
+
+      async function refresh() {
+        if (!active || loading) return
+        loading = true
+        try {
+          const response = await fetch('/dsh-price-hint/prices.json', { cache: 'no-store', signal: controller.signal })
+          const map = response.ok ? await response.json() : {}
+          if (!active) return
+          priceMap = map && typeof map === 'object' && !Array.isArray(map) ? map : {}
+          annotate()
+        } catch {
+          if (active) { priceMap = {}; annotate() }
+        } finally { loading = false }
+      }
+
+      const observer = new MutationObserver(() => { if (active) annotate() })
+      observer.observe(document.body, { childList: true, characterData: true, subtree: true })
+      const timer = setInterval(() => { void refresh() }, 30000)
+      void refresh()
+      ctx.effect(() => () => {
+        active = false
+        controller.abort()
+        clearInterval(timer)
+        observer.disconnect()
+        for (const [host, state] of owned) restore(host, state)
+      }, 'dsh-price-hint: title lifecycle')
     }
 
     exports.apply = apply

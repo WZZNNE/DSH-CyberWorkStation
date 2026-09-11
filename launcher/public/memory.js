@@ -142,8 +142,10 @@ $('#mem-detail')?.addEventListener('click', async e => {
 let memItemsTimer = 0
 let memItemsSeq = 0
 function memItemCard(i) {
+  const withdrawn = Number.isSafeInteger(i.meta?.staleAfterEdit) && ['extract', 'compaction'].includes(i.source)
+  const notice = withdrawn ? '来源对话已修改：此记忆已停用，保存文本可确认重新使用。 / Source edited: recall disabled; save text to confirm.' : i.sourceUnchecked ? '来源暂时无法核验：已暂停召回。 / Source unavailable: recall withheld.' : ''
   const meta = [i.kind, i.scope === 'global' ? T('mem_scope_global') : (T('mem_scope_workspace') + (i.cwd ? ' ' + memShortCwd(i.cwd) : '')), i.source, memFmtTime(i.createdAt), i.sessionId ? i.sessionId.slice(0, 16) + '…' : ''].filter(Boolean).map(esc).join(' · ')
-  return '<div class="card mem-item" data-id="' + esc(i.id) + '"><div class="mem-item-text">' + esc(i.text) + '</div>' +
+  return '<div class="card mem-item" data-id="' + esc(i.id) + '">' + (notice ? '<div class="tag">' + esc(notice) + '</div>' : '') + '<div class="mem-item-text">' + esc(i.text) + '</div>' +
     '<div class="row gap wrap" style="margin:6px 0 0"><span class="dim">' + (i.pinned ? '<span class="tag ok">' + T('mem_pinned') + '</span>' : '') + meta + (i.score !== undefined ? ' · score ' + i.score : '') + '</span><span class="spacer"></span>' +
     '<button class="btn mini mem-pin">' + (i.pinned ? T('mem_unpin') : T('mem_pin')) + '</button><button class="btn mini mem-scope" data-to="' + (i.scope === 'global' ? 'workspace' : 'global') + '" data-cwd="' + esc(i.cwd ?? '') + '">' + (i.scope === 'global' ? T('mem_make_workspace') : T('mem_make_global')) + '</button><button class="btn mini mem-edit">' + T('mem_edit') + '</button><button class="btn mini danger mem-del">' + T('mem_delete') + '</button></div></div>'
 }

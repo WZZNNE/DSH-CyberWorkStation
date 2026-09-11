@@ -20,6 +20,7 @@ window.__ModuleLoader__.load({
 
     const React = require('react')
     const h = React.createElement
+    const EMPTY_NODES = Object.freeze([])
 
     // ── i18n ──
     const ZH = {
@@ -81,167 +82,100 @@ window.__ModuleLoader__.load({
       try { return await r.json() } catch { return { ok: false, message: 'HTTP ' + r.status } }
     }
 
-    // ── display overrides applied to the rendered chat ──
-    // `originals` remembers what a text node said before a rewrite touched it — and only then, so
-    // nodes this plugin never edited are never written back to. `swapped` marks the nodes whose
-    // current content is ours, which is what makes clearing an override actually restore the text.
-    const originals = (window.__dshChatEditorOriginals ??= new WeakMap())
-    const swapped = (window.__dshChatEditorSwapped ??= new WeakSet())
-    // What we last wrote into a swapped node: the restore only fires while the node still says it,
-    // so a node the shell recycled into another conversation is left alone.
-    const written = (window.__dshChatEditorWritten ??= new WeakMap())
-    const hiddenMarks = (window.__dshChatEditorHidden ??= new WeakSet())
-    const collapseMarks = (window.__dshChatEditorCollapsed ??= new WeakSet())
-    const rowBound = (window.__dshChatEditorBound ??= new WeakSet())
-    // Which folded messages the reader clicked open, keyed by the override's original text — not by
-    // the DOM node, which the shell recycles across sessions. Pruned in refreshOverrides when the
-    // override goes away, so un-collapsing and re-collapsing from the panel folds again.
-    const expandedKeys = (window.__dshChatEditorExpanded ??= new Set())
-
-    function overrideFor(text) {
-      const raw = String(text ?? '')
-      const trimmed = raw.trim()
-      for (const o of store.overrides) {
-        if (o.original === raw || String(o.original).trim() === trimmed) return o
-      }
+    // Exact row identity comes from the core's live chat-node projection, never rendered text.
+    const expandedKeys = new Set()
+    const rowIndex = new Map()
+    let overrideGeneration = 0
+    let domDisposed = false
+    let scheduled = null
+    const rowKey = seq => store.sessionId + ':' + seq
+    function messageSeq(node) {
+      const d = node?.data
+      if (['user', 'steering', 'context', 'compaction'].includes(node?.kind)) return d?.seq
+      if (node?.kind === 'assistant-step') return d?.status === 'running' ? undefined : d?.finalNode?.seq
+      if (node?.kind === 'tool') return d?.root?.kind === 'tool-result' ? d.root.seq : undefined
+      if (node?.kind === 'manual-compaction') return d?.compaction?.seq
       return undefined
     }
-
-    const nodeOriginal = n => (originals.has(n) ? originals.get(n) : n.textContent)
-
-    const eq = (a, b) => a === b || String(a).trim() === String(b).trim()
-
-    /**
-     * The override a row carries, if any: one of its own text nodes must equal the override's
-     * original — the same whole-text rule the rewrite uses. `includes` on the row's textContent
-     * is what once let a deleted "好" fold half the transcript.
-     */
-    function rowOverride(row, want) {
-      const walker = document.createTreeWalker(row, NodeFilter.SHOW_TEXT)
-      let n
-      while ((n = walker.nextNode())) {
-        const original = nodeOriginal(n)
-        if (String(original).trim().length === 0) continue
-        for (const o of store.overrides) {
-          if (want(o) && eq(o.original, original)) return o
-        }
+    function setRows(nodes) {
+      rowIndex.clear()
+      for (const node of nodes ?? []) {
+        const seq = messageSeq(node)
+        if (Number.isSafeInteger(seq) && seq >= 0) rowIndex.set(node.key, seq)
       }
-      return undefined
+      schedule()
     }
-
-    /** Swap rewritten text nodes in, and swap them back out when the override is cleared. */
-    function applyText(root) {
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
-      let n
-      while ((n = walker.nextNode())) {
-        const parent = n.parentElement
-        if (!parent || parent.closest('textarea, input, [contenteditable="true"], .dsh-ce-panel')) continue
-        if (!parent.closest('[data-chat-flow-kind]')) continue
-        const original = nodeOriginal(n)
-        const hit = overrideFor(original)
-        if (hit && hit.hidden !== true && typeof hit.text === 'string' && hit.text.length > 0) {
-          if (!originals.has(n)) originals.set(n, original)
-          swapped.add(n)
-          written.set(n, hit.text)
-          if (n.textContent !== hit.text) n.textContent = hit.text
-        } else if (swapped.has(n) && n.textContent === written.get(n)) {
-          // Ours, and no longer overridden: put the original back. A node that was never ours is
-          // never touched — writing first-seen text onto it is what reverted streaming replies.
-          swapped.delete(n)
-          if (n.textContent !== original) n.textContent = original
+    function clearRow(row) {
+      for (const key of ['data-dsh-ce-edited', 'data-dsh-ce-hidden', 'data-dsh-ce-collapsed']) row.removeAttribute(key)
+      for (const layer of row.querySelectorAll(':scope > [data-dsh-ce-overlay]')) layer.remove()
+    }
+    function applyRows() {
+      const overrides = new Map(store.overrides.map(o => [o.seq, o]))
+      for (const row of document.querySelectorAll('[data-chat-flow-key]')) {
+        const seq = rowIndex.get(row.getAttribute('data-chat-flow-key'))
+        const hit = seq === undefined ? undefined : overrides.get(seq)
+        if (!hit) { clearRow(row); continue }
+        const flag = (key, enabled) => {
+          if (enabled) { if (!row.hasAttribute(key)) row.setAttribute(key, '') }
+          else row.removeAttribute(key)
         }
+        flag('data-dsh-ce-hidden', hit.hidden === true)
+        flag('data-dsh-ce-collapsed', hit.hidden !== true && hit.collapsed === true && !expandedKeys.has(rowKey(seq)))
+        const edited = hit.hidden !== true && typeof hit.text === 'string' && hit.text.length > 0
+        flag('data-dsh-ce-edited', edited)
+        let layer = row.querySelector(':scope > [data-dsh-ce-overlay]')
+        if (edited) {
+          if (!layer) { layer = document.createElement('div'); layer.setAttribute('data-dsh-ce-overlay', ''); row.appendChild(layer) }
+          if (layer.textContent !== hit.text) layer.textContent = hit.text
+        } else layer?.remove()
       }
     }
-
-    const foldRow = row => {
-      collapseMarks.add(row)
-      row.dataset.dshChatEditorCollapsed = '1'
-      row.style.maxHeight = '46px'
-      row.style.overflow = 'hidden'
-      row.style.cursor = 'zoom-in'
-    }
-    const unfoldRow = row => {
-      collapseMarks.delete(row)
-      delete row.dataset.dshChatEditorCollapsed
-      row.style.removeProperty('max-height')
-      row.style.removeProperty('overflow')
-      row.style.removeProperty('cursor')
-    }
-
-    /** Hide deleted rows, fold collapsed ones, and undo both when the override goes. */
-    function applyRows(root) {
-      // Streaming produces a mutation batch per chunk; with nothing hidden and nothing collapsed
-      // (the usual state) there is no reason to walk every row's text nodes on each one.
-      const any = store.overrides.some(o => o.hidden === true || o.collapsed === true)
-      const rows = root.querySelectorAll?.('[data-chat-flow-kind]') ?? []
-      if (!any) {
-        for (const row of rows) {
-          if (hiddenMarks.has(row)) { hiddenMarks.delete(row); delete row.dataset.dshChatEditorHidden; row.style.removeProperty('display') }
-          if (collapseMarks.has(row)) unfoldRow(row)
-        }
-        return
-      }
-      for (const row of rows) {
-        const hidden = rowOverride(row, o => o.hidden === true)
-        if (hidden) {
-          if (!hiddenMarks.has(row)) { hiddenMarks.add(row); row.dataset.dshChatEditorHidden = '1'; row.style.display = 'none' }
-        } else if (hiddenMarks.has(row)) {
-          hiddenMarks.delete(row); delete row.dataset.dshChatEditorHidden; row.style.removeProperty('display')
-        }
-
-        const folded = hidden ? undefined : rowOverride(row, o => o.collapsed === true)
-        if (folded && !expandedKeys.has(folded.original)) {
-          if (!collapseMarks.has(row)) foldRow(row)
-          if (!rowBound.has(row)) {
-            rowBound.add(row)
-            // One listener for the row's whole life; it only acts while the row is folded, so
-            // clicks in the expanded state (selecting text, pressing buttons) are untouched.
-            row.addEventListener('click', () => {
-              if (!collapseMarks.has(row)) return
-              const open = rowOverride(row, o => o.collapsed === true)
-              if (open) expandedKeys.add(open.original)
-              unfoldRow(row)
-            })
-          }
-        } else if (collapseMarks.has(row)) {
-          unfoldRow(row)
-        }
-      }
-    }
-
-    let pending = new Set()
-    let scheduled = false
-    function schedule(root) {
-      pending.add(root ?? document.body)
-      if (scheduled) return
-      scheduled = true
-      setTimeout(() => {
-        scheduled = false
-        const roots = pending; pending = new Set()
-        const targets = roots.has(document.body) ? [document.body] : [...roots].filter(r => r.isConnected)
-        for (const r of targets) { const el = r.nodeType === 1 ? r : document.body; applyText(r); applyRows(el) }
-      }, 16)
+    function schedule() {
+      if (domDisposed || scheduled !== null) return
+      scheduled = setTimeout(() => { scheduled = null; if (!domDisposed) applyRows() }, 16)
     }
     async function refreshOverrides() {
-      if (!store.sessionId) { store.set({ overrides: [] }); schedule(); return }
-      const d = await api('/overrides?sessionId=' + encodeURIComponent(store.sessionId))
-      store.set({ overrides: Array.isArray(d.overrides) ? d.overrides : [] })
-      // A key whose override is gone is pruned, so un-collapsing and later re-collapsing from the
-      // panel folds the message again instead of finding it pre-expanded forever.
-      const live = new Set(store.overrides.filter(o => o.collapsed === true).map(o => o.original))
-      for (const key of [...expandedKeys]) { if (!live.has(key)) expandedKeys.delete(key) }
+      const sessionId = store.sessionId
+      const generation = ++overrideGeneration
+      if (!sessionId) { store.set({ overrides: [] }); schedule(); return }
+      const d = await api('/overrides?sessionId=' + encodeURIComponent(sessionId))
+      if (domDisposed || generation !== overrideGeneration || store.sessionId !== sessionId) return
+      if (!d || d.ok === false || !Array.isArray(d.overrides)) throw new Error(d?.message || 'Cannot read message overrides')
+      store.set({ overrides: d.overrides })
+      const live = new Set(store.overrides.filter(o => o.collapsed === true).map(o => rowKey(o.seq)))
+      for (const key of expandedKeys) if (!live.has(key)) expandedKeys.delete(key)
       schedule()
     }
     function startDomHalf() {
-      if (window.__dshChatEditorDom) return
-      window.__dshChatEditorDom = true
-      const mo = new MutationObserver(muts => {
-        for (const m of muts) schedule(m.target.nodeType === 1 ? m.target : (m.target.parentElement ?? document.body))
-      })
-      mo.observe(document.body, { childList: true, subtree: true, characterData: true })
-      // any override change (a panel edit, a session switch, another tab) re-applies immediately
-      store.listeners.add(() => schedule())
-      setInterval(() => { if (store.open === false) refreshOverrides() }, 8000)
+      window.__dshChatEditorDispose?.()
+      domDisposed = false
+      const style = document.createElement('style')
+      style.textContent = '[data-dsh-ce-hidden]{display:none!important}'
+        + '[data-dsh-ce-edited]>:not([data-dsh-ce-overlay]){display:none!important}'
+        + '[data-dsh-ce-overlay]{white-space:pre-wrap;overflow-wrap:anywhere}'
+        + '[data-dsh-ce-collapsed]{max-height:46px!important;overflow:hidden!important;cursor:zoom-in}'
+      document.head.appendChild(style)
+      const mo = new MutationObserver(schedule)
+      mo.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['data-chat-flow-key'] })
+      const click = event => {
+        const row = event.target.closest?.('[data-dsh-ce-collapsed]')
+        if (!row) return
+        const seq = rowIndex.get(row.getAttribute('data-chat-flow-key'))
+        if (seq !== undefined) { expandedKeys.add(rowKey(seq)); row.removeAttribute('data-dsh-ce-collapsed') }
+      }
+      document.addEventListener('click', click)
+      store.listeners.add(schedule)
+      const timer = setInterval(() => { if (!store.open) refreshOverrides().catch(() => {}) }, 8000)
+      const dispose = () => {
+        domDisposed = true; overrideGeneration++
+        mo.disconnect(); clearTimeout(scheduled); scheduled = null; clearInterval(timer)
+        document.removeEventListener('click', click); store.listeners.delete(schedule)
+        for (const row of document.querySelectorAll('[data-chat-flow-key]')) clearRow(row)
+        rowIndex.clear(); expandedKeys.clear(); style.remove()
+        if (window.__dshChatEditorDispose === dispose) delete window.__dshChatEditorDispose
+      }
+      window.__dshChatEditorDispose = dispose
+      return dispose
     }
 
     // ── UI ──
@@ -263,8 +197,9 @@ window.__ModuleLoader__.load({
       const [draft, setDraft] = React.useState(m.text)
       React.useEffect(() => { setDraft(m.text) }, [m.text])
       const roleLabel = t('role_' + m.role)
-      const canContext = editable && m.onSurface && m.role !== 'tool' && m.role !== 'checkpoint'
-      const note = m.role === 'tool' ? t('tool_note') : m.role === 'checkpoint' ? t('cp_note') : ''
+      const canContext = editable && !m.contextDeleted && m.onSurface && m.role !== 'tool' && m.role !== 'checkpoint'
+      const hasDisplayRow = m.role !== 'tool' || [...rowIndex.values()].includes(m.seq)
+      const note = !hasDisplayRow ? (zh ? '此工具结果没有独立显示行，暂不支持显示修改。' : 'This tool result has no independent display row; display edits are unavailable.') : m.role === 'tool' ? t('tool_note') : m.role === 'checkpoint' ? t('cp_note') : ''
       const close = () => setMode(null)
       const body = mode === null
         ? h('div', { style: S.text }, m.override && m.override.hidden
@@ -275,31 +210,28 @@ window.__ModuleLoader__.load({
       const deleted = m.override !== undefined && m.override.hidden === true
       const actions = mode === null
         ? h('div', { style: S.actions },
-          editable ? h('button', { style: S.mini, onClick: () => setMode('edit') }, t('edit_msg')) : null,
+          editable && !m.contextDeleted && hasDisplayRow ? h('button', { style: S.mini, disabled: busy, onClick: () => setMode('edit') }, t('edit_msg')) : null,
           // No undo button: the model's copy is replaced by a record appended to the log, and
           // putting the message back on screen while the model still cannot see it is exactly the
           // split between "your view" and "its view" that this panel no longer has. The original is
           // in the log either way.
-          editable && !deleted ? h('button', {
+          editable && !deleted && hasDisplayRow ? h('button', {
             style: S.mini,
+            disabled: busy,
             onClick: () => {
               // The same honesty rule as edit: a tool result or an off-surface row only loses its
               // display half, and the dialog must not promise the model forgot it.
               if (!window.confirm(t(canContext ? 'confirm_del' : 'confirm_del_display'))) return
               return run(async () => {
-                // Both views or neither. The model half can refuse (a busy agent, a tool-call pair
-                // it must not split); pressing on to the display half would hide the message from
-                // the owner while the model still reads it — the exact split this panel removed.
-                if (canContext) {
-                  const first = await api('/context/delete', { sessionId, seq: m.seq })
-                  if (first && first.ok === false) return first
-                }
+                // Context changes have one authoritative log write; display is derived from it.
+                if (canContext) return api('/context/delete', { sessionId, seq: m.seq })
                 return api('/display', { sessionId, seq: m.seq, original: m.text, hidden: true })
               })
             },
           }, t('del_msg')) : null,
-          editable ? h('button', {
+          editable && hasDisplayRow ? h('button', {
             style: S.mini,
+            disabled: busy,
             onClick: () => run(() => api('/display', {
               sessionId, seq: m.seq, original: m.text,
               collapsed: !collapsed,
@@ -312,21 +244,13 @@ window.__ModuleLoader__.load({
         )
         : h('div', { style: S.actions },
           h('button', {
-            style: { ...S.mini, borderColor: 'var(--dsw-alias-brand-primary)', color: 'var(--dsw-alias-brand-primary)' },
+            style: { ...S.mini, border: '1px solid var(--dsw-alias-brand-primary)', color: 'var(--dsw-alias-brand-primary)' },
             disabled: busy,
             onClick: () => {
               if (mode === 'edit') {
                 if (!window.confirm(t(canContext ? 'confirm_ctx' : 'confirm_display_only'))) return
-                // One edit, both views. The model's copy is a replacement record appended to the
-                // log; the display override is what the page shows. Doing only one of them is what
-                // made "display only" and "model context" two settings nobody could tell apart.
                 return run(async () => {
-                  // Same rule as delete: if the model half refuses, stop — a display-only rewrite
-                  // that reports success is worse than an error message.
-                  if (canContext) {
-                    const first = await api('/context/edit', { sessionId, seq: m.seq, text: draft })
-                    if (first && first.ok === false) return first
-                  }
+                  if (canContext) return api('/context/edit', { sessionId, seq: m.seq, text: draft })
                   return api('/display', { sessionId, seq: m.seq, text: draft, original: m.text })
                 }, close)
               }
@@ -359,13 +283,23 @@ window.__ModuleLoader__.load({
       const [data, setData] = React.useState(null)
       const [busy, setBusy] = React.useState(false)
       const [note, setNote] = React.useState('')
+      const requestVersion = React.useRef(0)
+      const lifecycle = React.useRef(0)
+      const activeAction = React.useRef(false)
       const reload = React.useCallback(async () => {
+        const version = ++requestVersion.current
         setData(null)
         const d = await api('/messages?sessionId=' + encodeURIComponent(sessionId))
+        if (version !== requestVersion.current || sessionId !== store.sessionId) return
         setData(d)
         await refreshOverrides()
       }, [sessionId])
-      React.useEffect(() => { if (s.open) reload() }, [s.open, reload])
+      React.useEffect(() => {
+        const epoch = ++lifecycle.current
+        activeAction.current = false; setBusy(false); setNote('')
+        if (s.open) reload().catch(error => { if (lifecycle.current === epoch) setNote(t('failed') + String(error?.message ?? error)) })
+        return () => { requestVersion.current++; lifecycle.current++ }
+      }, [s.open, reload])
       React.useEffect(() => {
         if (!s.open || s.focusSeq === undefined || data === null) return
         const el = document.querySelector('.dsh-ce-panel [data-seq="' + s.focusSeq + '"]')
@@ -373,16 +307,21 @@ window.__ModuleLoader__.load({
       }, [s.open, s.focusSeq, data])
       if (!s.open) return null
       const run = async (fn, after) => {
+        if (activeAction.current) return
+        activeAction.current = true
+        const epoch = lifecycle.current
+        const current = () => epoch === lifecycle.current && sessionId === store.sessionId
         setBusy(true); setNote(t('busy'))
         try {
           const r = await fn()
+          if (!current()) return
           if (r && r.ok === false) setNote(t('failed') + (r.message ?? ''))
           else {
             setNote(r && r.sessionId && r.sessionId !== sessionId ? t('forked', { id: r.sessionId }) : t('done'))
             after?.()
             await reload()
           }
-        } catch (error) { setNote(t('failed') + String(error?.message ?? error)) } finally { setBusy(false) }
+        } catch (error) { if (current()) setNote(t('failed') + String(error?.message ?? error)) } finally { if (current()) { activeAction.current = false; setBusy(false) } }
       }
       const messages = data && Array.isArray(data.messages) ? data.messages : []
       return h('div', { style: S.overlay, onClick: e => { if (e.target === e.currentTarget) store.set({ open: false, focusSeq: undefined }) } },
@@ -391,7 +330,7 @@ window.__ModuleLoader__.load({
             h('b', null, t('title')),
             h('span', { style: S.meta }, data && data.editable === false ? t('readonly') : ''),
             h('span', { style: { flex: 1 } }),
-            h('button', { style: S.mini, onClick: reload, disabled: busy }, t('refresh')),
+            h('button', { style: S.mini, onClick: () => run(async () => ({ ok: true })), disabled: busy }, t('refresh')),
             h('button', { style: S.mini, onClick: () => store.set({ open: false, focusSeq: undefined }) }, t('close')),
           ),
           h('div', { style: { ...S.meta, marginBottom: '8px' } }, t('hint')),
@@ -406,9 +345,19 @@ window.__ModuleLoader__.load({
     /** Session-header entry: publishes the current session id and hosts the panel. */
     function HeaderEntry(props) {
       const sessionId = props.sessionId
+      const nodes = props.useSession(snapshot => snapshot.chat?.nodes?.values() ?? EMPTY_NODES)
       React.useEffect(() => {
-        if (sessionId && store.sessionId !== sessionId) { store.set({ sessionId, overrides: [] }); refreshOverrides() }
+        if (sessionId && store.sessionId !== sessionId) {
+          overrideGeneration++
+          rowIndex.clear(); expandedKeys.clear()
+          store.set({ sessionId, overrides: [], open: false, focusSeq: undefined })
+          refreshOverrides().catch(() => {})
+        }
+        return () => {
+          if (store.sessionId === sessionId) { overrideGeneration++; rowIndex.clear(); store.set({ sessionId: undefined, overrides: [], open: false }); schedule() }
+        }
       }, [sessionId])
+      React.useEffect(() => { if (store.sessionId === sessionId) setRows(nodes) }, [sessionId, nodes])
       if (!sessionId) return null
       return h(React.Fragment, null,
         h('button', { style: S.btn, title: t('open'), onClick: () => store.set({ open: true, focusSeq: undefined }) }, '✎'),
@@ -419,13 +368,19 @@ window.__ModuleLoader__.load({
     /** Inline action on a finished assistant message: open the panel focused on it. */
     function AssistantAction(props) {
       const messageId = props.messageId
+      const version = React.useRef(0)
+      React.useEffect(() => () => { version.current++ }, [props.sessionId])
       return h('button', {
         style: { ...S.mini, border: 'none', padding: '2px 6px' },
         title: t('open'),
         onClick: async () => {
           const sid = props.sessionId ?? store.sessionId
           if (!sid) return
-          const d = await api('/messages?sessionId=' + encodeURIComponent(sid))
+          const request = ++version.current
+          let d
+          try { d = await api('/messages?sessionId=' + encodeURIComponent(sid)) }
+          catch { if (request === version.current && store.sessionId === sid) store.set({ open: true, focusSeq: undefined }); return }
+          if (request !== version.current || store.sessionId !== sid) return
           const hit = Array.isArray(d.messages) ? d.messages.find(m => m.messageId === messageId) : undefined
           store.set({ sessionId: sid, open: true, focusSeq: hit ? hit.seq : undefined })
         },
@@ -433,7 +388,7 @@ window.__ModuleLoader__.load({
     }
 
     async function apply(ctx) {
-      startDomHalf()
+      ctx.effect(startDomHalf, 'chat-editor: display lifecycle')
       const slots = ctx.get('slots')
       if (slots === undefined) return
       slots.inject('conversation.session.header.actions', () => slots.register(

@@ -12,7 +12,3 @@
 ---
 
 Drop any file onto the DeepSeek Harness chat. The core's drop only accepts images; this plugin takes drops carrying other files, saves them under the current session workspace's `.dsh-uploads/` folder (clashes get `-2`, `-3`, ≤ 25 MB each) and inserts `@.dsh-uploads/<name>` into the composer so the agent reads them with the file tools it already has. Image-only drops still go to the core's attachment rail.
-
-## 测试
-
-`node --test .local/tests/dsh-drop-files/*.mjs` — 9 条维护者用例:文件名清洗、重名编号、经假 Cordis 上下文走上传路由(写入、各种拒绝、大小上限、卸载)。

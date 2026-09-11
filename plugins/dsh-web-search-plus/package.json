@@ -1,7 +1,7 @@
 {
   "name": "dsh-web-search-plus",
-  "version": "0.4.1",
-  "description": "SillyTavern-style web search for DeepSeek Harness, configured once in dsh Settings: off / let the model decide (tool call served by Serper, SerpApi, Tavily, Brave, SearXNG or DeepSeek official) / search on trigger words / use the API provider's own search (OpenRouter :online, billed per search); a web_fetch page reader (public addresses only) built from the core's own tool definition with an address-pinned transport; keys through the dsh credential store.",
+  "version": "0.5.0",
+  "description": "SillyTavern-style web search for DeepSeek Harness, configured once in dsh Settings: off / let the model decide (tool call served by Serper, SerpApi, Tavily, Brave, SearXNG or DeepSeek official) / search on trigger words / use the API provider's own search (OpenRouter :online, billed per search); a web_fetch page reader (public addresses only) built from the core's own tool definition with an address-pinned transport; optional page visiting that opens the top results and hands their article text to the model (built-in extraction, or a local trafilatura service); keys through the dsh credential store.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -30,7 +30,8 @@
     "@deepseek-ai/dsh-credentials": "*",
     "@deepseek-ai/dsh-llm": "*",
     "@deepseek-ai/dsh-tool-web": "*",
-    "@deepseek-ai/dsh-tools": "*"
+    "@deepseek-ai/dsh-tools": "*",
+    "@deepseek-ai/dsh-home-paths": "*"
   },
   "license": "MIT",
   "peerDependenciesMeta": {

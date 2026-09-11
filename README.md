@@ -1,40 +1,76 @@
-# DSH Suite — the DeepSeek Harness power-user workbench
+# DSH CyberWorkStation — the DeepSeek Harness workbench
 
 [中文](README.zh.md) | **English**
 
-> A complete toolkit that turns [DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) from a CLI tool into a visual workstation: a cyberpunk desktop launcher + 22 production-grade plugins + 7 engineering skills + 3 in-dsh skills.
-> **Zero core rewrites** — every capability is delivered through official plugin extension points, so the upstream core stays independently upgradable at all times.
-> Current vendored core: **dsh 0.1.1-rc.2** (upstream tag `dsh-v0.1.1-rc.2`). See [CHANGELOG.md](CHANGELOG.md).
+> Turns DeepSeek Harness from a command-line tool into a visual workstation: a desktop launcher + 22 plugins + 10 skills, zero changes to the core.
+> Vendored core: **dsh 0.1.1-rc.2** (upstream tag `dsh-v0.1.1-rc.2`).
 
-![DSH Workbench · Cyberpunk 2077 × Edgerunners skin](docs/screenshots/dashboard.png)
+`core: 0.1.1-rc.2` · `plugins: 22` · `skills: 10` · `license: MIT`
 
-| SillyTavern-grade Control Deck | Skin manager + community skin market |
-|---|---|
-| ![Control Deck](docs/screenshots/deck.png) | ![Skin system](docs/screenshots/skins.png) |
+![Dashboard](docs/screenshots/2026-09/01-launcher-dashboard.webp)
 
-<details><summary>More: CC-style token analytics (heatmap / streaks / Moby-Dick easter egg)</summary>
+## Contents
 
-![Token analytics](docs/screenshots/tokens.png)
-
-</details>
+- [00 · What this is](#overview)
+- [01 · The DSH Launcher: 13 pages](#launcher)
+- [02 · Inside dsh itself](#dsh)
+- [03 · What the screenshots cannot show](#beyond)
+- [04 · Context and memory](#memory)
+- [05 · Full plugin roster: original / fork / adopted](#roster)
+- [06 · Skills](#skills)
+- [07 · Skins and artwork](#skins)
+- [08 · License and credits](#principles)
 
 ---
 
-## ✦ What is this
+<a id="overview"></a>
 
-DeepSeek Harness is DeepSeek's official agent framework — powerful, but natively CLI-only with a plain web UI. DSH Suite adds on top of it:
+## 00 · What this is
 
-- **A desktop launcher** (UX inspired by 秋叶 aaaki's ComfyUI packs): double-click an EXE for one-click start/stop, plugin market, skill market, skin market, token analytics, session browser, and one-click updates — all graphical; dsh cold-starts in about 1.5 s from the built CLI;
-- **The Control Deck**: SillyTavern-grade multi-entry leveled prompt injection, regex scripts, World Info lorebooks, and sampling overrides, edited in a GUI and hot-reloaded within 1.5 s;
-- **A cost stack**: live multi-provider balances, automatic model price sync, cache-hit rates, and a CC-style usage heatmap;
-- **Safety & speed**: destructive-command blocking, hover model prices, HTTP quick-workspace creation, and frontend skin injection;
-- **Memory & context**: see and edit every session's active compaction summary, and a lightweight long-term memory (compaction summaries + extracted facts + notes, BM25 / optional local-embedding recall, injected as a separate context row, `memory_recall` / `memory_note` tools).
+**DSH CyberWorkStation** turns [DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) from "a CLI plus a plain web UI" into a visual workstation. It consists of one desktop launcher and 22 plugins:
 
-Everything ships as **plugins / skills / a standalone launcher** — not one line of the vendored core is modified, so the core can be replaced by any upstream release.
+- **The DSH Launcher**: a management panel you open by double-clicking an EXE — 13 pages for one-click start / stop, plugin and skill markets, sessions and storage, updates and self-check, token analytics, the Control Deck, model parameters, the Credentials Center, memory and context, skins, logs.
+- **Panels inside dsh**: 22 plugins add their features directly to dsh's own pages — Settings gains a Credentials Center, model-list sync, web search, media APIs, a desktop pet, usage & cost; the conversation gains message editing, temporary chats, file drops, thinking levels…
 
-## ✦ Quick start
+"The core" means the upstream deepseek-harness vendored under `core/`, not a line of it modified, so it can be upgraded to any upstream version at any time.
 
-Prerequisites: Windows 10/11, [Git](https://git-scm.com/), [Node.js `^22.19 || >=24` — 24 LTS recommended, 23.x is excluded by the core](https://nodejs.org/), Edge or Chrome.
+### Highlights
+
+- **The core is untouched.** Every capability is a plugin or a separate program; upgrading the core loses nothing.
+- **Everything is graphical.** What used to mean editing `settings.yaml` or typing `dsh plugin` commands is now a few clicks; configuration changes take effect within 1.5 seconds, no restart.
+- **Keys have a home.** API keys go only into dsh's credential store (with the keyring plugin, the Windows Credential Manager), never into config files; every panel is reachable from this machine only.
+- **Reuse before rewriting.** Of the 22 suite plugins, 19 are original and 3 are forks; 9 community plugins are adopted unchanged — all listed in the roster.
+
+### At a glance
+
+| Part | Count | Notes |
+|---|---|---|
+| DSH Launcher | 13 pages · zh / en · 3 skins | `launcher/`, double-click `DSH启动器.exe`; the core starts in about 1.5 s |
+| Suite plugins | 22 (19 original · 3 forks) | `plugins/`, registered automatically at setup |
+| Community plugins | 9 + 1 MCP memory server | installed from the launcher's plugin market, not in the repo |
+| Optional in-tree core capabilities | 10 upstream packages | persistent terminal, scheduling, LSP, MCP client, Claude Code / Codex hook bridges |
+| Engineering skills | 7 (Claude Code) | architecture / plugins / frontend / ops / playbook / testing / local models |
+| In-dsh skills | 3 | skin studio, control-deck authoring, desktop-pet making |
+| Skins | 3 launcher · 2 frontend · community skins on demand | managed on the launcher's Skins page |
+
+```mermaid
+flowchart LR
+  subgraph L["DSH Launcher · 127.0.0.1:3090"]
+    L1["Dashboard / Plugins / Skills / Sessions / Storage / Updates"]
+    L2["Tokens / Control Deck / Model params / Credentials / Memory / Skins / Logs"]
+  end
+  subgraph D["dsh core · 127.0.0.1:3080 · unmodified"]
+    D0["dsh runtime · sessions · tools · Web UI"]
+    D1["22 suite plugins"]
+    D2["9 community plugins + optional core capabilities"]
+  end
+  L -- "start / stop / install / update" --> D
+  L -- "edit config, live within 1.5 s" --> D1
+```
+
+### Quick start
+
+Prerequisites: Windows 10/11, Git, Node.js `^22.19 || >=24` (24 LTS recommended), Edge or Chrome.
 
 ```bat
 git clone https://github.com/WZZNNE/DSH-CyberWorkStation.git
@@ -42,265 +78,706 @@ cd DSH-CyberWorkStation
 setup.cmd
 ```
 
-`setup.cmd` automatically: uses the bundled `core/` source tree (dsh 0.1.1-rc.2; falls back to cloning upstream when absent) → installs deps and builds (build:lib + build:web) → registers all suite plugins → links the core packages the plugins import (`launcher/peer-links.mjs`) → opens the launcher.
+`setup.cmd` installs dependencies, builds the core (5–10 minutes the first time), registers all suite plugins and skills, then opens the launcher. After that, double-click `launcher/DSH启动器.exe`. Enter API keys on the launcher's Credentials page or in dsh Settings → Credentials Center.
 
-Daily use afterwards: double-click `launcher/DSH启动器.exe`. Manual mode: `node launcher/server.mjs` then visit `http://127.0.0.1:3090`.
+---
 
-> Remember to configure an API key on the launcher's Credentials page or in dsh Settings → Credentials (`OPENROUTER_API_KEY` / `DEEPSEEK_API_KEY`; an environment variable of the same name still wins — `settings.yaml` only holds the reference name, never the secret).
-> Core checked out elsewhere? Point `DSH_REPO` at it; override the launcher port with `DSH_LAUNCHER_PORT`.
-> Maintainer-local material (runtime logs, caches, maintainer tests and notes) lives under the git-ignored `.local/` directory; user data that must stay where the launcher reads it (converted community skins, `active.txt` state files, `plugins/node_modules` peer links) is ignored by individual rules instead.
+<a id="launcher"></a>
 
-## ✦ How it differs from stock dsh (feature matrix)
+## 01 · The DSH Launcher: 13 pages
 
-| Capability | Stock dsh | Suite | Form | Authorship |
-|---|---|---|---|---|
-| Visual management workbench | ✗ CLI only | 10+ pages, zh/en bilingual, light/dark/system | Standalone app (EXE + zero-dep Node server) | Original |
-| One-click start / stop | ✗ manual commands | Boots the built CLI in ≈1.5 s (≈20 s via the tsx source launch), auto-opens the browser; stop reaps the whole console process tree | Launcher | Original |
-| Embedded console | ✗ separate window | Aki-style embedded console, live output, autoscroll | Launcher | Original |
-| Plugin management | CLI (`dsh plugin`) | Graphical list + ~150 built-in capability rows + one-click update | Launcher | Original |
-| Plugin market | ✗ | Live npm search, one-click install, jump to project page | Launcher (npm registry API) | Original |
-| Skill market | ✗ | Live GitHub search, one-click install into `~/.dsh/skills` | Launcher (GitHub API) | Original |
-| Community skin market | ✗ | npm skin packages are **converted in place to local CSS** and managed on the Skins page (switch/delete/import) — never leaking into the plugin system | Launcher | Converter original; skin content belongs to its authors (e.g. the [@linxin666 collection](https://github.com/zhu1090093659/dsh-web-ui)) |
-| Token analytics | ✗ | GitHub-style heatmap, streaks, per-model split, daily detail | Launcher (reads cost-meter-plus ledger) | Original |
-| Costs / balances | ✗ | Live balances (OpenRouter/OpenAI/local), auto price catalog sync, cache-hit strip | Plugin `dsh-cost-meter-plus` | Fork of [Han-1413141/dsh-cost-meter](https://github.com/Han-1413141/dsh-cost-meter) (MIT) |
-| Usage panel, de-peaked | - | Removes peak/off-peak price display | Plugin `dsh-token-usage-plus` | Fork of [Tastelessor/dsh-usage-stats](https://github.com/Tastelessor/dsh-usage-stats) (MIT) |
-| Destructive-command blocking | ask-confirm only | `rm -rf`, formats, raw device writes, force pushes, fork bombs … denied outright | Plugin `dsh-safe-guard` | Original |
-| Control Deck (ST-grade) | ✗ | Tabbed editor with presets, SillyTavern World Info / regex-script / prompt-preset import & export, macros, display-layer AI-output regex — see the tutorial below | Plugin `dsh-control-deck` | Original; semantics aligned with [SillyTavern](https://github.com/SillyTavern/SillyTavern) (behavior reference, no code included) |
-| Frontend skin injection | ✗ | Injects `~/.dsh/frontend-skin.css` into the dsh web UI | Plugin `dsh-skin-loader` | Original |
-| Hover model prices | ✗ | Model picker shows input/output USD per million tokens on hover | Plugin `dsh-price-hint` | Original |
-| Quick workspace | manual GUI steps | One-click HTTP creation by absolute path (dashboard) | Plugin `dsh-quick-workspace` | Original |
-| Model parameters (any model) | ✗ (edit settings.yaml by hand) | Context window / max output / thinking levels per model for every route — DeepSeek official, OpenRouter, local LM Studio / Ollama …; local models are probed and auto-taught their levels so the native picker offers them (one page, one Save per row) | Plugin `dsh-local-reasoning` + launcher "Model parameters" page | Original |
-| Memory & context | Compaction summary is model-written and read-only (a collapsible row in the chat); no automatic memory across sessions (stock: an `@session` mention pulls a read-only snapshot of another session; or an MCP memory server if you wire one) | Launcher page lists every session (open or not); pick one to see its context pressure, the **active compaction summary (editable — saved as a real compaction record, the model continues from your text)**, compaction history and `/compact` on demand; long-term memory stores compaction summaries, model-extracted facts and notes, recalls them lexically (BM25, CJK-aware) or with a local `/v1/embeddings` model, injects relevant items as ONE separate context row, and gives the model `memory_recall` / `memory_note` | Plugin `dsh-memory-lite` + launcher "Memory & context" page | Original |
-| Config backup | ✗ | One JSON bundle of the suite's `~/.dsh` configuration (settings.yaml as-is, deck + presets, web search, safety rules, model params, memory, profile patches, skills, hooks, frontend skin); restore keeps a copy of the current files; the credential store (`.credentials.yaml`) and session logs are never included | Launcher Storage page | Original |
-| Web search, ST-style | DeepSeek-only `web_search` tool, no page reader | **`web_fetch` page reader** for every model (public http(s) only; runs in the harness, not the sandbox, so HTTPS works); Serper / SerpApi / Tavily / Brave / SearXNG / DeepSeek official (the official source needs only `DEEPSEEK_API_KEY` and works with any chat model); OpenRouter `:online` variants one click away on the Model parameters page (OpenRouter routes that carry their own `models` list; a catalog-only route must generate one on the dsh settings page first); four ways, set **once for the whole deployment** (dsh Settings → 联网搜索, or the Control Deck tab — same file) — off / **let the model decide** (tool call served by the chosen provider) / **search on trigger words** (ST trigger semantics: backticks / `$N` regex / phrases / always, template, budget, SSRF-guarded page visits; results added as a separate context message, your words untouched); keys stored through the dsh credential store; test button / **use the API provider's own search** (OpenRouter searches server-side through the `:online` model suffix, created automatically and **billed per search**; routes without such a switch fall back to the tool) | Plugin `dsh-web-search-plus` + Control Deck tab | Original; trigger semantics follow SillyTavern Extension-WebSearch (no code included) |
-| Editing / deleting chat messages | ✗ (the log is append-only; the UI offers no edit) | Edit or delete any message, yours **and** the assistant's, three ways: display-only (browser), hide, or **change what the model reads** (a real `compaction/prune` + surface replace, shadow price intact); delete one message or a whole turn; fork a new session from any completed turn (the first turn cannot be a fork point) | Plugin `dsh-chat-editor` (header ✎ + assistant-actions) | Original |
-| Temporary chats | ✗ every session lives in a workspace directory | One click makes a throwaway conversation in `$DSH_HOME/scratch/` with a shipped **chat-only preset** (no filesystem writes, no shell, jobs, subagents or workflows; `POST /new` may name another preset, which opts out of that sandbox), grouped in its own workspace; nothing is auto-deleted | Plugin `dsh-temp-chat` (sidebar button) | Original |
-| Image / video / voice APIs | ✗ text only | Four kinds behind one settings panel: image (OpenAI-compatible, Gemini, Replicate, fal), video (Sora, Veo, Replicate, fal, MiniMax), speech (OpenAI-compatible incl. local Kokoro, ElevenLabs, Fish Audio, MiniMax), transcription (OpenAI-compatible incl. local Whisper) plus a custom-HTTP adapter; results are saved, listed and **played inline in the chat** | Plugin `dsh-media-lab` (`generate_image` / `generate_video` / `text_to_speech` / `transcribe_audio`) | Original |
-| Desktop pet | ✗ | A companion with its own persona, lorebook and **separate multimodal API**; knows what the harness is doing (announces start / finish), talks first on four frequency bands, reminds you, speaks and listens, generates its own artwork, and — behind a three-level permission (none / ask / full) — reads the screen or drives mouse and keyboard; 8–24 frame sprite animations and a click-to-talk desktop window; three windows: in-dsh floating, WinForms desktop sprite, or an Edge app window | Plugin `dsh-desktop-pet` + dsh skill `desktop-pet` | Original |
-| Safety rules UI | - | Extra deny / ask-first / **auto-allow** regexes (deny > ask > allow, built-ins always first) hot-loaded from `~/.dsh/safe-guard.json` | Plugin `dsh-safe-guard` + Control Deck tab | Original |
-| Credentials in the system keyring | ✗ plaintext `.credentials.yaml` | API keys stored in the **Windows Credential Manager** (`dsh:<NAME>`); the environment still wins, secrets migrate on the next save, a keyring failure falls back to the plaintext path | Plugin `dsh-credentials-keyring` | Original |
-| LAN /api fence for remote access | ✗ a 0.0.0.0 bind trusts every LAN IP on `/api` | When mobile remote is on, an **unpaired** LAN device gets 403 on `/api` — the auto-derived LAN authorities are stripped from the trust list **in a plugin, with zero core change**, so the fence survives a core upgrade | Plugin `dsh-lan-fence` | Original |
-| Community ecosystem adoption | - | Nine community plugins adopted through the launcher's plugin market (not by `setup.cmd`; on this core `dsh-context` needs ≥ 0.40 — 0.13 registered its projections with a field the core no longer reads, so its 上下文 tab never loaded): vision bridge (image reading + OCR/grounding, 26 tools for text-only models; since v1.8.0 the Chinese-UI fork `dsh-vision-bridge-zh`), @file mentions, workbench sidebar (files/Git/terminal/browser), **scan-to-pair mobile remote** (pairing-gated; an unpaired LAN device gets 403 on `/api` — the `dsh-lan-fence` plugin strips the auto-derived LAN authorities in place (zero core change)), timed self-prompts, chat import (Claude Code/Codex/ChatGPT/Cursor), voice input, desktop notifications, auto-retry | vision-bridge / at-file / better-sidebar / remote-web-ui / automation / chat-import / voice-input / notification / retry | Community (see CHANGELOG v1.6.0; two candidates rejected for incompatibility / data hazard) |
-| Session grouping / export | CLI export | Sessions grouped by workspace with filter and one-click ZIP export through the core's `/api/session.export` | Launcher | Original |
-| Upstream tag upgrade & self-check | ✗ | Local vs latest upstream release, upgrade the vendored core to any tag (download → mirror → install → build), launcher self-check panel, log filter / copy / download | Launcher | Original |
-| AI skin studio (one-shot skins) | ✗ | Ask the agent for a launcher/frontend skin in chat: it gathers requirements first (style/colors/light-dark/background art), **asks the user for an image instead of fabricating one** when it cannot generate images (or calls an image-generation tool when it can), inlines local art as data URIs, and installs+applies in one call | Plugin `dsh-skin-studio` (registers the `skin_studio` tool) + dsh skill `skin-studio` | Original |
-| Engineering skills | ✗ | Architecture / plugin / frontend / ops / playbook / testing / local-models seven-pack | Claude Code skills | Original |
-| **Core rewrites** | - | **0 lines** — everything above goes through official extension points | - | - |
+The launcher is a small standalone program: double-click `DSH启动器.exe` and it opens `http://127.0.0.1:3090` in a chromeless app window. It listens on this machine only and the page carries its own access token. The "中 → EN" switch at the bottom left toggles the language.
 
-## ✦ Control Deck tutorial
+The screenshots were taken with the core OFFLINE, so pages that need dsh running (Model parameters, Credentials, Memory & context) show placeholders; what they show when online is described under each figure.
 
-> "Control Deck" page in the launcher sidebar, organised in tabs (Prompts / Regex / World Info / Sampling & context / Web search / Safety rules / Quick start). Every save **hot-reloads within 1.5 s** — no dsh restart. Semantics match SillyTavern, so ST veterans feel at home instantly; the top bar saves / loads / deletes **presets** and imports / exports **SillyTavern World Info, regex-script and prompt-preset JSON** (or the whole deck).
+### Fig. 01 · Dashboard
 
-### 1. Prompt injection (multi-entry, leveled)
+![Dashboard](docs/screenshots/2026-09/01-launcher-dashboard.webp)
 
-Each entry has:
-- **Name / text**: what gets injected;
-- **order**: lower numbers sort earlier — multiple entries stack by order;
-- **position**: `system` (into the system prompt) or `user-prefix` (added as a separate context message right after your message); **role** is your own annotation (ST prompt-manager field, round-trips on export);
-- **interval**: 1 = every user message; N>1 = once every N user messages of the same session (periodic reminders; tool turns do not count);
-- **enabled**: toggle per entry without deleting it;
-- **macros** (global switch): `{{date}} {{time}} {{weekday}} {{isodate}} {{isotime}} {{model}} {{provider}} {{workspace}} {{newline}} {{random:a,b,c}} {{roll:2d6}}` expand in prompt text and lore content.
+**What it does**
 
-### 2. Regex scripts (ST runRegexScript semantics)
+The banner shows the run state (OFFLINE / RUNNING); four cards show the core version, the Node version, the default model (with a link to change it in the Credentials Center) and "Open WEB UI". The Folders row creates a workspace from an absolute path; four shortcut cards open the core repo, the `~/.dsh` home, the plugins folder and the session logs. The console in the middle streams the core's output. Bottom right: "Start" and "Exit".
 
-Rewrites user input / world-info content, with SillyTavern-compatible fields:
-- **findRegex** with flags used as written (no `g` = first match only, like ST's `regexFromString`) and **replaceString** with ST's `runRegexScript` tokens: `{{match}}` (any case, = `$0`), `$1`… with any number of digits, `$<name>`; no `$$` escape (`$$5` is `$` + group 5), `$&` stays literal;
-- **trimStrings**: substrings stripped from every substituted value;
-- **placement**: scope — `user_input` (rewrites your message before the model sees it), `world_info` (rewrites injected lore) or `ai_output` (**display only**: rewrites the assistant text in the dsh web page — the log and the model's context stay untouched).
+**What we built**
 
-### 3. World Info (full ST field set)
+- One-click start in about 1.5 seconds when the core is built; falls back to the source launch automatically when it is not.
+- Exit stops only dsh's own process, never other terminals or programs; repeated clicks never start a second copy.
+- "New workspace" creates it from the typed path; refresh the dsh page and it is selectable (the core's own "+" button does nothing for ungrouped sessions).
 
-Scans recent conversation and injects lore when keys match:
-- **keys**: primary keywords, `/regex/flags` supported; **secondaryKeys + selectiveLogic**: `andAny / andAll / notAny / notAll`;
-- **constant 🔵**: always injected, no key needed; **probability**: percentage gate after a match;
-- **order**; **caseSensitive / matchWholeWords** (whole-word by default, auto-skipped for CJK text);
-- **Recursion**: one entry's content can trigger another (`excludeRecursion / preventRecursion / delayUntilRecursion` + global `maxRecursionSteps`);
-- **inclusion group + groupWeight**: mutually exclusive within a group, weighted pick; **prioritize** (highest order wins) and **useGroupScoring** (most key hits wins) like ST;
-- **sticky / cooldown / delay** measured in message counts;
-- **Global settings**: `scanDepth` (how many recent messages to scan; entries may override it), `budgetChars` (injection budget), `minActivations` / `maxDepth` (scan deeper history until enough entries fire), `includeNames` (scan buffer carries `User:` / `Assistant:` prefixes).
+> **Not in the picture** The Start button has an electric-current effect in the skin, RUNNING is a flip animation; deep links such as `#deck` open a page directly.
 
-Activated lore (like user-prefix and interval prompts) is added as a **separate plugin-sourced context message right after your message** — the core's own pattern for injected context (≈ SillyTavern "in-chat, depth 0"); your words are never rewritten, the row renders as context rather than as a user bubble, and earlier injections are never re-scanned. dsh's log-derived history cannot be spliced at deeper positions without breaking the request-reconstruction invariant. Per-entry `caseSensitive` / `matchWholeWords` may be left on "global" to follow the global World Info settings (ST's Case-sensitive / Match whole words).
+### Fig. 02 · Plugins
 
-### 4. Sampling overrides (with a master switch)
+![Plugins](docs/screenshots/2026-09/02-launcher-plugins.webp)
 
-**When "enable sampling override" is unchecked, the plugin touches no request parameters at all** — nothing can be passed by accident. When checked, you can override temperature, maxTokens, and stop sequences (up to 4).
-Reasoning effort is deliberately **not** in the Control Deck: the native model picker already owns it, and two controllers would fight — local models are taught their levels automatically (see the **Model parameters** page, `dsh-local-reasoning`).
+**What it does**
 
-**Max context**: dsh has no SillyTavern-style "truncate history" cap (session logs must be reconstructable byte for byte); the equivalent knob is the per-model `contextWindow` (core compaction fires at 80 % of it with the shipped standard / code / cordis presets that mount `compaction-basic`; the `minimal` preset has no compaction). The Sampling & context tab lists every local model's window (local routes only) next to what LM Studio / Ollama actually loaded and links to the **Model parameters** page, where any model — DeepSeek official, OpenRouter, local — gets its own `contextWindow` and `maxTokens` (max output per reply); that resolves the "dsh assumes 262,144 while LM Studio loaded 8k" conflict. When compaction has happened, the **Memory & context** page shows the summary the model now sees and lets you edit it (§9).
+Type an npm package name or a `link:` local path to install; the table lists every plugin in the web profile with version, source (npm / link), whether it is mounted as a bundle layer, and "Uninstall". Community and suite plugins share the same table. Below: the Plugin Market (search npm, install in one click) and the read-only list of the core's own hundred-odd built-in rows.
 
-### 5. Tool switches
+**What we built**
 
-List tool names to deny them at the `tools/pre-execute` stage (e.g. disable `web_search`).
+- Install, uninstall, market install and one-click update all go through the core's own plugin command — identical to doing it on the command line.
+- The two plugins referenced by the profile patch (credential keyring, LAN fence) are blocked from uninstalling, with migration steps, so the next boot never loads a missing module.
+- The market filters npm results to the dsh ecosystem; skin packages never end up in the plugin list (there is a separate skin market).
 
-### 6. Web search tab (`dsh-web-search-plus`)
+> **Not in the picture** The 9 community plugins were installed from this page. `dsh-context` needs version 0.40 or later; the self-check names outdated versions.
 
-Four modes, written once for the whole deployment (this tab and dsh Settings → 联网搜索(全局) write the same `~/.dsh/web-search.json`): **off** (the model's `web_search` tool is denied), **let the model decide** (the model calls `web_search` when it wants; the chosen provider — DeepSeek official or any API below — answers the call), **search on trigger words** (for models without tool calling; SillyTavern Web Search semantics: when a trigger matches — `` `backticks` ``, regex group 1, phrases, or always — the plugin searches first and adds the formatted results as a separate context message right after yours (your own words stay untouched); ideal for local models without tool calling), and **use the API provider's own search** (on OpenRouter the request switches to the `<model>:online` variant, which OpenRouter serves server-side — any model, **billed per search**; a route without such a switch falls back to the tool). Providers: Serper, SerpApi, Tavily, Brave, SearXNG and DeepSeek official. Keys are written through the dsh credential store (`~/.dsh/.credentials.yaml`), never by the launcher; a **Test search** button shows latency and the injected preview.
+### Fig. 03 · Skills
 
-### 7. Safety rules tab (`dsh-safe-guard`)
+![Skills](docs/screenshots/2026-09/03-launcher-skills.webp)
 
-The built-in deny list always applies; add your own **deny** regexes (blocked outright) or **ask-first** regexes (approval prompt in the dsh web UI) — one per line, case-insensitive, hot-loaded from `~/.dsh/safe-guard.json`.
+**What it does**
 
-### 8. Presets, SillyTavern import / export, one Save button
+Two sources of skills: the user folder `~/.dsh/skills` (the suite installs `control-deck-authoring`, `desktop-pet`, `skin-studio` there) and the 11 development-process skills shipped with the core's source. Each row shows source and description. The Skill Market searches GitHub repositories by keyword and unpacks one into the user folder.
 
-The single **Save & hot-reload (all tabs)** button at the bottom writes the deck, the web-search config and the safety rules together (API keys are stored separately through the Save key button). 
-Save / load / delete whole decks as named presets (`~/.dsh/control-deck-presets/*.json`). Import and export use SillyTavern's own JSON: World Info (`entries{}` with `selectiveLogic` 0-3, recursion, group, sticky/cooldown/delay …), regex scripts (`findRegex` as `/pattern/flags`, `placement` 1 / 2 / 5), prompt presets (`prompts[]` + `prompt_order`), or the whole deck. The in-dsh skill `control-deck-authoring` (installed to `~/.dsh/skills/`) teaches the agent every field so you can ask it to write lore and regexes for you.
+**What we built**
 
-### 9. Memory & context (`dsh-memory-lite`)
+- The three in-dsh skills are original: Skin Studio (let the model make skins), Control Deck Authoring (let the model write prompts / regex / lorebooks or migrate SillyTavern assets), Desktop Pet (from persona to asset list).
+- The repo also ships 7 engineering skills for Claude Code; they are not on this page — see "Skills".
 
-dsh compacts the oldest history into a model-written `<compacted-summary>` checkpoint at `contextWindow × 0.8` (or on `/compact`); nothing is truncated, but the checkpoint could only be read (a collapsible row in the chat), not changed, and there was no memory between sessions. The **Memory & context** page adds both:
+### Fig. 04 · Sessions
 
-- **Session context**: every session (open or not) with its context pressure against the compaction threshold, the **active compaction summary in an editable box**, the compaction history and a "Compact now" button. Saving an edit appends a genuine compaction bracket (`compaction/start` → `compaction/summary` → replacement checkpoint → `compaction/end`, provider `dsh-memory-lite` / model `manual-edit`) that replaces the active checkpoint, so the log stays append-only and byte-exact, the token meter's shadow-price protocol holds, and the model continues from your text on the next request. Sessions that are not open are resumed with their recorded preset, edited, flushed and disposed again.
-- **Long-term memory**: model-written compaction summaries are stored automatically (latest per session; an edited summary is stored when you press "Store in long-term memory"), the session's own model extracts durable facts every 8 human turns (global = about you, workspace = about the project), and you or the model (`memory_note`) add notes. Recall is BM25 over ASCII words + CJK bigrams (optional cosine blend through a local OpenAI-compatible `/v1/embeddings` endpoint — LM Studio, Ollama); on a session's first turn pinned + relevant items go in as ONE separate `[Memory recall]` context row after your message, later turns only add relevant items not injected before. Items can be pinned, scoped, edited, exported / imported. Config `~/.dsh/memory-lite.json`, data `~/.dsh/memory/memory.json`.
+![Sessions](docs/screenshots/2026-09/04-launcher-sessions.webp)
 
-## ✦ Inside dsh itself (chat editing, temp chats, media APIs, the pet, credentials, model list, drops)
+**What it does**
 
-Nine of the plugins put their own panels into the dsh page rather than the launcher, because that is
-where the conversation is: the four below, plus the Credentials Center section (`dsh-credentials-center`,
-also a launcher page), the model-list sync card (`dsh-provider-sync`), the Chinese vision card
-(`dsh-vision-bridge-zh`), the import note card (`dsh-import-note`) and the drop handler (`dsh-drop-files`, no panel).
+Every session under `~/.dsh/sessions`, grouped by working directory (newest first, with counts and last-active time), filterable by workspace / session id; "Open sessions folder" jumps to Explorer; expand a group to export one session as a ZIP (dsh must be running). A "≈" before a group name marks a best-effort directory guess.
 
-### Editing and deleting messages (`dsh-chat-editor`)
+**What we built**
 
-The session header gets a **✎** button listing every node in the log — role, whether it is still on
-the surface, what shadowed it. Each row offers four actions: **改** and **删除**, each moving both
-views at once (what you see and what the model reads), **折叠** (fold it away in the transcript;
-click to open it again), and
-**从这里分叉** (a new session seeded up to that point). Assistant rows also get an inline edit entry.
+- This page is read-only: there is no delete button — delete sessions in Explorer.
+- The `tmp\2026…` folders in the screenshot are the scratch directories the Temporary Chat plugin creates per temp session.
 
-The log itself is never rewritten: a model-visible edit appends a `compaction/prune` (carrying the
-shadowed range, seqs and token count) followed by a surface `replace`, which is exactly how the core
-compacts. Editing an assistant message lands as a user-role correction with explicit framing,
-because `assistant/message` requires an open step. Display overrides live in
-`$DSH_HOME/chat-edits.json` and are matched by text, so a shifting log cannot repaint the wrong row.
+### Fig. 05 · Storage
 
-### Temporary chats (`dsh-temp-chat`)
+![Storage](docs/screenshots/2026-09/05-launcher-storage.webp)
 
-**🗒 临时对话** in the sidebar footer opens a conversation that belongs to no project: a fresh
-`$DSH_HOME/scratch/tmp-…` directory, a shared "临时对话 / Temporary chats" workspace, and a shipped
-chat-only preset (no filesystem, shell, jobs, subagents or workflows). Nothing is deleted
-automatically; `POST /dsh-temp-chat/clean` removes a folder and refuses while it is still open.
+**What it does**
 
-### Media APIs (`dsh-media-lab`)
+The table sizes 9 key directories (core repo, `~/.dsh`, sessions, storages, profile, plugins, user skills, launcher, node_modules), each openable in one click. **Config backup** bundles the suite's configuration under `~/.dsh` into one JSON: `settings.yaml`, the Control Deck and presets, web search, safety rules, model parameters, the memory store, profile patches, skills, hooks, the frontend skin; "Preview" lists the files first; "Restore" saves a copy of the current files before writing.
 
-Settings → **多媒体 API**: image, video, speech and transcription, each with its own provider, base
-URL, model, key and a 试生成 button. The model gets `generate_image`, `generate_video`,
-`text_to_speech` and `transcribe_audio`; results land in `$DSH_HOME/media/` with a sidecar and are
-**played inline in the chat**. Eleven built-in providers (OpenRouter fronts images and video on one key) plus a custom-HTTP adapter (URL + headers +
-body template + result path), and a local server needs no key.
+**What we built**
 
-### Desktop pet (`dsh-desktop-pet`)
+- Backups never include the credential file or session logs; restore accepts only whitelisted files, rejects out-of-bounds or oversized bundles, and flags which files need a dsh restart.
+- A restored memory store is merged in even while dsh is running.
 
-**🐾 桌宠** in the sidebar opens a floating companion inside dsh; Settings → **桌宠** configures
-everything else: persona and appearance (pet-only or global), its own multimodal API, lorebook,
-expressions — each a still drawing with a named motion or a real **8–24 frame animation** with its
-own frame rate — the user profile distilled from your own past messages (editable, erasable), the
-three-level screen / control permission, four proactive frequency bands, voice, reminders,
-conversations, and the desktop window — a WinForms sprite or an Edge app window, both driven by a C#
-host compiled on demand with the .NET Framework compiler Windows already has. The sprite window is
-a per-pixel-alpha layered window, so a cut-out drawing keeps its soft edge and the empty part of the
-window is click-through; click the pet and a one-line box opens under it to talk to it. The companion
-skill `desktop-pet` walks the model through designing a pet, listing the artwork it needs, generating
-that artwork in-chat, and turning it into frame animations through image-to-video.
+### Fig. 06 · Updates
 
-## ✦ Launcher page tour
+![Updates](docs/screenshots/2026-09/06-launcher-update.webp)
 
-| Page | What it does |
+**What it does**
+
+The Version card compares the local core with the latest upstream release (flagged when newer) and offers three update paths: update the core (git pull + build), upgrade to the latest upstream tag, upgrade to a specific tag. The Plugins card updates every plugin in the profile. The **self-check** covers eight items: Node version, pnpm, ports, the core checkout, plugin peer links, config files, whether the built CLI exists, the plugins registered in the web profile. Update output scrolls live below.
+
+**What we built**
+
+- "Upgrade to tag" swaps the whole core for any upstream version and rebuilds; because the core is untouched, it can be done at any time without losing suite features.
+- The self-check reads its plugin roster from `plugins/`, so a new plugin is checked the moment it lands; outdated community plugins are named.
+
+### Fig. 07 · Tokens
+
+![Tokens](docs/screenshots/2026-09/07-launcher-tokens.webp)
+
+**What it does**
+
+A Claude-Code-style usage overview: Overview / Models tabs, All / 30d / 7d ranges; eight cards — sessions, messages, total tokens, active days, current and longest streak, busiest day, favourite model; a 26-week heat map; a per-day table of calls, cache hits / misses, output and cost.
+
+**What we built**
+
+- The data comes from the cost plugin's ledger; the launcher only reads it.
+- Local models are free: a loopback route is billed only when it names a paid vendor and carries that vendor's credential.
+- The Models tab splits tokens and cost per model.
+
+### Fig. 08 · Control Deck
+
+![Control Deck](docs/screenshots/2026-09/08-launcher-control-deck.webp)
+
+**What it does**
+
+A SillyTavern-grade prompt workbench. Top bar: **presets** (save / load / delete) and **import / export** (the whole deck, or SillyTavern's World Info / regex script / prompt preset JSON). Seven tabs: **Prompts** (multiple leveled entries, macros such as `{{date}}`, `{{model}}`, `{{random:a,b}}`, optional interval), **Regex scripts** (applied to user input / World Info / the displayed AI output), **World Info** (keyword hits inject lore; the full SillyTavern field set), **Sampling & context** (temperature / max output / stop words behind a master switch; a tool-disable list), **Web search**, **Safety rules**, **Quick start**. One "Save & hot-reload" button at the bottom writes every tab, live within 1.5 seconds.
+
+**What we built**
+
+- Injection never rewrites your words: prompts and matched lore are added as one separate context entry right after your message.
+- Fields share SillyTavern's names and meaning, so ST users learn nothing new; ST World Info, regex and prompt-preset JSON import and export directly.
+- A broken regex cannot stall dsh: rules run on a separate thread; one that overruns is disabled and named in the status line.
+- Unsaved edits survive late replies from preset loads or imports; a failed save keeps the draft.
+
+> **Not in the picture** The Web search and Safety tabs are shown in the dsh Settings screenshots (both sides write the same configuration). The field reference lives in the `control-deck-authoring` skill, so you can let the model write entries for you.
+
+### Fig. 09 · Model parameters
+
+![Model parameters](docs/screenshots/2026-09/09-launcher-model-params.webp)
+
+**What it does**
+
+Set the context window (`contextWindow`) and max output (`maxTokens`) of any model, plus **thinking levels** where the route allows it; local models (LM Studio / Ollama) can be probed and taught recommended levels, which then appear in dsh's own model picker. Toolbar: probe LM Studio / Ollama, refresh, auto-teach levels to local models that declare none, filter by model id. dsh was not running when the screenshot was taken, so the list is empty.
+
+**What we built**
+
+- Online, every route (DeepSeek official, OpenRouter, local) lists every model with its effective values; each row saves on its own.
+- Local models are taught levels by family; on/off-only models such as Qwen3 get `/no_think` appended automatically when Off is chosen. This resolves the "dsh defaults to 262,144 but the local server loaded 8k" conflict.
+- OpenRouter routes get a one-click add / remove `:online` web-search variant per row.
+- Saving one row never discards drafts in other rows.
+
+### Fig. 10 · Credentials Center
+
+![Credentials Center](docs/screenshots/2026-09/10-launcher-credentials.webp)
+
+**What it does**
+
+Online, every **API credential reference** (e.g. `OPENROUTER_API_KEY`) is listed: configured or not, where it is stored, which features are bound to it (model routes, media, web search, desktop pets, memory embeddings), alias and note, plus set / replace / delete and **spare keys**; add a reference, filter to bound ones. Two cards below: **Model list** — "Refresh model list" syncs OpenRouter's latest catalog into the route; **dsh default model** — pick a route, then a model. dsh Settings has a section of the same name; both write the same place.
+
+**What we built**
+
+- The reference list is assembled automatically; a new route or plugin appears by itself. Secret values are never echoed.
+- Spare keys: a reference can hold several secrets; switch with one click and the replaced one is kept as a spare.
+- The default model is validated against the route's list before it is written, so a non-existent id never lands.
+
+### Fig. 11 · Memory & context
+
+![Memory & context](docs/screenshots/2026-09/11-launcher-memory.webp)
+
+**What it does**
+
+Three tabs. **Session context**: for every session (open or not) the context pressure against the compaction threshold, **the active compaction summary — editable**, the compaction history, "Compact now" and "Store in memory". **Long-term memory**: summary / fact / note items with search, pin, scope, edit, delete, import / export. **Settings**: store summaries, extract facts, injection mode, items per injection, memory tools for the model, optional vector recall, and a recall test. dsh was not running in the screenshot.
+
+**What we built**
+
+The summary dsh writes after compaction used to be read-only, and nothing was remembered across sessions; this page adds both — editing the summary and cross-session memory. See "Context and memory".
+
+### Fig. 12 · Skins
+
+![Skins](docs/screenshots/2026-09/12-launcher-skins.webp)
+
+**What it does**
+
+Three blocks: **UI settings** (light / dark / system for the `default` skin); **launcher skins** (`cyberpunk-2077` / `default` / `night-city-holo`, applied instantly, CSS import); **frontend (DSH WEB UI) skins** ("(none)" restores stock / `cyberpunk-2077` / `night-city-holo`, refresh the dsh page to apply, import, "Get community skins" opens the market). Both sides wear the Night City holo skin in the screenshot.
+
+**What we built**
+
+- Launcher skins and dsh frontend skins are managed separately; both accept your own CSS.
+- The community skin market converts npm skin packages into local CSS, after which they are switched or deleted like your own skins and never mix into the plugin system.
+- Built in: `night-city-holo` (graphite base, holographic cyan hairlines, 2077 gold for the active state) and `cyberpunk-2077` (neon yellow × electric cyan).
+
+### Fig. 13 · Logs
+
+![Logs](docs/screenshots/2026-09/13-launcher-logs.webp)
+
+**What it does**
+
+Four sources: launcher log, dsh output, core update, plugin update; errors-only filter, keyword filter, copy, download the full file.
+
+**What we built**
+
+Update, skin conversion and backup-restore output all land here; the access token never appears in a log.
+
+---
+
+<a id="dsh"></a>
+
+## 02 · Inside dsh itself
+
+The next 15 figures are dsh's own pages. Some panels come from suite plugins (original or forked), some from community plugins (adopted), some are stock — each figure states which.
+
+### Fig. 14 · Message editor
+
+*dsh-chat-editor · original*
+
+![Message editor](docs/screenshots/2026-09/14-dsh-chat-editor.webp)
+
+**What it does**
+
+The ✎ in the session header opens this panel: every node of the conversation with its role, turn, whether the model can still see it (hidden by compaction) and its length. Four actions per message: **Edit** and **Delete** (both change what you see and what the model sees at once), **Fold** (display only, one click reopens), **Fork** (a new session from before this point). The screenshot shows an assistant message being edited.
+
+**What we built**
+
+- Your messages and the AI's can both be edited and deleted; the original text always stays in the log and can be traced.
+- Editing an AI message lands as a labelled correction; a deleted message cannot be edited back.
+- Fork starts a new session from any completed turn (the first turn cannot be a fork point).
+- Editing or deleting a message invalidates any memory extracted from it — see "Context and memory".
+
+### Fig. 15 · The conversation
+
+*core + several plugins*
+
+![Conversation](docs/screenshots/2026-09/15-dsh-conversation.webp)
+
+**What it does**
+
+A real session. Suite and community elements visible: the "Temporary chats" group in the left column; the balance / today's cost / cache-hit bar at the bottom left, "Import session" and a row of icons (mobile remote, temp chat, pet, pet chats); the ✎ in the session header and the Conversation / Trajectory / Context tabs; the microphone next to the composer and the model picker; two status lines at the bottom (the upper one is stock, the lower one is the cost plugin's per-session cost and token split); the Files panel on the right. The page colours come from the `night-city-holo` frontend skin.
+
+**What we built**
+
+- Everything added sits in the core's native slots — the icon row at the bottom of the sidebar, sections in Settings, buttons in the session header, icons beside the composer — without changing the layout.
+
+> **Not in the picture** Dropping any non-image file onto the chat stores it in the workspace and inserts a reference; typing `@` opens a file picker; the `/context` command opens the context breakdown; the pet is a draggable floating window inside dsh.
+
+### Fig. 16 · Thinking level
+
+*core picker + dsh-local-reasoning*
+
+![Thinking level](docs/screenshots/2026-09/16-dsh-reasoning-picker.webp)
+
+**What it does**
+
+The level dropdown next to the model picker: Default / Off / Low / Medium / Xhigh. The picker is stock, but a local model has no levels of its own — these were written by the Model parameters page.
+
+**What we built**
+
+- Local models are taught levels by family; OpenRouter models get theirs from Model-list sync.
+- On/off-only models such as Qwen3: Off appends `/no_think`, any other level appends `/think`.
+- Note: a new session locks its model at creation; changing the model in the picker also rewrites the global default.
+
+### Fig. 17 · Settings → Credentials Center
+
+*dsh-credentials-center · original*
+
+![Settings → Credentials Center](docs/screenshots/2026-09/17-dsh-settings-credentials.webp)
+
+**What it does**
+
+The same data as the launcher's Credentials page. One card per reference: name, status, source, set / replace, delete, spare keys; a second line with alias, note and **binding chips** (which model routes, media, search or pets use this key). The left column is the full list of Settings sections: General, Models, Credentials, Plugins, Agent presets, Session import, Model-list sync, Web search (global), Media APIs, Desktop pet, Usage & cost, File mentions, Sidebar cards.
+
+**What we built**
+
+- With the credential keyring plugin installed, secrets live in the Windows Credential Manager; a same-named environment variable still wins.
+
+### Fig. 18 · Settings → Plugins → Plugin configuration
+
+*core slot + several plugin cards*
+
+![Settings → Plugins](docs/screenshots/2026-09/18-dsh-settings-plugins.webp)
+
+**What it does**
+
+One card per plugin with settings: **Terminal**, **Agent loop**, **Web search** (stock), **Context** (preferences of the community `dsh-context`), **Image understanding** (`dsh-vision-bridge-zh`: images are first described by the chosen vision model, then handed to the chat model, so text-only models can "see"), **Session import · system prompt** (`dsh-import-note`). The "Plugin list" tab is a read-only inventory.
+
+**What we built**
+
+- The "Session import · system prompt" card says one thing: imported sessions never override dsh's or any plugin's system prompt.
+- "Image understanding" is a Chinese-UI fork of the community vision bridge; routes and configuration are unchanged, and a few issues (multi-image comparison, directory limits, race judging) were fixed.
+
+### Fig. 19 · Settings → Session import
+
+*dsh-chat-import · community (adopted)*
+
+![Settings → Session import](docs/screenshots/2026-09/19-dsh-settings-chat-import.webp)
+
+**What it does**
+
+The community plugin's own page: an **import system prompt** switch (off by default); **two-way sync** — external → DSH (watch Claude / Codex / Grok Build for new sessions, import incrementally), DSH → external (write new turns back), interval in seconds, "Sync now".
+
+**What we built**
+
+- Not modified. It imports sessions from 19 agents (Claude Code, Codex, ChatGPT, Cursor, Gemini, opencode, Kimi CLI…) and exports back to three; "Import session" in the sidebar is its entry.
+
+### Fig. 20 · Settings → Model-list sync
+
+*dsh-provider-sync · original*
+
+![Settings → Model-list sync](docs/screenshots/2026-09/20-dsh-settings-provider-sync.webp)
+
+**What it does**
+
+Keeps the OpenRouter route's model list current: last sync, interval (24 h), "Sync now", a switch that appends a note to Claude model names, and per-route counts (474 models in the screenshot, 16 new, 23 changed, 310 with thinking levels). The "Refresh model list" button on the Credentials page calls the same sync.
+
+**What we built**
+
+- New models are added, names / context windows / output limits refreshed, thinking levels declared for reasoning-capable models; anything you edited by hand is kept.
+- Claude models get a "not available for OpenRouter native search" note: OpenRouter's server-side web search does not answer Claude, so the web-search plugin routes Claude through tool search instead.
+
+### Fig. 21 · Settings → Web search (global)
+
+*dsh-web-search-plus · original*
+
+![Settings → Web search](docs/screenshots/2026-09/21-dsh-settings-web-search.webp)
+
+**What it does**
+
+Configured once (the launcher's Control Deck tab shares the same configuration). **Mode**: off / let the model decide / search on trigger words / the API provider's own search. **Source**: SearXNG (a self-hosted instance in the screenshot), Serper, SerpApi, Tavily, Brave, DeepSeek official. **Open page text**: after a search, open the top N results and hand their text to the model as well. **`web_fetch` page reader** switch: lets the model read any public web page. Below: Save, Test search, and a read-only card of saved credentials.
+
+**What we built**
+
+- Four modes for four situations: off = offline; let the model decide = the model calls the search tool when it needs to; trigger words = for local models without tool calling (SillyTavern-style: a backtick phrase, keyword or regex hit searches first, then answers); provider search = OpenRouter's server-side search, any model, billed per search.
+- `web_fetch` lets any model read web pages — public addresses only; private and loopback addresses are refused.
+- "Open page text" saves a tool round trip; text extraction can use a local trafilatura service.
+- Keys are stored in dsh's credential store; "Test search" shows results and timing.
+
+### Fig. 22 · Settings → Media APIs
+
+*dsh-media-lab · original*
+
+![Settings → Media APIs](docs/screenshots/2026-09/22-dsh-settings-media-lab.webp)
+
+**What it does**
+
+Image generation, video generation, speech synthesis and speech recognition in one panel: per kind, choose provider, endpoint, model (fetchable list), size or resolution, API key, and "Try it" for a live round trip. Files are saved under `~/.dsh/media` and play directly in the conversation; local services need no key. In the screenshot, images go to OpenRouter's gpt-image-2 and video to OpenRouter's hailuo-3.
+
+**What we built**
+
+- Four new model tools: `generate_image`, `generate_video`, `text_to_speech`, `transcribe_audio`; results appear right in the conversation.
+- Nine providers (OpenAI-compatible, OpenRouter, Gemini, Veo, Replicate, fal, ElevenLabs, Fish Audio, MiniMax) plus a custom HTTP adapter; "shared DSH API" borrows a route saved on the Models page so you never enter a key twice.
+- Image-to-video, reference-guided image generation, TTS voice presets, automatic clean-up of old files.
+- A section may only use its own provider's key; internal addresses returned by a provider are refused.
+
+### Fig. 23 · Settings → Desktop pet
+
+*dsh-desktop-pet · original*
+
+![Settings → Desktop pet](docs/screenshots/2026-09/23-dsh-settings-desktop-pet.webp)
+
+**What it does**
+
+The current pet (create / delete), enable and show switches; **persona** (name, personality and voice, appearance, greeting, scope); **chat model** (follow dsh / share a DSH provider / its own endpoint and key). Further down: lorebook, expressions and frame animations, owner profile, permissions, proactive-talk frequency, voice, reminders, look, desktop window.
+
+**What we built**
+
+- The pet has its own persona, lorebook, multimodal API and chat history; it knows what you are working on (one line when a task starts and finishes), talks first on four frequency bands, sets reminders, speaks and listens, and can draw itself.
+- Three windows: a floating pet inside dsh, a desktop sprite (per-pixel transparency, drag and resize, click to talk), an Edge app window; the window comes back after a dsh restart.
+- Screen reading and computer control each have three permission levels (never / ask / full); as soon as anything you did not type yourself enters the conversation (a screenshot, a search result, uploaded material), control requests must be confirmed with a card.
+- An expression can be one drawing with a motion, or an 8–24 frame animation at its own frame rate.
+
+> **Not in the picture** Pet conversations are managed in their own page opened from 💬 in the sidebar; the Look section adjusts the bubble or lets the image model draw the bubble, input bar and send key. The companion skill `desktop-pet` walks the model from persona to artwork.
+
+### Fig. 24 · Settings → Usage & cost
+
+*dsh-cost-meter-plus · fork*
+
+![Settings → Usage & cost](docs/screenshots/2026-09/24-dsh-settings-usage-cost.webp)
+
+**What it does**
+
+UI language; **official account balance** (total, grant, top-up, refresh); today / this month / all-time cost cards; today's sessions; token statistics and heat map; per-model statistics; further down, budget, price table and the vendors' Coding Plan quota panels.
+
+**What we built**
+
+- Upstream [dsh-cost-meter](https://github.com/Han-1413141/dsh-cost-meter) provides per-session / daily / historical cost, official price sync, a 90+ model price catalog, 7 Coding Plan quotas, budgets and alerts, zh / en UI.
+- We added: multi-vendor balances (DeepSeek / OpenRouter / local / OpenAI, each shown as its API allows), automatic OpenRouter price sync, a cache-hit bar in the sidebar, per-session token split, free local routes, and a "money first" order on the settings page.
+
+### Fig. 25 · Settings → File mentions
+
+*dsh-at-file · community (adopted)*
+
+![Settings → File mentions](docs/screenshots/2026-09/25-dsh-settings-file-mentions.webp)
+
+**What it does**
+
+Type `@` in the composer to search workspace files and insert a path reference; "ignore @ in pasted text"; two-level file filters (global / workspace).
+
+**What we built**
+
+Not modified. The suite's file-drop plugin works with it: dropped files are inserted as `@.dsh-uploads/<name>`, the same kind of reference.
+
+### Fig. 26 · Settings → Sidebar cards
+
+*dsh-better-sidebar · community (adopted)*
+
+![Settings → Sidebar cards](docs/screenshots/2026-09/26-dsh-settings-sidebar.webp)
+
+**What it does**
+
+Settings of the VS Code-style right-hand workbench (files, editor, terminal, Git, browser, background tasks): open by default in new sessions, default width, open chat files in the sidebar, expose a sidebar tool to the model, position compatibility mode, and switches for each content tab.
+
+**What we built**
+
+Not modified. The Files panel on the right of Fig. 15 is this plugin.
+
+### Fig. 27 · Trajectory
+
+*stock*
+
+![Trajectory](docs/screenshots/2026-09/27-dsh-trajectory.webp)
+
+**What it does**
+
+The session trajectory view: Duration / Turns / Calls scales, a time strip, and every step in order with its text, tool calls and result previews.
+
+**What we built**
+
+Stock, unchanged. Compare with the next figure: the trajectory answers "what was done", the context tab answers "what the model is carrying right now".
+
+### Fig. 28 · Context
+
+*dsh-context 0.40.1 · community (adopted)*
+
+![Context](docs/screenshots/2026-09/28-dsh-context-tab.webp)
+
+**What it does**
+
+The context dashboard: **context stats** (turns, steps, tool calls, injections, compactions, prunes); **token stats** (cache-hit ring); **timing** (model calls / tool runs / overhead); **current context** (200.1k / 262.1k, 76% used, split into system prompt, tool definitions, user messages, injected context, assistant messages, tool results); **context trend** (one bar per request, compactions and prunes marked); **context browser** (every item expands to its actual content); **context events**; **file activity**.
+
+**What we built**
+
+- Not modified; needs version 0.40 or later — the launcher self-check names outdated versions.
+- This is where the suite's effects become visible: how much the tool definitions weigh, what the Control Deck / search / memory injected, at which step compaction happened, how far the current request is from the threshold.
+
+---
+
+<a id="beyond"></a>
+
+## 03 · What the screenshots cannot show
+
+Some capabilities have no panel of their own, or only a corner of one. Grouped by purpose.
+
+### Safety
+
+- **Destructive-command blocking** (`dsh-safe-guard`, original): `rm -rf /`, `git push --force` without a lease, raw device writes, `mkfs`, Windows drive-root deletes / formats, fork bombs and the like are denied outright without disturbing the normal approval flow; on the Control Deck's Safety tab you add your own **deny**, **ask** (approval card) and **auto-allow** patterns, live within 1.5 seconds.
+- **Keys in the system keyring** (`dsh-credentials-keyring`, original): API keys are stored in the Windows Credential Manager instead of a plaintext file; environment variables still win; a keyring failure only means a lookup fails, never a lost key.
+- **LAN fence for mobile remote** (`dsh-lan-fence`, original): with the scan-to-pair remote enabled, unpaired LAN devices get 403 on dsh's `/api` while the pairing channel keeps working; pure plugin, so a core upgrade cannot reopen the hole.
+- **Local only**: the launcher listens on 127.0.0.1 and every request carries a token; every suite endpoint that writes configuration refuses cross-site requests and foreign hosts.
+
+### Conversation
+
+- **Temporary chats** (`dsh-temp-chat`, original): one sidebar button opens a chat that belongs to no project, in a shared "Temporary chats" workspace, running a chat-only preset (no files, no terminal); nothing is deleted automatically, a clean-up button removes the folder when you want.
+- **File drops** (`dsh-drop-files`, original): drop any non-image file onto the chat; it is saved into the current workspace's `.dsh-uploads/` and `@.dsh-uploads/<name>` is inserted into the composer for the model to read with its file tools; 25 MB per file; PDF / Office / archives are stored but the model cannot read them, and the drop says so.
+- **Skin Studio** (`dsh-skin-studio` + skill `skin-studio`, original): ask the model in chat to make a skin for the launcher or dsh; it asks about style, primary colour, light/dark and background image first, then writes and applies the CSS; with no image and no image model it asks you for one instead of inventing.
+- **Hover prices** (`dsh-price-hint`, original): hover any model in the picker to see input / output / cache prices per million tokens.
+- **Quick workspace** (`dsh-quick-workspace`, original): create a workspace from a path on the launcher dashboard (the directory is created if missing).
+- **Frontend skin injection** (`dsh-skin-loader`, original): applies the frontend skin chosen in the launcher to the dsh page.
+
+### Optional core capabilities we switched on (upstream packages)
+
+| Capability | What it gives you |
 |---|---|
-| Dashboard | Status (RUNNING flip effect), core & Node versions, default model, start (lightning FX) / stop, folder shortcuts, quick workspace, embedded console |
-| Plugins | Installed plugins + built-in capability list, market search & install, one-click update |
-| Skills | Local skill list + GitHub market install |
-| Sessions | Sessions grouped by workspace (newest first), filter box, one-click ZIP export through the core endpoint |
-| Storage | Sizes per store, one-click open, **config backup / restore** (JSON bundle) |
-| Update | Local vs latest upstream release, one-click git pull + build, **upgrade the vendored core to any upstream tag**, plugin update, launcher self-check panel, live progress log |
-| Tokens | Totals & hit-rate overview, GitHub-style heatmap, streaks, per-model, daily detail |
-| Credentials | Every API credential reference with its bindings, status and source; alias / note; set / replace / delete through the core store; **refresh model list** (OpenRouter catalog sync) and **dsh default model** (route → model, writes `agent-default-model`) |
-| Skins | Launcher skins and dsh frontend skins managed separately: switch / delete / CSS import / community market. Built-in: `default` (launcher), `cyberpunk-2077` and `night-city-holo` (both) |
-| Control Deck | The ST-grade tabbed editor described above (prompts / regex / world info / sampling & context / web search / safety rules / quick start), presets, ST import-export |
-| Model parameters | Every route's models: context window / max output / thinking levels (local routes: probe, auto-teach, thinking mode, api switch); OpenRouter `:online` web-search variants; filter box, collapsed large routes |
-| Memory & context | Session list; per session: context pressure, editable active compaction summary, compaction history, compact-now; long-term memory items (search / pin / scope / edit / export / import), settings, recall test |
-| Logs | Launcher internals / dsh output / update logs, errors-only filter, keyword filter, copy, download |
+| Persistent terminal (the three `dsh-terminal` packages) | the model can open a persistent PTY, send commands interactively, read output, send signals, with background jobs |
+| Scheduling (`dsh-schedule`) | remind the agent at a time or on a fixed rate |
+| LSP code intelligence (the three `dsh-lsp` packages) | a TypeScript language server; the model can go to definition, find references, hover types |
+| MCP client + reference memory server | the official knowledge-graph memory example (entities / relations / observations); independent from the suite's memory plugin |
+| Claude Code / Codex hook bridges | reuse hooks.json files in Claude Code or Codex format |
 
-The 🌐 icon at the bottom-left switches zh/en (server messages follow); the default skin supports light / dark / follow-system.
+---
 
-## ✦ The skin system
+<a id="memory"></a>
 
-- **Launcher skins** (`launcher/skins/launcher/`): `cyberpunk-2077` (Cyberpunk 2077 × Edgerunners, Jimeng-AI-generated art) and `default` (three-state theme).
-- **dsh frontend skins** (`launcher/skins/frontend/`): injected into the dsh web UI via the `dsh-skin-loader` plugin. Pick "(none)" to restore stock looks. The active skin copy is re-synced every time the launcher starts, so an updated bundled skin file takes effect after a launcher restart.
-- **Community skin market**: search npm skin packages and install with one click (results are double-filtered for the dsh ecosystem + skin semantics, so unrelated packages never slip in). The launcher **converts each package in place into a single local CSS file** (manifest-v2 asset dirs, legacy client.js plugin format — executed out of process under Node's permission model —, plain CSS packages, and aggregator shells via up to two levels of dependency recursion are all supported); background art is inlined as data URIs and layered exactly like the original skin-center runtime — painted on the body above its background color, beneath the translucent panels, with light/dark variants following the dsh theme attribute. Converted skins are then switched/deleted like your own — skins never end up in the plugin system. Converted files are git-ignored (copyright stays with the original authors).
+## 04 · Context and memory
 
-## ✦ Plugin roster
+This chapter covers the launcher's Memory & context page and the `dsh-memory-lite` plugin: how dsh manages context on its own, what enters the context and where to control it, and how memory is recorded and used.
 
-| Plugin | Responsibility | Verification |
-|---|---|---|
-| `dsh-control-deck` | ST-grade prompts/regex/lorebook/sampling (pure-function engine + thin host shell), presets, ST import/export, display-only AI-output regex | 48 maintainer cases (11 semantics + 15 adversarial + 17 v3 engine/format + 5 host-shell) |
-| `dsh-safe-guard` | Destructive-command denial (deny, no confirm noise) + hot-loaded deny / ask-first / auto-allow user rules (deny > ask > allow, built-ins always first) | 46 maintainer cases (38 + 6 bypass-adversarial + 2 user-rules) |
-| `dsh-credentials-keyring` | Windows Credential Manager backend for the credential seam: env still wins, secrets migrate on write, records inherited, every keyring failure falls back to the stock path | 12 maintainer cases |
-| `dsh-cost-meter-plus` | Balances / prices / cache hits / ledger | 9 maintainer cases |
-| `dsh-token-usage-plus` | De-peaked usage panel (kept in the repo, not in the default profile since v1.8.0: the cost meter covers it) | live smoke |
-| `dsh-skin-loader` | Frontend skin injection | live smoke |
-| `dsh-price-hint` | Hover model prices | live smoke |
-| `dsh-quick-workspace` | HTTP quick workspace | 2 maintainer cases |
-| `dsh-skin-studio` | Model-facing skin studio: the `skin_studio` tool plus a guided requirements flow, installing through the launcher API; companion dsh skill (`dsh-skills/skin-studio`, installed to `~/.dsh/skills/`) carries the variable tables and templates | 9 maintainer cases (4 + 5 adversarial) |
-| `dsh-local-reasoning` | Model parameters for every route (DeepSeek official / OpenRouter / local): context window, max output, thinking levels (Ollama native reasoning_effort, gpt-oss efforts, Qwen3 soft switch on LM Studio) written with revision-checked settings writes (models[] entry / modelOverrides / llm-deepseek list), backend probing, auto-teach, editable levels, OpenRouter `:online` variants | 16 maintainer cases (8 pure + 8 host-shell) |
-| `dsh-memory-lite` | Memory across compaction and sessions: compaction-summary deposit, fact extraction, BM25 / optional embedding recall, first-turn + relevance injection as a separate context row, `memory_recall` / `memory_note` tools, per-session context view with **editable compaction summary** (written as a real compaction bracket), compact-now, JSON store | 36 maintainer cases (26 pure + 10 host-shell) |
-| `dsh-web-search-plus` | SillyTavern-style web search: five providers + DeepSeek official, four modes (off / tool call / trigger-word injection / **the API provider's own search**) configured once in dsh Settings, ST trigger semantics, template / budget / SSRF-guarded page visits, credential-store keys; **`web_fetch` page reader** built from the core's tool definition over an address-pinned transport behind a public-address guard (the shipped presets keep it off) | 53 maintainer cases |
-| `dsh-chat-editor` | Editing and deleting chat messages: display-only overrides, hide, model-visible edits through a real `compaction/prune` + surface replace (assistant edits land as framed user corrections), delete message / turn, fork from any completed turn, cold-session resume | 15 maintainer cases |
-| `dsh-temp-chat` | Project-less conversations: scratch directory per chat, shared workspace, shipped chat-only agent preset, global tools masked, guarded cleanup | 9 maintainer cases |
-| `dsh-media-lab` | Image / video / speech / transcription APIs behind one settings panel, eleven providers plus a custom-HTTP adapter, per-kind source switch (custom / borrow a DSH provider, host + key resolved together, fail-closed), model+price discovery filtered by capability, TTS voice presets, reference-guided image generation (OpenRouter `input_references` + seed + resolution tier), files saved to `$DSH_HOME/media` and played inline in the chat, four model tools | 104 maintainer cases (60 adapters + 33 host-shell + 6 model-scout + 5 source/config) |
-| `dsh-desktop-pet` | Desktop companion: own persona / lorebook / multimodal API, user profile distilled from your own history, task awareness, proactive bands, reminders, voice in and out, 8–24 frame sprite animations, click-to-talk layered desktop window that leans and stretches while dragged (frames cached per window size, no repaint per move), three-level screen & control permission, in-dsh + WinForms + Edge windows, companion pet-making skill; full-parameter lorebook (keywords / secondary keys / logic / probability / order / scan depth) with override-or-coexist against the control deck's world info, and a max-input token budget | 94 maintainer cases (34 pure + 60 host-shell) |
-| `dsh-provider-sync` | Keeps every OpenRouter route's model list current: boot + every 24 h + a Settings card; new models added, limits refreshed, reasoning-effort ladder declared for reasoning-capable models | 15 unit |
-| `dsh-drop-files` | Drop any non-image file on the chat: saved under the workspace's `.dsh-uploads/` and referenced as `@.dsh-uploads/<name>` (images stay with the core rail) | 9 unit |
-| `dsh-credentials-center` | One page for every credential reference: bindings (llm routes, media, search, pets, memory), status, source, alias, note; set / delete through the core store; **spare keys per reference** (several secrets, switch with one click, the replaced one is kept); launcher page + Settings section | 18 unit |
-| `dsh-vision-bridge-zh` | Chinese-UI fork of the community vision bridge (MIT): same routing, a card you can read | live smoke |
-| `dsh-import-note` | One card under Plugins: what the community session importer does with source system prompts (kept off by default; at most a context message inside the imported session, never dsh's own prompt); shown only while the importer is installed | 2 maintainer cases |
-| `dsh-lan-fence` | LAN /api fence for mobile remote: strips the auto-derived LAN authorities from the connection fence in place (a patch layer of the profile, not a bundle — registered by `launcher/dsh-patch-layers.mjs`) | 6 maintainer cases |
-The maintainer test suite (504 cases) is kept out of the published tree, under the git-ignored `.local/tests/`.
+### 1. What dsh does by itself
 
-## ✦ Engineering skills (seven-pack)
+- History is append-only and never truncated. Near the limit (80% of the context window) dsh compacts the oldest stretch into a summary; from then on the model sees the summary instead of the original; `/compact` triggers it by hand.
+- The limit is each model's `contextWindow`, 262,144 by default; local models rarely load that much, so set the real value per model on the launcher's Model parameters page or compaction happens in the wrong place.
+- Stock dsh has no cross-session memory: in a new session the model remembers nothing.
 
-Copy the folders under `skills/` into `~/.claude/skills/` and Claude Code masters the dsh codebase:
-`dsh-architecture` (Cordis model) · `dsh-plugin-dev` (plugin contract) · `dsh-frontend-dev` (client slots) · `dsh-env-ops` (environment ops) · `dsh-playbook` (tuning playbook) · `dsh-testing` (test layering) · `dsh-local-models` (LM Studio / Ollama routes, thinking levels, context alignment).
+### 2. What enters the context, and where to adjust it
 
-In-dsh skills (`dsh-skills/`, copied to `~/.dsh/skills/` by `setup.cmd`): `skin-studio` (skin craft) · `control-deck-authoring` (prompts / regex / lore / presets and SillyTavern migration) · `desktop-pet` (designing a pet: persona, artwork checklist, prompt recipes).
+| Content | From | Adjust in | Default budget |
+|---|---|---|---|
+| System prompt entries | Control Deck → Prompts | Control Deck | by entry order |
+| Matched World Info, user-prefix prompts | Control Deck → World Info / Prompts | Control Deck | 8000 characters, scans the last 6 messages |
+| Search results (trigger mode) | Web search | dsh Settings → Web search (global) | character budget; up to 5 pages opened |
+| Page text ("open page text", `web_fetch`) | Web search | same | 2000 characters per page (adjustable); 200,000 for a full page read |
+| Memory recall | Memory & context | launcher → Memory & context → Settings | 4000 characters, at most 5 items |
+| Text descriptions of images (text-only models) | Image understanding | dsh Settings → Plugins → Image understanding | images up to 4 MP / 20 MB |
+| Tool definitions | tools registered by the core and plugins | Control Deck tool switches; temporary chats mask all tools by default | about 94 items, 17.6k tokens in the screenshot |
 
-## ✦ Why zero core rewrites work
+Every injection is **one separate context entry placed after your message**; your words are never rewritten. To see the effect: the context ring beside the composer, the session's Context tab (community plugin `dsh-context`), the pressure bar on the launcher's memory page.
 
-dsh is built on the Cordis plugin framework; the suite only uses these **official extension points**:
+```mermaid
+flowchart TB
+  U["Your message"] --> REQ["Request to the model (with injections: lore · search results · memory recall)"]
+  REQ --> LOG[("Session history (append-only)")]
+  LOG -- "near the limit" --> CMP["Auto-compaction summary"]
+  CMP -- "stored automatically" --> MEM[("Memory store: summaries / facts / notes")]
+  LOG -- "facts extracted every 8 turns" --> MEM
+  MEM -- "recalled by relevance" --> REQ
+  EDIT["Launcher: edit the active summary"] --> LOG
+  CE["Message editor: edit / delete"] --> LOG
+  CE -- "related memory invalidated" --> MEM
+```
 
-- `ctx.systemPrompt.section()` — sectioned system-prompt injection;
-- `agent/pre-step` — rewrite messages entering the model (regex / world info / prefixes);
-- `agent/request` — merge request parameters (sampling overrides);
-- `tools/pre-execute` — allow/deny tool calls (safety blocking / tool switches);
-- `llm/stream` + `ctx.sessionProjections` — usage capture and the per-session cost projection (cost-meter);
-- `ctx.webServer.register()` — mount HTTP endpoints (quick workspace / skin serving / price hints);
-- `session/event` / `agent/status` / `ctx.tools.register()` / `ctx.agents.resume()` + `agent.runMaintenance()` + `session.append()` — the memory plugin's summary deposit, fact extraction, tools and the summary-edit compaction bracket (the same append-only surface-replace protocol `compaction-basic` uses);
-- the client `__ModuleLoader__` slot — frontend injection (skins / price hints / cost & usage panels).
+### 3. Session context tab: view and edit the compaction summary
 
-The launcher is a fully separate process that talks to the core only via CLI and HTTP.
+- **View**: for every session (open or not) the context pressure against the threshold, the active summary, the compaction history.
+- **Edit**: change the summary text and save; from the next request on the model continues from your text; the original stays in the session log.
+- **Compact now**: compact before the threshold. **Store in memory**: save the current summary as a memory item.
+- When editing is refused: the session is answering, compacting, or that summary has already been replaced by a newer compaction.
 
-## ✦ FAQ
+### 4. Long-term memory tab: remembering across sessions
 
-**Q: A task failed with `MISSING_CREDENTIAL: deepseek-official` — is that a bug?**
-No. dsh sessions **pin the model chosen at creation time**. If a session was created on the official DeepSeek model while you only configured an OpenRouter key, that session keeps using the official channel and reports the missing credential. Fix: start a new session (default model shows on the dashboard), switch models inside the session, or add `DEEPSEEK_API_KEY`.
+**What is stored.** Three kinds of items:
+- **Summaries** — every automatic compaction summary is stored (the latest per session);
+- **Facts** — every 8 turns the session's own model extracts "things worth remembering long-term" (can be disabled, interval adjustable);
+- **Notes** — written by you on the page, or by the model through the `memory_note` tool.
 
-**Q: Where did my market-installed skin go?**
-The "dsh frontend skins" section of the Skins page — never the plugin list (v1 briefly installed them as plugins; that's fixed, with conversion).
+Each item has a scope: **global** (about you) or **this workspace only** (about a project); items can be pinned, edited, deleted, imported / exported, and unpinned ones cleared in one click.
 
-**Q: UI changes not showing?**
-Browser cache — hard-refresh with `Ctrl+F5`.
+**How it is used.** On the first turn of a new session, pinned and relevant items are added as one context entry after your message; on later turns only relevant items not yet injected are added. The injection mode ("pinned + relevant on the first turn / first turn only / off"), items per injection and the character budget are adjustable. Recall is keyword-based (Chinese supported) and can use a local embeddings endpoint (LM Studio / Ollama) for semantic recall; the "recall test" on the Settings tab shows what a sentence would inject. The model also gets `memory_recall` / `memory_note` tools, which can be turned off.
 
-**Q: Do Control Deck edits need a restart?**
-No — saves hot-reload within 1.5 s.
+**After editing the source conversation.** If a message is edited or deleted with the message editor, facts and summaries taken from it are invalidated: they stay on the memory page with a label for you to inspect and are no longer recalled automatically; sessions that already received them get a withdrawal or correction notice at their next step. Saving an item's text on the memory page confirms it and makes it valid again.
 
-**Q: Can I change what the model remembers after compaction?**
-Yes — Memory & context → pick the session → edit the active summary → Save. It is written as a new compaction record (the original stays in the log); the next request uses your text. Sessions that are not open are resumed, edited and closed again.
+### 5. Where the files are
 
-**Q: Does the memory plugin cost extra model calls?**
-Only fact extraction (one short call every 8 human turns on the session's own model; switch it off in Memory & context → Settings) — plus "Compact now" when you click it. Deposit, recall and injection are local; embeddings are optional and off by default (default endpoint LM Studio; Ollama or any OpenAI-compatible `/v1/embeddings` works).
+- Settings: `~/.dsh/memory-lite.json` (enabled, store summaries, extract facts, interval, injection mode, items per injection, character budget, model tools, embeddings endpoint).
+- Data: `~/.dsh/memory/memory.json` (items) and `vectors.json` (optional embeddings).
+- Both are part of the launcher's config backup; a restore is merged in while dsh is running.
 
-**Q: dsh takes 20 s to start instead of 1.5 s?**
-The core has not been built (`core/apps/cli/lib/bin.js` missing) and the launcher fell back to the tsx source launch. Run `corepack pnpm build:lib && corepack pnpm build:web` inside `core/` (or "Update core" on the Update page).
+### 6. FAQ
 
-## ✦ License & credits
+**Does it cost extra model calls?** Only fact extraction (one short request every 8 turns, with the session's own model, can be disabled) and a manual "Compact now"; recall and injection are local.
 
-Original suite code is MIT (see [LICENSE](LICENSE)). Forked plugins keep their upstream MIT licenses: [dsh-cost-meter](https://github.com/Han-1413141/dsh-cost-meter) (Han-1413141), [dsh-usage-stats](https://github.com/Tastelessor/dsh-usage-stats) (Tastelessor). Control Deck semantics align with [SillyTavern](https://github.com/SillyTavern/SillyTavern) (behavior reference only, no code included). Community skin content belongs to its authors and keeps whatever license its source package declares (check each package before redistributing; some skins are non-commercial). Launcher artwork generated with Jimeng AI by the suite author. Launcher UX pays homage to [秋叶 aaaki's ComfyUI pack launcher](https://space.bilibili.com/12566101).
+**Is the original text still there after editing a summary?** Yes. The edit is a new record appended to the log; the Context tab's event list shows it.
+
+**Will memory drag in things from other projects?** Facts are global or workspace-scoped, and workspace items are recalled only in the same directory; later turns have a relevance gate; the total injection is budgeted; the recall test shows it in advance.
+
+---
+
+<a id="roster"></a>
+
+## 05 · Full plugin roster: original / fork / adopted
+
+**Original** = written from scratch (a feature may follow another program's behaviour, but none of its code; noted where so); **fork** = built on someone else's open-source project, upstream license kept, changes listed; **adopted** = third-party projects used as-is, not a line changed. Versions measured on this machine on 2026-09-11.
+
+### Program
+
+Standalone program, not a dsh plugin.
+
+| Plugin / program | Version | Provenance | Role | Where |
+|---|---|---|---|---|
+| `DSH Launcher` | 13 pages | original | One-click start / exit, plugin and skill markets, sessions and storage, updates and self-check, token analytics, Control Deck, model parameters, Credentials Center, memory & context, skins, logs; zh / en. Its UX pays homage to 秋叶 aaaki's ComfyUI launcher (experience only, no code). | launcher/ |
+
+### Suite plugins · original
+
+19 plugins.
+
+| Plugin | Version | Provenance | Role | Where |
+|---|---|---|---|---|
+| `dsh-control-deck` | 0.3.1 | original | SillyTavern-grade Control Deck: leveled prompts, regex scripts, World Info, sampling overrides, tool switches, presets, ST JSON import/export, live within 1.5 s. Follows SillyTavern's behaviour without its code. | launcher → Control Deck |
+| `dsh-safe-guard` | 0.2.0 | original | Destructive-command blocking + custom deny / ask / allow rules. | Control Deck → Safety |
+| `dsh-credentials-keyring` | 0.1.0 | original | API keys in the Windows Credential Manager. | Credentials Center "source" column |
+| `dsh-skin-loader` | 0.1.0 | original | Skins the dsh web page. | launcher → Skins |
+| `dsh-price-hint` | 0.1.0 | original | Hover prices in the model picker. | dsh model picker |
+| `dsh-quick-workspace` | 0.1.0 | original | Create a workspace from a path. | launcher dashboard |
+| `dsh-skin-studio` | 0.1.0 | original | Let the model make skins in chat (`skin_studio` tool). | chat |
+| `dsh-local-reasoning` | 0.1.1 | original | Context window / max output / thinking levels for any model; local models probed and taught; OpenRouter `:online` variants. | launcher → Model parameters |
+| `dsh-web-search-plus` | 0.5.0 | original | Four web-search modes, six sources, `web_fetch` page reader, automatic page text. Trigger semantics follow SillyTavern's WebSearch extension without its code. | dsh Settings → Web search (global), Control Deck |
+| `dsh-memory-lite` | 0.1.0 | original | Editable compaction summaries, compact now; long-term memory (summaries / facts / notes) with automatic injection and the `memory_recall` / `memory_note` tools. | launcher → Memory & context |
+| `dsh-chat-editor` | 0.1.0 | original | Edit / delete / fold any message, fork from any turn. | session header ✎ |
+| `dsh-temp-chat` | 0.1.1 | original | Temporary chats that belong to no project. | sidebar button |
+| `dsh-media-lab` | 0.1.1 | original | Image / video / TTS / STT with nine providers plus custom endpoints; results play in the chat. | dsh Settings → Media APIs |
+| `dsh-desktop-pet` | 0.2.2 | original | Desktop pet: persona, lorebook, own API, proactive talk, reminders, voice, frame animation, screen / control permissions, three windows. | dsh Settings → Desktop pet, sidebar |
+| `dsh-lan-fence` | 0.1.0 | original | Fences `/api` from unpaired LAN devices during mobile remote. | (no panel) |
+| `dsh-provider-sync` | 0.2.0 | original | Automatic OpenRouter model-list sync with thinking levels for reasoning models. | dsh Settings → Model-list sync |
+| `dsh-drop-files` | 0.1.1 | original | Drop any file onto the chat. | chat drag & drop |
+| `dsh-credentials-center` | 0.3.0 | original | Every API key on one page: bindings, aliases, spare keys, default model. | launcher → Credentials + dsh Settings |
+| `dsh-import-note` | 0.1.0 | original | One card: session import never overrides system prompts. | dsh Settings → Plugins |
+
+### Suite plugins · forks
+
+3 forks, all of MIT projects, upstream license kept.
+
+| Plugin | Version | Provenance | Upstream / license | Role | Where |
+|---|---|---|---|---|---|
+| `dsh-cost-meter-plus` | 1.5.19-plus.4 | fork | Han-1413141/dsh-cost-meter 1.5.19 · MIT | Upstream: per-session / daily / historical cost, official price sync, 90+ model price catalog, 7 Coding Plan quotas, budget alerts, zh / en. **Ours**: multi-vendor balances, automatic OpenRouter price sync, cache-hit bar, per-session token split, free local routes, money-first settings page. | dsh Settings → Usage & cost, sidebar |
+| `dsh-token-usage-plus` | 2.1.0-plus.1 | fork | Tastelessor/dsh-usage-stats 2.1.0 · MIT | Upstream: usage cards + heat map + official peak/off-peak pricing. **Ours**: peak/off-peak display removed, OpenRouter prices filled from the cost ledger. Not mounted by default (the cost page covers it), still in the repo. | (not mounted by default) |
+| `dsh-vision-bridge-zh` | 0.4.5-zh.2 | fork | @goodandready/dsh-vision-bridge 0.4.5 · MIT | Upstream: vision for text-only models (automatic rewriting + 26 vision tools: describe, OCR, grounding, crop, long screenshots, PDF, video…). **Ours**: Chinese UI; fixes to multi-image comparison, directory limits and race judging. | dsh Settings → Plugins → Image understanding |
+
+### Community plugins · adopted
+
+9 plugins + 1 MCP server, installed from the launcher's plugin market, not a line changed. Two candidates were rejected: `dsh-auto-approval` (incompatible with the current core) and `dsh-filesnap` (recorded sessions cannot be opened after uninstalling it).
+
+| Plugin | Version | Provenance | Upstream / license | Role | Where |
+|---|---|---|---|---|---|
+| `dsh-context` | 0.40.1 | adopted | bowenliang123 · Apache-2.0 | Context dashboard (composition, trend, events, browser, file activity) and the `/context` command. Needs 0.40+. | session → Context tab |
+| `dsh-at-file` | 0.6.3 | adopted | omdsh-dev · MIT | `@` file references in the composer. | dsh Settings → File mentions |
+| `dsh-better-sidebar` | 0.17.1 | adopted | omdsh-dev · MIT | VS Code-style right sidebar: files / editor / terminal / Git / browser / background tasks. | dsh Settings → Sidebar cards, right panel |
+| `@linxin666/dsh-remote-web-ui` | 0.3.10 | adopted | zhu1090093659/dsh-web · Apache-2.0 | Scan-to-pair remote for phones / PCs sharing the same web GUI, one-time tokens, revocable devices, optional Cloudflare tunnel. | sidebar phone icon |
+| `dsh-automation` | 0.1.4 | adopted | Ephemeral-AI-Lab · MIT | Timed / recurring self-prompts inside a session. | chat |
+| `dsh-chat-import` | 0.8.2 | adopted | Nwflower · MIT | Import sessions from 19 agents (Claude Code / Codex / ChatGPT / Cursor / Gemini…); two-way sync. | sidebar "Import session", dsh Settings → Session import |
+| `dsh-voice-input-plugin` | 0.1.1 | adopted | CrazyGummies · MIT | Microphone in the composer, browser speech recognition, no keys. | composer |
+| `dsh-notification` | 0.1.1 | adopted | nishit130 · MIT | Desktop and webhook notifications when the agent finishes, errors or waits for approval. | (background) |
+| `@syncended/dsh-retry` | 0.2.2 | adopted | syncended · MIT | Automatic retries on transient model errors, interrupted-session recovery. | (background) |
+| `@modelcontextprotocol/server-memory` | 2026.7.4 | adopted | Model Context Protocol project · MIT | MCP knowledge-graph memory server, mounted through the core's MCP client. | model tools |
+
+### Core and optional in-tree capabilities · adopted
+
+Official deepseek-harness code, zero changes.
+
+| Package | Version | Provenance | Upstream / license | Role | Where |
+|---|---|---|---|---|---|
+| `deepseek-harness (core/)` | 0.1.1-rc.2 | upstream | deepseek-ai · MIT | The full upstream source, vendored and unmodified; the launcher upgrades it to any upstream version. Ships 11 development-process skills. | core/ |
+| `dsh-terminal / -bash / tool-terminal` | 0.1.1-rc.2 | upstream | in-tree | Persistent terminal and six model tools. | profile patch |
+| `dsh-schedule` | 0.1.1-rc.2 | upstream | in-tree | Scheduled reminders. | profile patch |
+| `dsh-lsp / lsp-stdio / tool-lsp` | 0.1.1-rc.2 | upstream | in-tree | LSP code intelligence (TypeScript). | profile patch |
+| `dsh-mcp-client` | 0.1.1-rc.2 | upstream | in-tree | MCP client. | profile patch |
+| `dsh-hooks-claude-code / -codex` | 0.1.1-rc.2 | upstream | in-tree | Claude Code / Codex hook bridges. | profile patch |
+
+### Totals
+
+| Category | Count |
+|---|---|
+| Original programs | 1 (the DSH Launcher) |
+| Original plugins | 19 |
+| Forked plugins | 3 (cost-meter-plus, token-usage-plus, vision-bridge-zh) |
+| Adopted community plugins | 9 + 1 MCP server |
+| Adopted optional core packages | 10 |
+| Original skills | 7 engineering + 3 in-dsh |
+| Skills shipped with the core | 11 (adopted) |
+| Original skins | 3 launcher · 2 frontend |
+| Lines changed in the core | 0 |
+
+---
+
+<a id="skills"></a>
+
+## 06 · Skills
+
+Two kinds: engineering skills for **Claude Code** (`skills/`, copy to `~/.claude/skills/`) and skills for **the model inside dsh** (`dsh-skills/`, copied to `~/.dsh/skills/` at setup, visible on the launcher's Skills page). All original.
+
+### Engineering skills (Claude Code, 7)
+
+| Skill | For |
+|---|---|
+| `dsh-architecture` | understanding dsh's plugin system, profiles / bundles / patches, the turn flow — read before touching the core |
+| `dsh-plugin-dev` | writing dsh plugins: tools, hooks, permission gates, commands, model adapters |
+| `dsh-frontend-dev` | changing the dsh web UI: panels, settings cards, sidebar items, themes |
+| `dsh-env-ops` | setting up, upgrading and troubleshooting build / install / startup errors (Windows first) |
+| `dsh-playbook` | how to run it, configure models and keys, make it faster and cheaper, install plugins |
+| `dsh-testing` | which tests to run, how to write them, how to refresh snapshots |
+| `dsh-local-models` | LM Studio / Ollama routes, thinking levels, context-window alignment |
+
+### In-dsh skills (3)
+
+| Skill | For |
+|---|---|
+| `skin-studio` | letting the model make launcher or dsh skins (variable tables, templates, background images) |
+| `control-deck-authoring` | letting the model write prompts, regex, lorebooks and presets, or migrate SillyTavern assets |
+| `desktop-pet` | letting the model build a pet with you: requirements, persona, asset list, artwork, plugin config |
+
+### Shipped with the core (adopted)
+
+The core ships 11 development-process skills (code review, documentation standards, pre-push checks, translation…), listed on the launcher's Skills page as repo skills.
+
+---
+
+<a id="skins"></a>
+
+## 07 · Skins and artwork
+
+Launcher skins and dsh frontend skins are managed separately, both switched and imported on the launcher's Skins page.
+
+| Skin | Side | Provenance | Notes |
+|---|---|---|---|
+| `default` | launcher | original | light / dark / system |
+| `cyberpunk-2077` | launcher + frontend | original | neon yellow × electric cyan, chamfered cards, glitch, electric effects; artwork generated with 即梦 AI |
+| `night-city-holo` | launcher + frontend | original | graphite base, holographic cyan hairlines, 2077 gold active state, vector navigation icons, no scanlines or flicker; the Night City backdrop was generated with gpt-image-2 |
+| Community skins | frontend | community authors (adopted) | converted from npm into local CSS by "Get community skins" (miku, matrix, minecraft, xp and a dozen others have been used); each keeps its own license, none is committed |
+
+Other artwork: the pet's holographic UI set (bubble, input bar, send key) ships with the pet plugin; the expression frames of the pet "王胖子" were generated with gpt-image-2 and keyed out locally.
+
+---
+
+<a id="principles"></a>
+
+## 08 · License and credits
+
+- Original suite code: **MIT** (`LICENSE`).
+- Forked plugins keep their upstream MIT licenses: [Han-1413141/dsh-cost-meter](https://github.com/Han-1413141/dsh-cost-meter), [Tastelessor/dsh-usage-stats](https://github.com/Tastelessor/dsh-usage-stats), [@goodandready/dsh-vision-bridge](https://www.npmjs.com/package/@goodandready/dsh-vision-bridge).
+- Adopted community plugins carry their own licenses (MIT / Apache-2.0), see the roster; community skins belong to their authors.
+- The Control Deck and web search follow the behaviour of [SillyTavern](https://github.com/SillyTavern/SillyTavern) and its WebSearch extension (behaviour only, none of their code).
+- The launcher's UX pays homage to [秋叶 aaaki's ComfyUI launcher](https://space.bilibili.com/12566101).
+- Core: [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) (MIT).
+- Launcher artwork generated with 即梦 AI; the Night City backdrop and the pet frames with gpt-image-2.
+
+Screenshots taken 2026-09-11 on dsh 0.1.1-rc.2; launcher screenshots show dsh not running.

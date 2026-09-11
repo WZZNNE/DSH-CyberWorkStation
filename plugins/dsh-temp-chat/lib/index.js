@@ -11,8 +11,8 @@
  * Temp sessions are kept (never auto-deleted); `POST /clean` removes the scratch folders
  * of sessions the user selects, and the launcher lists them.
  */
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, rmSync, statSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
@@ -20,7 +20,7 @@ import { randomUUID } from 'node:crypto'
 export const name = 'temp-chat'
 export const inject = ['sessions', 'agents', 'workspaceRegistry']
 
-const DSH_HOME = process.env.DSH_HOME ?? join(homedir(), '.dsh')
+const DSH_HOME = resolveDshHome()
 const SCRATCH_ROOT = join(DSH_HOME, 'scratch')
 const PRESET_ID = 'temp-chat'
 const USER_PRESET_DIR = join(DSH_HOME, '.agent-presets', PRESET_ID)

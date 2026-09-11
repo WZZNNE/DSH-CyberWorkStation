@@ -40,7 +40,3 @@ The list under `llm-pi-ai.providers.<route>.models` is a one-time snapshot: mode
 - `POST /dsh-provider-sync/settings` accepts `{ intervalHours?: whole number 1–720, anthropicNote?: boolean }`; anything else is a 400, never a silent reset.
 - A failed sync is retried after 5, then 15, then 60 minutes; `status` reports `failures`, `lastAttemptAt`, and this run's per-route record (`models / added / updated / noted / reasoning / at`).
 - Hand edits stay: name / contextWindow / maxTokens are refreshed only while the field still holds what this plugin wrote last (or the catalog value); new ids are appended, the owner's order is kept.
-
-## 测试
-
-`node --test .local/tests/dsh-provider-sync/*.mjs` — 15 条维护者用例:目录合并规则(追加不重排 / 只刷新本插件写过的字段 / 无记录时以目录值判定 / 思考档位归属 / :online 变体 / Claude 名称后缀 / 不改入参)、OpenRouter 路由识别、配置归一。

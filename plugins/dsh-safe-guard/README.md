@@ -36,9 +36,6 @@ Edited from the DSH Launcher Control Deck → Safety rules tab and re-read every
 
 `bash.command`, `pwsh.command`, `terminal_send.text`. All other tools delegate untouched. Denials return `{ kind: 'deny', reason }` and never call `next()`; every allow delegates, so downstream policy (sandbox, permission, plan mode) still runs.
 
-## Test
-
-The unit suite (38 rule cases + 6 bypass-adversarial cases + user-rules file cases) is maintained in the suite author's local `.local/tests/dsh-safe-guard/` directory and is not shipped with the package.
 
 ## Model Experience
 

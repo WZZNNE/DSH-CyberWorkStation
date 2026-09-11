@@ -19,8 +19,8 @@
  * that folder, and the folder carries its own `.gitignore` so uploads never enter the workspace's
  * repository. The route carries the suite's loopback + same-origin fence.
  */
-import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs'
-import { basename, extname, join, resolve } from 'node:path'
+import { lstatSync, mkdirSync, realpathSync, statSync, writeFileSync } from 'node:fs'
+import { basename, extname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 
 export const name = 'drop-files'
 export const inject = ['webServer', 'sessions']
@@ -29,6 +29,42 @@ const MAX_MB = 25
 const MAX_BODY = Math.ceil(MAX_MB * 1024 * 1024 * 4 / 3) + 64 * 1024   // base64 growth + JSON envelope
 const FOLDER = '.dsh-uploads'
 const NAME_MAX = 120
+
+// lstat also sees dangling links. Treat them as occupied names, never as a new file.
+const entryExists = path => {
+  try { lstatSync(path); return true } catch (error) { if (error?.code === 'ENOENT') return false; throw error }
+}
+const refusedPath = () => Object.assign(new Error('upload directory is outside the workspace or changed during upload'), { status: 400, code: 'refused-path' })
+const sameDirectory = (a, b) => a.dev === b.dev && a.ino === b.ino && b.isDirectory()
+const strictChild = (root, dir) => {
+  const rel = relative(root, dir)
+  return rel !== '' && rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel)
+}
+
+/** Resolve directory aliases before writing; each write rechecks the canonical parents. */
+function uploadDirectory(root, rootState) {
+  const requested = join(root, FOLDER)
+  if (entryExists(requested)) {
+    let existing
+    try { existing = realpathSync(requested) } catch { throw refusedPath() }
+    if (!strictChild(root, existing) || !statSync(existing).isDirectory()) throw refusedPath()
+  } else {
+    try { mkdirSync(requested) } catch (error) { if (error?.code !== 'EEXIST') throw error }
+  }
+  const dir = realpathSync(requested)
+  if (!strictChild(root, dir) || !statSync(dir).isDirectory()) throw refusedPath()
+  const dirState = statSync(dir)
+  const check = () => {
+    try {
+      if (!samePath(realpathSync(root), root) || !sameDirectory(rootState, statSync(root))
+        || !samePath(realpathSync(requested), dir)
+        || !samePath(realpathSync(dir), dir) || !sameDirectory(dirState, statSync(dir))
+        || !strictChild(root, realpathSync(dir))) throw refusedPath()
+    } catch { throw refusedPath() }
+  }
+  check()
+  return { dir, check }
+}
 
 /** A file name that cannot escape the folder or upset Windows: no path separators, no reserved names. */
 export function safeName(raw) {
@@ -52,7 +88,7 @@ export function freeName(dir, wanted) {
     const suffix = n === 1 ? '' : `-${n}`
     // The suffix must not push the name past the cap: shorten the stem, keep the extension.
     const candidate = stem.slice(0, Math.max(1, NAME_MAX - ext.length - suffix.length)) + suffix + ext
-    if (!existsSync(join(dir, candidate))) return candidate
+    if (!entryExists(join(dir, candidate))) return candidate
   }
 }
 
@@ -126,26 +162,32 @@ export function apply(ctx) {
         if (!workspace) return refuse(res, 400, 'no-workspace', 'no workspace: open a session inside a workspace first')
         const known = await knownWorkspace({ sessions: ctx.sessions, persistence: ctx.get?.('sessionPersistence') }, workspace, sessionId)
         if (!known) return refuse(res, 403, 'unknown-workspace', 'that folder is not the workspace of any session here')
-        let root
-        try { root = resolve(workspace); if (!statSync(root).isDirectory()) throw new Error('not a directory') } catch { return refuse(res, 400, 'not-a-directory', `workspace is not a directory: ${workspace}`) }
+        let root, rootState
+        try { root = realpathSync(resolve(workspace)); rootState = statSync(root); if (!rootState.isDirectory()) throw new Error('not a directory') } catch { return refuse(res, 400, 'not-a-directory', `workspace is not a directory: ${workspace}`) }
         const b64 = typeof body.base64 === 'string' ? body.base64 : ''
         if (!b64) return refuse(res, 400, 'empty', 'empty file')
         const bytes = Buffer.from(b64, 'base64')
         if (bytes.length > MAX_MB * 1024 * 1024) return refuse(res, 413, 'too-big', `file over the ${MAX_MB} MB limit`)
-        const dir = join(root, FOLDER)
-        const fresh = !existsSync(dir)
-        mkdirSync(dir, { recursive: true })
+        const { dir, check } = uploadDirectory(root, rootState)
         // Uploads are the owner's scratch material, not part of their project: the folder ignores itself.
-        if (fresh || !existsSync(join(dir, '.gitignore'))) { try { writeFileSync(join(dir, '.gitignore'), '*\n') } catch { /* read-only folder: the upload below will tell */ } }
+        check()
+        const ignore = join(dir, '.gitignore')
+        // On Windows, wx can follow a dangling junction. Never attempt a write
+        // through any existing entry, even when its destination does not exist.
+        if (!entryExists(ignore)) {
+          check()
+          try { writeFileSync(ignore, '*\n', { flag: 'wx' }) } catch { /* upload reports directory write failures; a concurrently created file is retained */ }
+        }
         const wanted = safeName(body.name)
         let fileName = ''
         let target = ''
         // Exclusive create: two drops racing for the same name each get their own file.
         for (let attempt = 0; attempt < 5; attempt++) {
+          check()
           fileName = freeName(dir, wanted)
           target = join(dir, fileName)
-          // Belt and braces: the resolved target must stay inside the folder.
-          if (!resolve(target).startsWith(resolve(dir) + (process.platform === 'win32' ? '\\' : '/'))) return refuse(res, 400, 'refused-path', 'refused path')
+          if (!strictChild(dir, resolve(target))) throw refusedPath()
+          check()
           try { writeFileSync(target, bytes, { flag: 'wx' }); break } catch (error) { if (error?.code !== 'EEXIST' || attempt === 4) throw error }
         }
         return json(res, 200, { ok: true, relative: `${FOLDER}/${fileName}`, absolute: target, bytes: bytes.length })

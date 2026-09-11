@@ -28,7 +28,8 @@
   },
   "peerDependencies": {
     "@deepseek-ai/dsh-compaction": "*",
-    "@deepseek-ai/dsh-llm": "*"
+    "@deepseek-ai/dsh-llm": "*",
+    "@deepseek-ai/dsh-home-paths": "*"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-compaction": {

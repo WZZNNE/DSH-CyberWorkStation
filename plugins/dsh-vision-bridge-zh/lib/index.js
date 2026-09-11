@@ -26,6 +26,8 @@ import { runChannels, probeOllama, channelKey } from './channels.js'
 import { createLru, descriptionCacheKey } from './cache.js'
 import { EvidenceStore } from './evidence.js'
 import { VisionJournal } from './journal.js'
+import { resolveAllowedTarget, publicPageUrl } from './paths.js'
+export { isPathAllowed } from './paths.js'
 
 export const name = 'dsh-vision-bridge'
 export const inject = ['tools', 'llm', 'attachments', 'fs', 'webServer', 'settings', 'skills']
@@ -124,7 +126,7 @@ export const Config = z.object({
   // Block 8 (0.2.13): privacy boundary.
   allowedImageDirs: z
     .array(z.string())
-    .description('If non-empty, only allow image paths under these dirs; others are rejected.')
+    .description('If non-empty, local image, HTML, video and PDF inputs must resolve inside these directories; links and aliases are checked after resolution.')
     .default([]),
   auditLog: z
     .union([z.const('off'), z.const('errors'), z.const('all')])
@@ -182,12 +184,6 @@ export function shouldBridgeForModel(config, supportsImages) {
   if (pref === 'never') return true
   if (pref === 'always') return false
   return !supportsImages // prefer: bridge only when text-only
-}
-
-export function isPathAllowed(path, allowedDirs) {
-  if (!Array.isArray(allowedDirs) || allowedDirs.length === 0) return true
-  const p = String(path || '')
-  return allowedDirs.some((d) => p.startsWith(String(d)))
 }
 
 export function maskSecretsInError(msg) {
@@ -391,6 +387,53 @@ export function apply(ctx, config) {
       state.finishedAt = Date.now()
     })()
     return id
+  }
+
+  const validateVisionImage = ({ bytes }) => {
+    if (!bytes || bytes.length === 0) throw new Error('vision: image bytes are missing')
+    if (config.maxImageBytes > 0 && bytes.length > config.maxImageBytes) throw new Error('vision: image exceeds maxImageBytes')
+    if (config.maxImagePixels > 0) {
+      const dims = imageDimensions(bytes)
+      if (dims && dims.width * dims.height > config.maxImagePixels) throw new Error('vision: image exceeds maxImagePixels')
+    }
+  }
+
+  // Comparison is one multimodal request. Validate the complete input before saving or sending
+  // any image, and avoid the single-image cache whose identity cannot represent an ordered pair.
+  const callVisionModelWithImages = async (images, question, opts = {}) => {
+    for (const image of images) validateVisionImage(image)
+    const catalog = async (channel, { signal }) => {
+      const defaults = channel?.provider && channel?.model ? channel : await visionSelection()
+      const provider = channel?.provider || defaults.provider
+      const model = channel?.model || defaults.model
+      if (!acceptsImages(await ctx.llm.resolveModelInfo(provider, model))) throw new Error('vision: comparison model does not accept images')
+      const blocks = []
+      for (let index = 0; index < images.length; index++) {
+        signal?.throwIfAborted()
+        const image = images[index]
+        const saved = await ctx.attachments.saveImage({ data: image.bytes, mediaType: image.contentType || 'image/png', name: `compare-${index + 1}` })
+        blocks.push({ type: 'image', attachment: saved })
+      }
+      blocks.push({ type: 'text', text: question })
+      const description = await collectText(ctx.llm.stream({
+        provider, model, signal, [VISION_PASS]: true,
+        messages: [{ role: 'user', content: blocks }], maxTokens: 1024,
+      }))
+      return { ok: !!description, description, ...(description ? {} : { reason: 'comparison returned no text' }) }
+    }
+    if (config.channels?.length) {
+      const result = await runChannels(config.channels, {
+        images, catalog, prompt: question, signal: opts.signal,
+        timeoutMs: config.channelTimeoutMs, cooldownMs: config.channelCooldownMs,
+        cooldowns: channelCooldowns, fallback: config.channelFallback || 'sequential',
+        detail: opts.detail || config.detail || 'auto', stream: config.stream === true,
+      })
+      if (!result.ok) throw new Error('vision: comparison failed (' + (result.reason || 'all channels failed') + ')')
+      return result.description
+    }
+    const result = await catalog({}, { signal: opts.signal })
+    if (!result.ok) throw new Error('vision: ' + result.reason)
+    return result.description
   }
 
   const callVisionModelWithBytes = async (bytes, contentType, question, opts) => {
@@ -626,12 +669,11 @@ export function apply(ctx, config) {
       }
     }
     for (const path of paths) {
-      if (!isPathAllowed(path, config.allowedImageDirs)) throw new Error(`describe_image: путь ${path} вне разрешённых dirs`);
       if (fs === undefined) throw new Error('describe_image: сервис fs недоступен в этом развёртывании.')
       let bytes
       try {
-        const target = await fs.resolve(path)
-        bytes = await fs.readBytes(target, undefined, config.maxImageBytes)
+        const target = await resolveAllowedTarget(fs, path, config.allowedImageDirs, exec?.signal)
+        bytes = await fs.readBytes(target, exec?.signal, config.maxImageBytes)
       } catch (error) {
         const raw = error && error.message ? error.message : String(error)
         const msg = config.maskSecrets ? maskSecretsInError(raw) : raw
@@ -797,8 +839,8 @@ export function apply(ctx, config) {
         }
         const fs = ctx.get('fs')
         if (fs) {
-          const target = await fs.resolve(src)
-          const bytes = await fs.readBytes(target, undefined, config.maxImageBytes)
+          const target = await resolveAllowedTarget(fs, src, config.allowedImageDirs, exec?.signal)
+          const bytes = await fs.readBytes(target, exec?.signal, config.maxImageBytes)
           const r = await callVisionModelWithBytes(bytes, sniffMediaType(bytes) || 'image/png', question || 'Describe this image.', { ...(exec ? { signal: exec.signal } : {}), detail })
           return { description: r.description || '' }
         }
@@ -867,26 +909,13 @@ export function apply(ctx, config) {
     isConcurrencySafe: () => false, timeoutMs: config.timeoutMs + 15000,
     execute: async ({ attachmentIds, question }, exec) => {
       if (!Array.isArray(attachmentIds) || attachmentIds.length < 2) throw new Error('vision_compare: need ≥2 attachmentIds');
-      // Block 0.4.0 (#74): honest multi-image — all images in one message.
-      const imageBlocks = []
-      const savedRefs = []
+      const images = []
       for (const id of attachmentIds) {
         const ref = attachmentById.get(String(id)); if (!ref) throw new Error(`vision_compare: unknown ${id}`)
         const src = await resolveImageBytes(ref)
-        // Save each to a real ref so the adapter can resolve it.
-        const saved = await ctx.attachments.saveImage({ data: src.bytes, mediaType: src.contentType, name: `compare-${id}` })
-        savedRefs.push(saved)
-        imageBlocks.push({ type: 'image', attachment: saved })
+        images.push(src)
       }
-      imageBlocks.push({ type: 'text', text: (question || 'List the differences between these images.') + ` (${attachmentIds.length} images provided.) Be specific and structured.` })
-      const { provider, model } = await visionSelection()
-      const chunks = ctx.llm.stream({
-        ...(exec?.signal ? { signal: exec.signal } : {}),
-        provider, model,
-        messages: [{ role: 'user', content: imageBlocks }],
-        maxTokens: 1024,
-      })
-      const text = await collectText(chunks)
+      const text = await callVisionModelWithImages(images, (question || 'List the differences between these images.') + ` (${attachmentIds.length} images provided in order.) Be specific and structured.`, { signal: exec?.signal })
       return { deltas: text || '' }
     },
   }))
@@ -896,9 +925,9 @@ export function apply(ctx, config) {
     parameters: { path: { type: 'string', description: 'Local file path to publish' } },
     output: { schema: { type: 'object', additionalProperties: false, properties: { attachmentId: { type: 'string' } } }, render(_a,v){ return [{type:'text',text:`published ${v.attachmentId}`}] } },
     isConcurrencySafe: () => false, timeoutMs: config.timeoutMs + 15000,
-    execute: async ({ path }) => {
+    execute: async ({ path }, exec) => {
       const fs = ctx.get('fs'); if (!fs) throw new Error('vision_present: fs unavailable');
-      const target = await fs.resolve(path); const bytes = await fs.readBytes(target, undefined, config.maxImageBytes);
+      const target = await resolveAllowedTarget(fs, path, config.allowedImageDirs, exec?.signal); const bytes = await fs.readBytes(target, exec?.signal, config.maxImageBytes);
       const ref = await ctx.attachments.saveImage({ data: bytes, mediaType: sniffMediaType(bytes)||'image/png', name: path.split(/[\\/]/).pop() });
       return { attachmentId: String(ref.attachmentId ?? ref.id ?? '') };
     },
@@ -1075,15 +1104,15 @@ export function apply(ctx, config) {
 
   // — Block 3 (0.2.8) Pixel loop — pixel_diff / html_screenshot / materialize + focusHint/taskMode
   ctx.tools.register(defineTool({
-    name: 'vision_pixel_diff', description: 'Compare two images per-pixel → diff ratio + worst regions.',
+    name: 'vision_pixel_diff', description: 'Compare two images visually and describe their differences. This returns a model assessment, not a numerical per-pixel measurement.',
     parameters: { attachmentIdA: { type: 'string' }, attachmentIdB: { type: 'string' } },
     output: { schema: { type: 'object', additionalProperties: false, properties: { diff: { type: 'string' } } }, render(_a,v){ return [{type:'text',text:v.diff}] } },
     isConcurrencySafe: () => false, timeoutMs: config.timeoutMs + 15000,
-    execute: async ({ attachmentIdA, attachmentIdB }) => {
+    execute: async ({ attachmentIdA, attachmentIdB }, exec) => {
       const refA = attachmentById.get(String(attachmentIdA)); const refB = attachmentById.get(String(attachmentIdB));
       if (!refA || !refB) throw new Error('vision_pixel_diff: need both attachmentIds');
       const a = await resolveImageBytes(refA); const b = await resolveImageBytes(refB);
-      const { description } = await callVisionModelWithBytes(b.bytes, b.contentType, `This is image B. Image A had hash ${a.bytes.length} bytes. List the visible differences between A and B in strict JSON {"diff":string}. Be specific about what changed and where.`, {});
+      const description = await callVisionModelWithImages([a, b], 'The first image is A; the second image is B. Describe the visible differences between A and B, including what changed and where.', { signal: exec?.signal });
       return { diff: description || '' };
     },
   }))
@@ -1093,14 +1122,13 @@ export function apply(ctx, config) {
     parameters: { path: { type: 'string', description: 'local .html file path' }, width: { type: 'number', description: 'viewport width, default 1280' }, fullPage: { type: 'boolean', description: 'capture full page, default false' } },
     output: { schema: { type: 'object', additionalProperties: false, properties: { note: { type: 'string' }, attachmentId: { type: 'string' } } }, render(_a,v){ return [{type:'text',text:v.note}] } },
     isConcurrencySafe: () => false, timeoutMs: config.timeoutMs + 30000,
-    execute: async ({ path, width, fullPage }) => {
+    execute: async ({ path, width, fullPage }, exec) => {
       const fs = ctx.get('fs'); if (!fs) throw new Error('vision_html_screenshot: fs unavailable');
-      const target = await fs.resolve(path);
-      const htmlPath = String(target.path ?? target ?? '');
+      const target = await resolveAllowedTarget(fs, path, config.allowedImageDirs, exec?.signal);
       // Chrome headless screenshot (no puppeteer dep).
       const chrome = process.env.CHROME_PATH || '/usr/bin/google-chrome'
       const out = join(tmpdir(), `vbshot-${Date.now()}.png`)
-      const args = ['--headless', '--disable-gpu', '--no-sandbox', '--screenshot=' + out, '--window-size=' + (width || 1280) + ',1024', '--hide-scrollbars', 'file://' + htmlPath]
+      const args = ['--headless', '--disable-gpu', '--no-sandbox', '--screenshot=' + out, '--window-size=' + (width || 1280) + ',1024', '--hide-scrollbars', fs.fileUrl(target)]
       const r = spawnSync(chrome, args, { timeout: config.timeoutMs + 15000, encoding: 'utf8' })
       if (!existsSync(out) || (r.status !== 0 && r.status !== undefined)) {
         const err = r.stderr?.split('\n')[0] || `chrome exited ${r.status}`
@@ -1135,10 +1163,10 @@ export function apply(ctx, config) {
     parameters: { path: { type: 'string' }, question: { type: 'string' }, frames: { type: 'number', description: 'frames to sample, default 6' } },
     output: { schema: { type: 'object', additionalProperties: false, properties: { description: { type: 'string' } } }, render(_a,v){ return [{type:'text',text:v.description}] } },
     isConcurrencySafe: () => false, timeoutMs: config.timeoutMs + 60000,
-    execute: async ({ path, question, frames }) => {
+    execute: async ({ path, question, frames }, exec) => {
       const fs = ctx.get('fs'); if (!fs) throw new Error('vision_video_describe: fs unavailable');
-      const target = await fs.resolve(path);
-      const videoPath = String(target.path ?? target ?? '');
+      const target = await resolveAllowedTarget(fs, path, config.allowedImageDirs, exec?.signal);
+      const videoPath = fs.processPath(target);
       const n = Math.max(2, Math.min(12, Number(frames) || 6));
       const dir = tmpdir(); const stem = `vbf-${Date.now()}`;
       const r = spawnSync('ffmpeg', ['-i', videoPath, '-vf', `fps=1/1,select='not(mod(n\\,${n}))'`, '-frames:v', String(n), '-y', join(dir, stem + '-%02d.jpg')], { timeout: config.timeoutMs + 30000, encoding: 'utf8' })
@@ -1163,9 +1191,10 @@ export function apply(ctx, config) {
     output: { schema: { type: 'object', additionalProperties: false, properties: { note: { type: 'string' }, attachmentId: { type: 'string' } } }, render(_a,v){ return [{type:'text',text:v.note}] } },
     isConcurrencySafe: () => false, timeoutMs: config.timeoutMs + 30000,
     execute: async ({ url, width }) => {
+      const pageUrl = publicPageUrl(url)
       const chrome = process.env.CHROME_PATH || '/usr/bin/google-chrome'
       const out = join(tmpdir(), `vbpage-${Date.now()}.png`)
-      const r = spawnSync(chrome, ['--headless', '--disable-gpu', '--no-sandbox', '--hide-scrollbars', `--screenshot=${out}`, `--window-size=${width || 1280},1024`, '--virtual-time-budget=5000', String(url)], { timeout: config.timeoutMs + 30000, encoding: 'utf8' })
+      const r = spawnSync(chrome, ['--headless', '--disable-gpu', '--no-sandbox', '--hide-scrollbars', `--screenshot=${out}`, `--window-size=${width || 1280},1024`, '--virtual-time-budget=5000', pageUrl], { timeout: config.timeoutMs + 30000, encoding: 'utf8' })
       if (!existsSync(out)) {
         const err = r.stderr?.split('\n')[0] || `chrome exited ${r.status}`
         return { note: 'page_persist failed: ' + String(err).slice(0, 200), attachmentId: '' }
@@ -1182,8 +1211,9 @@ export function apply(ctx, config) {
     output: { schema: { type: 'object', additionalProperties: false, properties: { snapshot: { type: 'string' } } }, render(_a,v){ return [{type:'text',text:v.snapshot.slice(0,2000)}] } },
     isConcurrencySafe: () => false, timeoutMs: config.timeoutMs + 30000,
     execute: async ({ url }) => {
+      const pageUrl = publicPageUrl(url)
       const chrome = process.env.CHROME_PATH || '/usr/bin/google-chrome'
-      const r = spawnSync(chrome, ['--headless', '--disable-gpu', '--no-sandbox', '--dump-dom', '--virtual-time-budget=5000', String(url)], { timeout: config.timeoutMs + 30000, encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 })
+      const r = spawnSync(chrome, ['--headless', '--disable-gpu', '--no-sandbox', '--dump-dom', '--virtual-time-budget=5000', pageUrl], { timeout: config.timeoutMs + 30000, encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 })
       if (!r.stdout) return { snapshot: `browser_snapshot failed for ${url}` }
       // Strip tags crudely — the model needs text, not markup.
       const text = String(r.stdout).replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -1241,9 +1271,9 @@ export function apply(ctx, config) {
     parameters: { path: { type: 'string', description: 'local .pdf path' }, pages: { type: 'string', description: 'e.g. "1-5" or "1,3,7", default all' }, question: { type: 'string' } },
     output: { schema: { type: 'object', additionalProperties: false, properties: { description: { type: 'string' } } }, render(_a,v){ return [{type:'text',text:v.description}] } },
     isConcurrencySafe: () => false, timeoutMs: config.timeoutMs + 60000,
-    execute: async ({ path, pages, question }) => {
+    execute: async ({ path, pages, question }, exec) => {
       const fs = ctx.get('fs'); if (!fs) throw new Error('vision_pdf_pages: fs unavailable')
-      const target = await fs.resolve(path); const pdfPath = String(target.path ?? target ?? '')
+      const target = await resolveAllowedTarget(fs, path, config.allowedImageDirs, exec?.signal); const pdfPath = fs.processPath(target)
       const dir = tmpdir(); const stem = `vbpdf-${Date.now()}`
       const pageArgs = pages ? ['-f', String(pages.split('-')[0] || 1), '-l', String(pages.split('-')[1] || pages.split(',')[0] || 999)] : []
       const r = spawnSync('pdftoppm', ['-png', '-r', '150', ...pageArgs, pdfPath, join(dir, stem)], { timeout: config.timeoutMs + 30000, encoding: 'utf8' })

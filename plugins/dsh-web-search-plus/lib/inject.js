@@ -28,8 +28,15 @@ export const DEFAULT_CONFIG = {
   triggers: { backticks: true, regex: '', regexQuery: '$1', phrases: [], always: false, maxWords: 10 },
   template: DEFAULT_TEMPLATE,
   budgetChars: 1500,
-  visitLinks: 0,                // number of top results whose page text is fetched
-  visitChars: 1200,             // per-page text budget when visiting links
+  visitLinks: 0,                // inject mode: number of top results whose page text is fetched
+  visitChars: 1200,             // inject mode: per-page text budget when visiting links
+  // tool mode: the same page visiting, for the model's own web_search call. Snippets from any
+  // search API are one or two sentences; opening the top results is what makes a result set
+  // answerable without a second tool round trip.
+  toolVisit: { links: 0, chars: 2000 },
+  // Optional local article extractor (dsh-extract, .local/searxng/extract): the plugin fetches
+  // through its own guarded transport and posts only the HTML. Empty = built-in htmlToText.
+  extractorUrl: '',
   blacklist: [],                // hostnames never visited
   cacheTtlSec: 300,
   // provider-native mode: OpenRouter searches server-side through the `:online` model suffix
@@ -41,7 +48,7 @@ export const DEFAULT_CONFIG = {
 }
 
 export const PROVIDER_CHOICES = ['serper', 'serpapi', 'tavily', 'brave', 'searxng', 'deepseek-official']
-const LIMITS = { template: 4000, regex: 500, regexQuery: 200, phrase: 100, phrases: 50, blacklist: 200, searxngUrl: 500 }
+const LIMITS = { template: 4000, regex: 500, regexQuery: 200, phrase: 100, phrases: 50, blacklist: 200, searxngUrl: 500, extractorUrl: 500 }
 
 const clampInt = (v, lo, hi, d) => { const n = Math.floor(Number(v)); return Number.isFinite(n) && n >= lo && n <= hi ? n : d }
 const strArr = (v, max, each) => (Array.isArray(v) ? v.map(x => String(x).trim()).filter(x => x.length > 0 && x.length <= each).slice(0, max) : [])
@@ -69,6 +76,11 @@ export function normalizeConfig(raw) {
     budgetChars: clampInt(o.budgetChars, 200, 50000, 1500),
     visitLinks: clampInt(o.visitLinks, 0, 5, 0),
     visitChars: clampInt(o.visitChars, 200, 20000, 1200),
+    toolVisit: {
+      links: clampInt(o.toolVisit && typeof o.toolVisit === 'object' ? o.toolVisit.links : undefined, 0, 5, 0),
+      chars: clampInt(o.toolVisit && typeof o.toolVisit === 'object' ? o.toolVisit.chars : undefined, 200, 20000, 2000),
+    },
+    extractorUrl: typeof o.extractorUrl === 'string' ? o.extractorUrl.trim().slice(0, LIMITS.extractorUrl) : '',
     blacklist: strArr(o.blacklist, LIMITS.blacklist, 253).map(h => h.toLowerCase()),
     cacheTtlSec: clampInt(o.cacheTtlSec, 0, 86400, 300),
     providerNative: {
@@ -110,6 +122,8 @@ export function validateConfig(raw) {
   if (o.fetch !== undefined && (o.fetch === null || typeof o.fetch !== 'object')) problems.push('fetch must be an object')
   if (o.fetch && typeof o.fetch === 'object' && o.fetch.enabled !== undefined && typeof o.fetch.enabled !== 'boolean') problems.push('fetch.enabled must be true or false')
   if (o.mode !== undefined && o.mode !== 'off' && o.provider === 'searxng' && !(typeof o.searxngUrl === 'string' && o.searxngUrl.trim().length > 0)) problems.push('SearXNG needs an instance URL')
+  if (o.toolVisit !== undefined && (o.toolVisit === null || typeof o.toolVisit !== 'object')) problems.push('toolVisit must be an object')
+  if (typeof o.extractorUrl === 'string' && o.extractorUrl.trim().length > 0 && !/^https?:\/\//i.test(o.extractorUrl.trim())) problems.push('extractorUrl must start with http:// or https://')
   return problems
 }
 
@@ -191,8 +205,44 @@ export function formatResults(query, result, { template = DEFAULT_TEMPLATE, budg
   return template.split('{{query}}').join(query).split('{{text}}').join(text)
 }
 
-/** Human-readable, model-facing text for the tool-mode result (same shape as tool-web's render). */
-export function formatToolText(result) {
+/** Merge query results fairly while preserving provider and local truncation. */
+export function mergeSearchResults(queries, results, maxResults) {
+  const seen = new Set()
+  const sources = []
+  const ranks = Math.max(0, ...results.map(r => r.sources.length))
+  let droppedUnique = false
+  for (let rank = 0; rank < ranks; rank++) {
+    for (const result of results) {
+      const source = result.sources[rank]
+      if (!source || seen.has(source.url)) continue
+      seen.add(source.url)
+      if (sources.length < maxResults) sources.push(source)
+      else droppedUnique = true
+    }
+  }
+  const contents = results.map((r, i) => r.content
+    ? (queries.length > 1 ? `### ${queries[i]}\n\n${r.content}` : r.content)
+    : '').filter(Boolean)
+  return {
+    ...(contents.length ? { content: contents.join('\n\n') } : {}),
+    sources,
+    truncated: results.some(r => r.truncated) || droppedUnique,
+  }
+}
+
+/** One URL-labelled article block, suitable for the canonical web_search value.content. */
+export function formatPageText(pages = []) {
+  const opened = pages.filter(p => p && typeof p.text === 'string' && p.text.trim().length > 0)
+  if (opened.length === 0) return ''
+  const blocks = opened.map((p, i) => {
+    const head = [p.title, p.date ? `(${p.date})` : ''].filter(Boolean).join(' ')
+    return `--- [${i + 1}] ${head ? head + '\n' : ''}${p.url}\n\n${p.text.trim()}`
+  })
+  return `Page text — the top ${opened.length} result${opened.length === 1 ? ' was' : 's were'} opened and read:\n\n${blocks.join('\n\n')}`
+}
+
+/** Human-readable tool text; optional pages support standalone formatting callers. */
+export function formatToolText(result, { pages = [] } = {}) {
   const parts = []
   if (result.content) parts.push(result.content)
   if (result.sources.length > 0) {
@@ -202,6 +252,8 @@ export function formatToolText(result) {
       return `- [${label}](${s.url})${meta ? ' — ' + meta : ''}`
     }).join('\n'))
   } else if (!result.content) parts.push('No results found.')
+  const pageText = formatPageText(pages)
+  if (pageText) parts.push(pageText)
   if (result.truncated) parts.push(`(Showing the first ${result.sources.length} sources. Refine the query for more.)`)
   parts.push('Cite the relevant URLs above as markdown links in your answer.')
   return parts.join('\n\n')

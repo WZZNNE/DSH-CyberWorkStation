@@ -36,14 +36,14 @@
  *   POST /dsh-provider-sync/sync     — run now
  *   POST /dsh-provider-sync/settings — { intervalHours?, anthropicNote? } (a bad interval is a 400, never a reset)
  */
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 export const name = 'provider-sync'
 export const inject = ['webServer']
 
-const DSH_HOME = process.env.DSH_HOME ?? join(homedir(), '.dsh')
+const DSH_HOME = resolveDshHome()
 const CONFIG_FILE = join(DSH_HOME, 'provider-sync.json')
 const CATALOG_URL = 'https://openrouter.ai/api/v1/models'
 const NS = 'llm-pi-ai'

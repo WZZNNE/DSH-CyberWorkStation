@@ -38,8 +38,8 @@
  *
  * Per-model thinking mode and the auto-teach switch live in $DSH_HOME/local-reasoning.json (hot reload).
  */
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { readFileSync, writeFileSync, mkdirSync, watchFile, unwatchFile } from 'node:fs'
-import { homedir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { classifyModel, recommend, recommendContext, toggleSuffix, parseEffortSpec, assertServiceableEfforts, LEVELS } from './families.js'
 import { isLocalBaseUrl, originOf, probeOrigin } from './detect.js'
@@ -47,7 +47,7 @@ import { isLocalBaseUrl, originOf, probeOrigin } from './detect.js'
 export const name = 'local-reasoning'
 export const inject = ['settings', 'webServer', 'llm']
 
-const DSH_HOME = process.env.DSH_HOME ?? join(homedir(), '.dsh')
+const DSH_HOME = resolveDshHome()
 const CONFIG_FILE = join(DSH_HOME, 'local-reasoning.json')
 const NS = 'llm-pi-ai'
 /** The official DeepSeek adapter: its `models` list (id, name, contextWindow, maxTokens, image limits) lives in this namespace; levels are fixed by the adapter. */

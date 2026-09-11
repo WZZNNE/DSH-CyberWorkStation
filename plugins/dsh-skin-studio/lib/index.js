@@ -9,22 +9,42 @@
  * image and the model cannot generate one, ask the user for an image (never
  * fabricate one); when an image-generation tool exists, call it.
  */
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { assertTarget, buildCss, imageToDataUri, sanitizeSkinName } from './studio.js'
+import fs from 'node:fs'
+import nodePath from 'node:path'
 
 export const name = 'skin-studio'
 export const inject = ['tools', 'systemPrompt']
 
-const LAUNCHER = `http://127.0.0.1:${Number(process.env.DSH_LAUNCHER_PORT ?? 3090)}`
+const launcherPort = String(process.env.DSH_LAUNCHER_PORT ?? 3090).trim()
+if (!/^\d+$/.test(launcherPort) || Number(launcherPort) < 1 || Number(launcherPort) > 65535) throw new Error('DSH_LAUNCHER_PORT must be an integer between 1 and 65535')
+const LAUNCHER = `http://127.0.0.1:${Number(launcherPort)}`
 
 async function launcherPost(path, body) {
-  const r = await fetch(LAUNCHER + path, {
+  if (!['/api/skins/import', '/api/skins/apply'].includes(path)) throw new Error('Unsupported launcher skin route')
+  const home = resolveDshHome()
+  let token
+  try { token = fs.readFileSync(nodePath.join(home, 'launcher.token'), 'utf8').trim() } catch {
+    throw new Error('无法读取启动器认证文件；请先启动同一 DSH_HOME 下的 DSH 启动器')
+  }
+  if (!/^[0-9a-f]{32,64}$/.test(token)) throw new Error('启动器认证文件无效；请检查 DSH_HOME 并重新启动启动器')
+  let r
+  try { r = await fetch(LAUNCHER + path, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', 'x-launcher-token': token },
     body: JSON.stringify(body),
+    redirect: 'error',
     signal: AbortSignal.timeout(15000),
-  })
-  return await r.json()
+  }) } catch {
+    throw new Error(`无法连接 DSH 启动器(${LAUNCHER})，或请求发生了不允许的重定向；请检查启动器和端口`)
+  }
+  if (r.status === 403) throw new Error('启动器拒绝认证(HTTP 403)；请确认 dsh 和启动器使用同一 DSH_HOME')
+  if (!r.ok) throw new Error(`启动器请求失败(HTTP ${r.status})`)
+  const data = await r.json().catch(() => null)
+  if (!data || typeof data.ok !== 'boolean') throw new Error('启动器返回了无效响应')
+  return data
 }
 
 /** @param {import('@deepseek-ai/cordis').Context} ctx */
@@ -74,12 +94,7 @@ export function apply(ctx) {
       const skinName = sanitizeSkinName(args.name)
       const dataUri = args.background_image_path === undefined ? undefined : imageToDataUri(args.background_image_path)
       const css = buildCss(args.css, target, dataUri)
-      let imported
-      try {
-        imported = await launcherPost('/api/skins/import', { target, name: skinName, css })
-      } catch {
-        throw new Error(`DSH 启动器(${LAUNCHER})未运行:皮肤系统由启动器管理,请先打开启动器再重试`)
-      }
+      const imported = await launcherPost('/api/skins/import', { target, name: skinName, css })
       if (imported?.ok === false) throw new Error('启动器拒绝导入:' + (imported.message ?? '未知原因'))
       const wantApply = args.apply !== false
       let applied = false

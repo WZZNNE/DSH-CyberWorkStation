@@ -19,6 +19,42 @@ const newId = () => 'm_' + randomBytes(5).toString('hex')
 const clampText = (t, max = MAX_TEXT) => String(t ?? '').replace(/\r\n?/g, '\n').trim().slice(0, max)
 const capFor = kind => (kind === 'summary' ? MAX_SUMMARY_TEXT : MAX_TEXT)
 
+/** Durable per-id context updates outlive item pruning. Missing fields never mean deletion. */
+export function normalizeWithdrawals(raw) {
+  const records = {}
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return records
+  for (const [id, entry] of Object.entries(raw)) {
+    if (!/^m_[0-9a-f]{6,16}$/.test(id) || !entry || !Number.isSafeInteger(entry.revision) || entry.revision < 0 || typeof entry.text !== 'string') continue
+    records[id] = {
+      revision: entry.revision, text: entry.text.slice(0, 500),
+      ...(Number.isSafeInteger(entry.sourceEditSeq) ? { sourceEditSeq: entry.sourceEditSeq } : {}),
+      ...(typeof entry.correctedText === 'string' ? { correctedText: entry.correctedText.slice(0, MAX_TEXT) } : {}),
+      ...(entry.confirmed === true ? { confirmed: true } : {}),
+    }
+  }
+  return records
+}
+
+export function mergeWithdrawals(current, incoming) {
+  const merged = { ...normalizeWithdrawals(current) }
+  for (const [id, entry] of Object.entries(normalizeWithdrawals(incoming))) {
+    if (!merged[id] || entry.revision > merged[id].revision) merged[id] = entry
+  }
+  return merged
+}
+
+function legacyWithdrawals(items) {
+  const records = {}
+  for (const item of items) {
+    if (['extract', 'compaction'].includes(item.source) && Number.isSafeInteger(item.meta?.staleAfterEdit)) {
+      records[item.id] = { revision: item.meta.staleAfterEdit, sourceEditSeq: item.meta.staleAfterEdit, text: item.text.slice(0, 500) }
+    } else if (item.meta?.withdrawnRecall && typeof item.meta.withdrawnRecall.text === 'string') {
+      records[item.id] = { ...item.meta.withdrawnRecall, correctedText: item.text.slice(0, MAX_TEXT) }
+    }
+  }
+  return records
+}
+
 const readJsonFile = file => JSON.parse(readFileSync(file, 'utf8').replace(/^\uFEFF/, ''))
 
 function writeAtomic(file, data) {
@@ -70,6 +106,7 @@ export class MemoryStore {
     this.items = []
     /** Per-session extraction watermark: { lastSeq, userTurns } */
     this.watermarks = {}
+    this.withdrawals = {}
     this.vectors = { model: '', byId: {} }
     this.loadError = null
     this.lastSavedAt = 0
@@ -94,6 +131,8 @@ export class MemoryStore {
   load() {
     let items = []
     let watermarks = {}
+    let withdrawals = this.withdrawals
+    let diskWithdrawals = {}
     try {
       if (existsSync(this.file)) {
         let raw = readJsonFile(this.file)
@@ -105,6 +144,8 @@ export class MemoryStore {
           if (item && !seen.has(item.id)) { seen.add(item.id); items.push(item) }
         }
         if (raw.watermarks && typeof raw.watermarks === 'object') watermarks = raw.watermarks
+        diskWithdrawals = normalizeWithdrawals(raw.withdrawals)
+        withdrawals = mergeWithdrawals(withdrawals, diskWithdrawals)
       }
     } catch (error) {
       this.loadError = String(error?.message ?? error)
@@ -114,6 +155,8 @@ export class MemoryStore {
     }
     this.items = items
     this.watermarks = watermarks
+    this.withdrawals = mergeWithdrawals(withdrawals, legacyWithdrawals(items))
+    this.withdrawalsDirty = JSON.stringify(this.withdrawals) !== JSON.stringify(diskWithdrawals)
     this.loadError = null
     this.loadErrorKind = null
     this.removedSinceSave.clear()
@@ -156,13 +199,14 @@ export class MemoryStore {
         if (cur !== this.lastSeenMtime) {
           // ids removed in memory since the last save are tombstoned: the external copy must not bring them back
           const before = new Map(this.items.map(i => [i.id, i.updatedAt]))
-          this.importJson({ items: (raw.items ?? []).filter(r => !(r && typeof r === 'object' && this.removedSinceSave.has(r.id))) })
+          this.importJson({ items: (raw.items ?? []).filter(r => !(r && typeof r === 'object' && this.removedSinceSave.has(r.id))), withdrawals: raw.withdrawals })
           this.mergedIds = this.items.filter(i => before.get(i.id) !== i.updatedAt).map(i => i.id)
           if (this.mergedIds.length) this.mergedExternal = (this.mergedExternal ?? 0) + 1
         }
       }
     }
-    writeAtomic(this.file, JSON.stringify({ version: STORE_VERSION, savedAt: Date.now(), watermarks: this.watermarks, items: this.items }, null, 1))
+    writeAtomic(this.file, JSON.stringify({ version: STORE_VERSION, savedAt: Date.now(), watermarks: this.watermarks, items: this.items, withdrawals: this.withdrawals }, null, 1))
+    this.withdrawalsDirty = false
     this.loadError = null
     this.loadErrorKind = null
     try { this.lastSavedAt = statSync(this.file).mtimeMs } catch { this.lastSavedAt = Date.now() }
@@ -262,13 +306,14 @@ export class MemoryStore {
   }
 
   exportJson() {
-    return { version: STORE_VERSION, exportedAt: Date.now(), items: this.items }
+    return { version: STORE_VERSION, exportedAt: Date.now(), items: this.items, withdrawals: this.withdrawals }
   }
 
   /** Merge imported items (by id; an existing id is updated only when the import is newer). Returns counts. */
   importJson(raw) {
     const list = Array.isArray(raw) ? raw : Array.isArray(raw?.items) ? raw.items : null
     if (list === null) throw new Error('import expects { items: [...] } or an array')
+    this.withdrawals = mergeWithdrawals(this.withdrawals, raw?.withdrawals)
     let added = 0
     let updated = 0
     let skipped = 0
@@ -281,6 +326,7 @@ export class MemoryStore {
       else if (item.updatedAt > cur.updatedAt) { Object.assign(cur, item); delete this.vectors.byId[item.id]; updated++ }
       else skipped++
     }
+    this.withdrawals = mergeWithdrawals(this.withdrawals, legacyWithdrawals(this.items))
     this.version++
     return { added, updated, skipped }
   }

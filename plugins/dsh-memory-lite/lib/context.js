@@ -231,20 +231,129 @@ export function injectedMemoryIds(events, pluginName) {
 /** Plain-text transcript of human prompts and assistant replies after `fromSeq` (tool results excluded), newest last. */
 export function transcriptAfter(events, fromSeq, maxChars) {
   const parts = []
-  let lastSeq = fromSeq
+  const lastSeq = events.at(-1)?.seq ?? fromSeq
   let chars = 0
-  for (const e of events) {
+  const bySeq = new Map(events.map(e => [e.seq, e]))
+  for (const seq of foldSurfaceBasic(events)) {
+    const e = bySeq.get(seq)
+    if (!e) continue
     if (e.seq <= fromSeq) continue
     let line = ''
-    if (e.type === 'user/message' && e.data?.source?.kind === 'user') line = 'User: ' + textOf(e.data.content)
+    const source = e.data?.source
+    if (e.type === 'user/message' && (!source || source.kind === 'user')) line = 'User: ' + textOf(e.data.content)
+    else if (isChatEdit(e) && source.editKind === 'edit' && ['user', 'assistant'].includes(source.editedRole)) {
+      let text = textOf(e.data.content)
+      if (source.editedRole === 'assistant') text = text.replace(/^\[The user corrected the assistant's earlier reply\. Treat the following as what the assistant said, and continue from it\.\]\n\n/, '')
+      line = (source.editedRole === 'assistant' ? 'Assistant: ' : 'User: ') + text
+    }
     else if (e.type === 'assistant/message') line = 'Assistant: ' + textOf(e.data.message?.content)
-    if (!line.trim() || line.trim().endsWith(':')) { lastSeq = e.seq; continue }
+    if (!line.trim() || line.trim().endsWith(':')) continue
     line = line.replace(/\s+\n/g, '\n').trim()
     parts.push(line)
     chars += line.length + 2
-    lastSeq = e.seq
   }
   let text = parts.join('\n\n')
   if (text.length > maxChars) text = '…' + text.slice(text.length - maxChars)
   return { text, lastSeq, chars }
+}
+
+export const isChatEdit = e => e?.type === 'user/message' && e.surfaceOp?.op === 'replace'
+  && e.data?.source?.kind === 'plugin' && e.data.source.plugin === 'chat-editor'
+export const replacementRevision = events => events.reduce((seq, e) => e.surfaceOp?.op === 'replace' ? Math.max(seq, e.seq) : seq, -1)
+export const chatEditRevision = events => events.reduce((seq, e) => isChatEdit(e) ? Math.max(seq, e.seq) : seq, -1)
+export const automaticItem = item => ['extract', 'compaction'].includes(item.source)
+export const staleItem = item => automaticItem(item) && Number.isSafeInteger(item.meta?.staleAfterEdit)
+
+/** Retain records (including pins), but withdraw automatic assertions derived before an edit. */
+export function invalidateSource(store, sessionId, revision) {
+  if (revision < 0) return false
+  store.withdrawals ??= {}
+  let changed = false
+  for (const item of store.items) {
+    if (item.sessionId !== sessionId || !automaticItem(item) || (item.meta?.sourceRevision ?? -1) >= revision) continue
+    if ((item.meta?.staleAfterEdit ?? -1) < revision) {
+      item.meta = { ...item.meta, staleAfterEdit: revision }
+      item.updatedAt = Date.now()
+      changed = true
+    }
+    const previous = store.withdrawals[item.id]
+    if (!previous || (previous.sourceEditSeq ?? -1) < revision) {
+      store.withdrawals[item.id] = { revision: Math.max(revision, (previous?.revision ?? -1) + 1), sourceEditSeq: revision, text: item.text.slice(0, 500) }
+      changed = true
+    }
+  }
+  const mark = store.watermarks[sessionId]
+  if (mark && (mark.invalidatedAtSeq ?? -1) < revision) {
+    store.watermarks[sessionId] = { lastSeq: -1, userTurns: 0, invalidatedAtSeq: revision, at: Date.now() }
+    changed = true
+  }
+  if (changed) store.version++
+  return changed
+}
+
+export function pendingInvalidations(events, items, pluginName, withdrawals = {}) {
+  const seen = injectedMemoryIds(events, pluginName)
+  const notified = new Set()
+  const notifiedIds = new Set()
+  for (const e of events) {
+    const source = e.type === 'user/message' ? e.data?.source : null
+    if (source?.kind !== 'plugin' || source.plugin !== pluginName) continue
+    for (const entry of source.memoryInvalidations ?? []) { notified.add(entry.id + ':' + entry.revision); notifiedIds.add(entry.id) }
+  }
+  const records = new Map(Object.entries(withdrawals))
+  for (const item of items) {
+    if (records.has(item.id)) continue
+    const legacy = staleItem(item) ? { revision: item.meta.staleAfterEdit, text: item.text } : item.meta?.withdrawnRecall
+    if (legacy) records.set(item.id, { ...legacy, ...(item.source === 'user' ? { correctedText: item.text } : {}) })
+  }
+  for (const id of toolRecalledMemoryIds(events, pluginName, records)) seen.add(id)
+  return [...records].flatMap(([id, record]) => {
+    if (!seen.has(id) || notified.has(id + ':' + record.revision) || (record.confirmed && !notifiedIds.has(id))) return []
+    return [{ id, ...record }]
+  })
+}
+
+/** Read durable, identified recall results; never infer exposure from arbitrary chat text. */
+export function toolRecalledMemoryIds(events, pluginName, records = new Map()) {
+  const ids = new Set()
+  const bySeq = new Map(events.map(event => [event.seq, event]))
+  const calls = new Map(events.filter(event => event.type === 'tool/call').map(event => [event.data?.callId, event]))
+  const validId = id => typeof id === 'string' && /^m_[0-9a-f]{6,16}$/.test(id)
+  // The historical renderer had no escaped entry separator. Matching its header AND
+  // the retained old assertion is a conservative migration, not an unambiguous codec.
+  const legacy = content => {
+    const text = textOf(content).replace(/\r\n?/g, '\n')
+    const header = /^- \((m_[0-9a-f]{6,16}) · (?:fact|note|summary) · \d{4}-\d{2}-\d{2}(?: · pinned)?\) /gm
+    for (const match of text.matchAll(header)) {
+      const old = records.get(match[1])?.text?.replace(/\r\n?/g, '\n').slice(0, 500)
+      if (old && text.slice(match.index + match[0].length).startsWith(old)) ids.add(match[1])
+    }
+  }
+  for (const event of events) {
+    if (event.type === 'tool/result') {
+      const message = event.data?.message
+      const block = message?.content?.[0]
+      if (message?.source?.kind !== 'tool' || block?.type !== 'tool-result' || block.isError !== false) continue
+      const callId = message.source.callId
+      if (typeof callId !== 'string' || block.toolCallId !== callId) continue
+      const call = (event.sourceEventSeqs ?? []).map(seq => bySeq.get(seq)).find(candidate =>
+        candidate?.type === 'tool/call' && candidate.data?.name === 'memory_recall' && candidate.data.callId === callId && candidate.seq < event.seq)
+      if (!call) continue
+      const meta = event.data.meta
+      if (meta?.plugin === pluginName && Array.isArray(meta.memoryIds)) {
+        for (const id of meta.memoryIds) if (validId(id)) ids.add(id)
+      } else legacy(block.content)
+    } else if (event.type === 'tool/code-dispatch') {
+      const data = event.data
+      if (data?.name !== 'memory_recall' || data.isError !== false) continue
+      const root = calls.get(data.rootCallId)
+      const parent = calls.get(data.parentCallId)
+      // Current core's code mode dispatch is owned by one top-level run_code call.
+      // Logs from other transports or missing identities cannot prove exposure.
+      if (!root || root !== parent || root.data?.name !== 'run_code' || root.seq >= event.seq) continue
+      if (typeof data.subCallId !== 'string' || !data.subCallId.startsWith(data.parentCallId + ':code:')) continue
+      legacy(data.content)
+    }
+  }
+  return ids
 }

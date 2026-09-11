@@ -69,16 +69,29 @@ export async function probeOllama(baseURL = 'http://localhost:11434/v1') {
 }
 
 /** Single attempt: send bytes+prompt to one channel, return {ok, description} or {ok:false, reason, status}. */
-export async function runChannel(channel, {bytes, contentType, prompt, model, timeoutMs, signal, detail, stream}) {
+export async function runChannel(channel, {bytes, contentType, images, catalog, prompt, model, timeoutMs, signal, detail, stream}) {
   const t = channel && channel.type
+  const controller = new AbortController()
+  const abort = () => controller.abort(signal.reason)
+  if (signal?.aborted) abort()
+  else signal?.addEventListener('abort', abort, { once: true })
+  const timer = setTimeout(() => controller.abort(new Error('vision channel timeout')), Math.max(1, timeoutMs || 30000))
   try {
-    if (t === 'dsh-catalog') return {ok: false, reason: 'dsh-catalog runs through ctx.llm, not here'}
-    if (t === 'openai-compatible' || t === 'ollama') return await runOpenAIChat({channel, bytes, contentType, prompt, model, timeoutMs, signal, detail, stream})
-    if (t === 'custom') return await runCustom({channel, bytes, contentType, prompt, model, timeoutMs, signal})
-    if (t === 'webhook') return await runWebhook({channel, bytes, contentType, prompt, model, timeoutMs, signal})
+    if (controller.signal.aborted) throw controller.signal.reason
+    const bounded = controller.signal
+    if (t === 'dsh-catalog') return typeof catalog === 'function'
+      ? await catalog(channel, { images, prompt, signal: bounded })
+      : {ok: false, reason: 'dsh-catalog runs through ctx.llm, not here'}
+    if (t === 'openai-compatible' || t === 'ollama') return await runOpenAIChat({channel, bytes, contentType, images, prompt, model, signal: bounded, detail, stream})
+    if (images?.length > 1) return {ok: false, reason: `${t}: multiple image input is not supported by this channel protocol`}
+    if (t === 'custom') return await runCustom({channel, bytes, contentType, prompt, model, signal: bounded})
+    if (t === 'webhook') return await runWebhook({channel, bytes, contentType, prompt, model, signal: bounded})
     return {ok: false, reason: 'unknown channel type: ' + String(t)}
   } catch (error) {
-    return {ok: false, reason: error && error.message ? error.message : String(error)}
+    return {ok: false, reason: error && error.message ? error.message : String(error), ...(signal?.aborted ? { cancelled: true } : {})}
+  } finally {
+    clearTimeout(timer)
+    signal?.removeEventListener('abort', abort)
   }
 }
 
@@ -95,7 +108,7 @@ async function runWebhook({channel, bytes, contentType, prompt, model, timeoutMs
     prompt: prompt || '',
     ...(model ? {model} : {}),
   })
-  const res = await fetch(url, { method: 'POST', headers, body, signal: mergeSignal(timeoutMs, signal) })
+  const res = await fetch(url, { method: 'POST', headers, body, signal })
   if (res.status === 429 || res.status === 401 || res.status === 402 || res.status === 403) {
     return {ok: false, reason: 'http ' + res.status, status: res.status}
   }
@@ -112,18 +125,6 @@ async function runWebhook({channel, bytes, contentType, prompt, model, timeoutMs
   return {ok: true, description: description.trim()}
 }
 
-function mergeSignal(timeoutMs, callSignal) {
-  const ctrl = new AbortController()
-  const t = setTimeout(() => { try { ctrl.abort(new Error('timeout')) } catch {} }, Math.max(1, timeoutMs || 30000))
-  const off = () => clearTimeout(t)
-  if (callSignal) {
-    if (callSignal.aborted) ctrl.abort(callSignal.reason)
-    else callSignal.addEventListener('abort', () => { try { ctrl.abort(callSignal.reason) } catch {} }, {once: true})
-  }
-  ctrl.signal.addEventListener('abort', off, {once: true})
-  return ctrl.signal
-}
-
 function buildDataUrl(bytes, contentType) {
   const mime = contentType || 'image/png'
   return 'data:' + mime + ';base64,' + Buffer.from(bytes).toString('base64')
@@ -133,18 +134,18 @@ function buildDataUrl(bytes, contentType) {
 // of a generic backend error. Matched on common markers in the response body.
 const CONTENT_FILTERED_RE = /content_?filter|safety|inappropriate|violat(?:e|ion)|refus|blocked by our/i
 
-async function runOpenAIChat({channel, bytes, contentType, prompt, model, timeoutMs, signal, detail, stream}) {
+async function runOpenAIChat({channel, bytes, contentType, images, prompt, model, signal, detail, stream}) {
   const baseURL = (channel.baseURL || (channel.type === 'ollama' ? 'http://localhost:11434/v1' : '')).replace(/\/+$/, '')
   if (!baseURL) return {ok: false, reason: 'openai-compatible: baseURL is required'}
   const keys = resolveApiKeys(channel)
   const useModel = model || channel.model
   if (!useModel) return {ok: false, reason: 'openai-compatible: model is required'}
-  const dataUrl = buildDataUrl(bytes, contentType)
+  const inputs = images?.length ? images : [{ bytes, contentType }]
   const body = {
     model: useModel,
     messages: [{role: 'user', content: [
       {type: 'text', text: prompt},
-      {type: 'image_url', image_url: {url: dataUrl, ...(detail ? {detail} : {})}},
+      ...inputs.map(image => ({type: 'image_url', image_url: {url: buildDataUrl(image.bytes, image.contentType), ...(detail ? {detail} : {})}})),
     ]}],
     max_tokens: 1024,
     // #106: streaming — faster first token, better UX. Non-stream fallback kept.
@@ -159,7 +160,7 @@ async function runOpenAIChat({channel, bytes, contentType, prompt, model, timeou
     if (apiKey) headers['Authorization'] = 'Bearer ' + apiKey
     const res = await fetch(baseURL + '/chat/completions', {
       method: 'POST', headers, body: JSON.stringify(body),
-      signal: mergeSignal(timeoutMs, signal),
+      signal,
     })
     if (res.status === 429 || res.status === 401 || res.status === 402 || res.status === 403) {
       lastStatus = res.status
@@ -261,7 +262,7 @@ async function runCustom({channel, bytes, contentType, prompt, model, timeoutMs,
     method: 'POST',
     headers,
     body: bodyStr,
-    signal: mergeSignal(timeoutMs, signal),
+    signal,
   })
   if (res.status === 429 || res.status === 401 || res.status === 402 || res.status === 403) {
     return {ok: false, reason: 'http ' + res.status, status: res.status}
@@ -313,30 +314,31 @@ export async function runChannels(channels, ctx) {
       eligible.push({channel, key})
     }
     if (eligible.length === 0) return {ok: false, reason: 'all channels failed', attempts}
-    const runners = eligible.map(({channel, key}) => runChannel(channel, {
+    const controllers = eligible.map(() => new AbortController())
+    const runners = eligible.map(({channel, key}, index) => runChannel(channel, {
       bytes: ctx.bytes,
       contentType: ctx.contentType,
+      images: ctx.images,
+      catalog: ctx.catalog,
       prompt: ctx.prompt,
       model: ctx.model,
       timeoutMs: ctx.timeoutMs,
-      signal: ctx.signal,
+      signal: ctx.signal ? AbortSignal.any([ctx.signal, controllers[index].signal]) : controllers[index].signal,
       detail: ctx.detail,
       stream: ctx.stream,
-    }).then(r => ({...r, channel, key})))
+    }).then(r => {
+      const cancelled = r.cancelled || ctx.signal?.aborted || controllers[index].signal.aborted
+      attempts.push({ channel: key, ok: !!r.ok && !cancelled, ...(r.reason ? { reason: r.reason } : {}), ...(cancelled ? { cancelled: true } : {}) })
+      if (r.ok && !cancelled) return { ...r, channel, key, index }
+      if (!cancelled && ctx.cooldownMs > 0) cooldowns.set(key, Date.now() + ctx.cooldownMs)
+      throw new Error(r.reason || (cancelled ? 'cancelled' : 'channel failed'))
+    }))
     try {
       const winner = await Promise.any(runners)
-      for (const {key, channel} of eligible) {
-        if (channel === winner.channel) continue
-        // losers keep their state; winner's channel stays warm
-      }
-      attempts.push({channel: winner.key, ok: true})
-      return {ok: !!winner.ok, description: winner.description, reason: winner.reason, channel: winner.channel, attempts}
+      for (let index = 0; index < controllers.length; index++) if (index !== winner.index) controllers[index].abort(new Error('another vision channel succeeded'))
+      return {ok: true, description: winner.description, channel: winner.channel, attempts: attempts.map(a => ({ ...a })), keyUsed: winner.keyUsed, usage: winner.usage}
     } catch (e) {
-      for (const {key} of eligible) {
-        if (ctx.cooldownMs > 0) cooldowns.set(key, Date.now() + ctx.cooldownMs)
-        attempts.push({channel: key, ok: false})
-      }
-      return {ok: false, reason: 'all channels failed', attempts}
+      return {ok: false, reason: ctx.signal?.aborted ? 'cancelled' : 'all channels failed', attempts: attempts.map(a => ({ ...a }))}
     }
   }
 
@@ -350,6 +352,8 @@ export async function runChannels(channels, ctx) {
     const attempt = await runChannel(channel, {
       bytes: ctx.bytes,
       contentType: ctx.contentType,
+      images: ctx.images,
+      catalog: ctx.catalog,
       prompt: ctx.prompt,
       model: ctx.model,
       timeoutMs: ctx.timeoutMs,
@@ -365,7 +369,7 @@ export async function runChannels(channels, ctx) {
     if (attempt.ok) {
       return {ok: true, description: attempt.description, channel, attempts, keyUsed: attempt.keyUsed, usage: attempt.usage}
     }
-    if (ctx.cooldownMs > 0) {
+    if (!attempt.cancelled && !ctx.signal?.aborted && ctx.cooldownMs > 0) {
       cooldowns.set(key, Date.now() + ctx.cooldownMs)
     }
   }

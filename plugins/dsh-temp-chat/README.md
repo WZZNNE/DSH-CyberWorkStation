@@ -19,6 +19,11 @@ hand. This plugin adds a one-click temp chat:
 The sidebar gets a **🗒 临时对话** button; the plugin creates the session, attaches it to the scratch
 workspace and flushes it so a reload finds it.
 
+The browser opens it through the framework's `sessions.open` after its id appears in `useSessions().byId`.
+While creation/list propagation is pending the button prevents duplicate requests. Navigating elsewhere
+or unmounting cancels the automatic switch. A list timeout or navigation failure preserves the created
+id and offers a button to retry opening that same session without creating another one.
+
 ## Routes
 
 | Route | Purpose |
@@ -36,9 +41,3 @@ a preset only decides what the *preset* mounts, and a tool another plugin (or yo
 registered globally is visible to every agent. So each temp chat also calls `tools.restrict({ allow: [] })`
 on its own agent context, which masks the global set. `POST /dsh-temp-chat/new {"tools":"all"}` opts
 out when you do want the deployment's tools, and every reply says `sandboxed: true|false`.
-
-## Tests
-
-`node --test .local/tests/dsh-temp-chat/*.mjs` — 9 maintainer cases: the shipped preset really being chat-only, the global-tool mask (on, opted out of, and on a core that cannot restrict), preset installation, session
-creation with preset + workspace + flush, a deployment without the presets service, the cleanup
-guard (name shape, live session, idempotence), the loopback fence, and folder listing.

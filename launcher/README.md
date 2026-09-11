@@ -25,6 +25,21 @@ Modelled on the feature shape of Aki (秋葉aaaki)'s ComfyUI launcher (one-click
 
 `server.mjs` boots the core from its built CLI (`core/apps/cli/lib/bin.js`) under plain Node — cold start ≈ 1.5 s. When the core has not been built yet it falls back to the source launch (`corepack pnpm dsh web`, tsx, ≈ 20 s). Before every start it runs `peer-links.mjs`, which links the core packages the suite plugins import (`@deepseek-ai/dsh-tools`, `dsh-settings`, …) into `plugins/node_modules/` so plain Node can resolve them. `dsh plugin …` operations (install / remove / market) also use the built CLI; because that command forwards to a bare `pnpm`, they fall back to `corepack pnpm dsh plugin …` when `pnpm` is not on PATH (corepack not enabled system-wide).
 
+All launch helpers honor `DSH_HOME` (default `~/.dsh`), `DSH_LAUNCHER_PORT` (3090), and `DSH_WEB_PORT` (3080). Ports must be distinct integers in 1–65535. The EXE and CMD authenticate the selected launcher's status before opening its page. They do not open a page when the token is missing/invalid or a different service occupies the port.
+
+`DSH_HOME` uses the core's path rules: an empty or whitespace-only value selects the default, `~`, `~/` and `~\` expand to the user home, and a relative path starts at the directory from which setup, CMD, EXE or the Node entry point was invoked. Each launcher entry resolves it once before changing working directories and passes the absolute result to child processes. Suite plugins use the core resolver when started directly through dsh as well. The bootstrap resolver needs only Node, so setup also works before core is downloaded or built.
+
+Stop checks the complete listening port and the process's CLI path, profile and creation identity. It never terminates ancestor terminals. If a manually launched source command used a relative path and this launcher cannot establish its working directory, stop it in its original terminal. Repeated start/stop clicks are serialized; a process still preparing after the readiness timeout remains tracked so another click does not spawn a duplicate.
+
+## Removing patch-layer plugins
+
+`dsh-credentials-keyring` and `dsh-lan-fence` are referenced by the web profile's own `cordis.patch.yml`. The launcher refuses to uninstall either dependency while that reference remains, because the next boot would otherwise try to load a missing module. Other plugins keep their normal uninstall behavior.
+
+1. Stop dsh and back up `$DSH_HOME/profiles/web/cordis.patch.yml` (normally `%USERPROFILE%\.dsh\profiles\web\cordis.patch.yml`).
+2. For `dsh-lan-fence`, remove its `lan-fence` insert entry. Review your connection trust settings before restarting.
+3. For `dsh-credentials-keyring`, first retain or migrate every key you need from Windows Credential Manager through the credentials UI. Removing the plugin does not delete keyring secrets, but the stock file provider cannot read them. Remove the `credentials-keyring` insert entry and remove the associated `id: credentials` / `disabled: true` override so the stock provider can start. Re-enter retained keys through the credentials UI after restarting with that provider.
+4. Keep the remaining patch file a valid YAML array (`[]` if empty), then uninstall the package in the launcher and restart dsh. If the file cannot be read or parsed, uninstall is cancelled until it is repaired.
+
 ## Skin mechanism
 
 - **Launcher skins**: `skins/launcher/*.css`, override the `--lc-*` variables; switching applies instantly. Built-in: `default` (light / dark / system), `cyberpunk-2077` (neon yellow #fcee0a × electric cyan #00f0ff, chamfered cards, glitch animations) and `night-city-holo` (graphite base, holographic cyan hairlines, 2077 gold for the active state, vector navigation icons, one easing and short distances — no flicker, no scanlines).

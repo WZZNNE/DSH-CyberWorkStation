@@ -1,7 +1,7 @@
 /**
  * Display-layer overrides: what the browser shows for a message without touching the
- * session log or the model's context. Text-anchored (the full original text is the key)
- * so the rewrite survives node-key changes across core upgrades. Pure: no I/O.
+ * session log or the model's context. Keyed by session id and immutable event seq;
+ * original text is retained for inspection and legacy pure-helper compatibility. Pure: no I/O.
  */
 
 export const MAX_TEXT = 20000
@@ -46,6 +46,7 @@ export function normalizeDoc(raw) {
         ...(collapsed ? { collapsed: true } : {}),
         ...(text.length > 0 ? { text } : {}),
         role: typeof entry.role === 'string' ? entry.role.slice(0, 20) : '',
+        ...(Number.isSafeInteger(entry.baseEditSeq) ? { baseEditSeq: entry.baseEditSeq } : {}),
         at: Number.isFinite(entry.at) ? entry.at : Date.now(),
       }
       if (++n >= MAX_PER_SESSION) break
@@ -56,7 +57,7 @@ export function normalizeDoc(raw) {
 }
 
 /** Set (or clear, when both text and hidden are absent) one override. */
-export function setOverride(doc, sessionId, seq, { original, text, hidden, collapsed, role }) {
+export function setOverride(doc, sessionId, seq, { original, text, hidden, collapsed, role, baseEditSeq }) {
   const next = { version: 1, sessions: { ...doc.sessions } }
   const entries = { ...(next.sessions[sessionId] ?? {}) }
   const key = String(seq)
@@ -73,6 +74,7 @@ export function setOverride(doc, sessionId, seq, { original, text, hidden, colla
       ...(collapsed === true ? { collapsed: true } : {}),
       ...(wantsText ? { text: clamp(text) } : {}),
       role: typeof role === 'string' ? role.slice(0, 20) : '',
+      ...(Number.isSafeInteger(baseEditSeq) ? { baseEditSeq } : {}),
       at: Date.now(),
     }
   }
@@ -117,6 +119,7 @@ export function overridesFor(doc, sessionId) {
     seq: Number(seq),
     role: e.role ?? '',
     original: e.original,
+    ...(Number.isSafeInteger(e.baseEditSeq) ? { baseEditSeq: e.baseEditSeq } : {}),
     // Only the switches that are actually set: the browser reads `text` as "there is a rewrite",
     // so sending an undefined one would make a collapsed message render as empty.
     ...(e.hidden === true ? { hidden: true } : {}),

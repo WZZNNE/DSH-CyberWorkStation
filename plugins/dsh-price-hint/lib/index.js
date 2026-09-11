@@ -6,36 +6,44 @@
  * cacheMiss = input, output = output). Read on every request, so a refreshed
  * price table applies immediately.
  */
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { readFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 export const name = 'price-hint'
 export const inject = ['webServer']
 
-const LEDGER = join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'storages', 'cost-meter', 'ledger.json')
+const LEDGER = join(resolveDshHome(), 'storages', 'cost-meter', 'ledger.json')
+
+// The picker exposes display names, not provider/model identities. A name is safe
+// only when every declared model bearing it has the same known displayed price.
+export function buildPriceMap(providers, prices) {
+  const labels = new Map()
+  for (const [pid, cfg] of Object.entries(providers ?? {})) {
+    const table = prices?.[pid]?.models ?? {}
+    for (const model of (Array.isArray(cfg?.models) ? cfg.models : [])) {
+      const id = typeof model === 'string' ? model : model?.id
+      const label = typeof model?.name === 'string' ? model.name : id
+      if (typeof id !== 'string' || typeof label !== 'string' || !label.trim()) continue
+      const e = table[id]
+      const known = e && [e.cacheMiss, e.output, e.cacheHit].every(value => typeof value === 'number' && Number.isFinite(value) && value >= 0)
+      const hint = known ? `输入 $${e.cacheMiss}/M · 输出 $${e.output}/M` + (e.cacheHit !== e.cacheMiss ? ` · 缓存 $${e.cacheHit}/M` : '') : null
+      const key = label.trim()
+      if (!labels.has(key)) labels.set(key, hint)
+      else if (labels.get(key) !== hint) labels.set(key, null)
+    }
+  }
+  return Object.fromEntries([...labels].filter(([, hint]) => hint !== null))
+}
 
 /** @param {import('@deepseek-ai/cordis').Context} ctx */
 export function apply(ctx) {
   const buildMap = () => {
-    const map = {}
     let prices = {}
     try { prices = JSON.parse(readFileSync(LEDGER, 'utf8')).config?.prices?.providers ?? {} } catch { /* no ledger yet */ }
     const settings = ctx.get('settings')
     const providers = typeof settings?.get === 'function' ? settings.get('llm-pi-ai')?.providers : undefined
-    if (providers !== null && typeof providers === 'object') {
-      for (const [pid, cfg] of Object.entries(providers)) {
-        const table = prices[pid]?.models ?? {}
-        for (const m of (Array.isArray(cfg?.models) ? cfg.models : [])) {
-          const id = typeof m === 'string' ? m : m?.id
-          const label = typeof m === 'object' && typeof m?.name === 'string' ? m.name : id
-          const e = table[id]
-          if (typeof id !== 'string' || e === undefined) continue
-          map[label] = `输入 $${e.cacheMiss}/M · 输出 $${e.output}/M` + (e.cacheHit !== e.cacheMiss ? ` · 缓存 $${e.cacheHit}/M` : '')
-        }
-      }
-    }
-    return map
+    return buildPriceMap(providers, prices)
   }
   // A GET-only, no-CORS route still answers a DNS-rebinding page, which is same-origin to the
   // browser: the Host header is what tells us the request really came to a loopback address.

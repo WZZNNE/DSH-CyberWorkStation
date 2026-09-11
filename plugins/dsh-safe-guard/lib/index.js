@@ -26,8 +26,8 @@
  * `git` would match `git … && curl x | sh` and approve the lot.
  */
 
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { readFileSync, watchFile, unwatchFile } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { compileExtraRules, evaluate } from './rules.js'
 
@@ -38,7 +38,7 @@ const COMMAND_FIELDS = new Map([
   ['terminal_send', 'text'],
 ])
 
-const RULES_FILE = join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'safe-guard.json')
+const RULES_FILE = join(resolveDshHome(), 'safe-guard.json')
 
 /**
  * Extract the command text this execution would run, or undefined when the

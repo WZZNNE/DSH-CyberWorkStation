@@ -2,6 +2,14 @@
 
 All notable changes to DSH CyberWorkStation. The vendored core (`core/`) tracks the upstream [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) release named in each entry.
 
+## v1.10.0 — 2026-09-11
+
+- **Docs**: README (zh / en) rewritten around 33 screenshots — every launcher page, every panel inside dsh, and the full plugin roster with provenance (original / fork / adopted).
+- **Launcher**: self-check parses the profile patch with a real YAML parser; uninstalling the two patch-layer plugins (keyring, LAN fence) is blocked while the profile still references them; `DSH_WEB_PORT` is passed to the core; stop verifies the process identity before terminating; `DSH_HOME` is resolved once at the entry point; the Web search form saves through a field patch so hidden settings survive; EXE rebuilt.
+- **Web search**: SearXNG source with an optional local extractor (`toolVisit`, `extractorUrl`); page text stays in the tool value; multi-query sources are distributed round-robin.
+- **Memory**: facts and summaries taken from messages that were later edited or deleted are withdrawn, and sessions that already received them get a correction notice; `memory_recall` results are tracked too.
+- **Chat editor**: display edits are derived from the log (exact seq matching); **Control deck**: macros read the current turn, lorebook scans the current surface, display regex runs in a worker, saving keeps drafts; **Temp chat** opens the created session; **Vision bridge** sends multi-image requests jointly and checks directory containment by real path; **Price hint** hides ambiguous prices; **Token usage** reads the ledger from the current home; **Drop files** refuses junctions that leave the workspace.
+
 ## v1.9.0 — 2026-09-02
 
 A second pass on the same day, from a list of eight things noticed while using v1.8.0; the record

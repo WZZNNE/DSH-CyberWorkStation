@@ -1,7 +1,7 @@
-import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import { installSettingsSection, settingsNamespace } from "@deepseek-ai/dsh-settings";
+import { resolveDshHome } from "@deepseek-ai/dsh-home-paths";
 
 //#region node_modules/.pnpm/@deepseek-ai+cosmokit@1.8.2/node_modules/@deepseek-ai/cosmokit/lib/index.js
 /** Return true when a value is `null` or `undefined`. */
@@ -1560,7 +1560,7 @@ function apply(ctx, config) {
 		cacheLatest = void 0;
 	};
 	const dshHomePath = ctx.get("dshHomePath");
-	const indexFile = () => dshHomePath !== void 0 ? join(dshHomePath("dsh-token-usage"), "index.json") : join(homedir(), ".dsh", "dsh-token-usage", "index.json");
+	const indexFile = () => typeof dshHomePath === "function" ? join(dshHomePath("dsh-token-usage"), "index.json") : join(resolveDshHome(), "dsh-token-usage", "index.json");
 	const listSessions = async () => {
 		const records = await sessionQuery.listSessions();
 		const persistence = ctx.get("sessionPersistence");
@@ -1672,12 +1672,16 @@ function apply(ctx, config) {
 	// Owned by the context and unref'd: a bare timer here held the event loop for eight seconds in
 	// every headless run and still fired — writing prices — after the plugin had been disposed.
 	ctx.effect(() => {
+		let disposed = false;
 		const priceSync = setTimeout(async () => {
 		try {
-			const { readFileSync: rf } = await import("node:fs");
-			const { homedir: hd } = await import("node:os");
-			const { join: jn } = await import("node:path");
-			const ledger = JSON.parse(rf(jn(hd(), ".dsh", "storages", "cost-meter", "ledger.json"), "utf8"));
+			if (disposed) return;
+			// cost-meter's host opens this one path; do not fall back to another
+			// installation's ledger when the selected home is missing or unreadable.
+			const ledgerPath = typeof dshHomePath === "function" ? dshHomePath("storages", "cost-meter", "ledger.json") : join(resolveDshHome(), "storages", "cost-meter", "ledger.json");
+			const raw = await readFile(ledgerPath, "utf8");
+			if (disposed) return;
+			const ledger = JSON.parse(raw);
 			const or = ledger.config?.prices?.providers?.openrouter?.models ?? {};
 			const cur = current().models ?? {};
 			const missing = {};
@@ -1692,7 +1696,7 @@ function apply(ctx, config) {
 		} catch (error) { console.warn("[dsh-token-usage] fork price sync skipped: " + String(error).slice(0, 100)); }
 		}, 8000);
 		priceSync.unref?.();
-		return () => clearTimeout(priceSync);
+		return () => { disposed = true; clearTimeout(priceSync); };
 	}, "dsh-token-usage: price sync");
 }
 

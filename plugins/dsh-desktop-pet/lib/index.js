@@ -18,9 +18,10 @@
  * The pet has no tool-calling loop: it asks for things with tags ([screen], [click:x,y], …), which
  * this file executes only after checking the permission level. See `pet.js`.
  */
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { execFile, spawn } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, unlinkSync, watchFile, unwatchFile, writeFileSync } from 'node:fs'
-import { homedir, tmpdir } from 'node:os'
+import { tmpdir } from 'node:os'
 import { join, extname, basename } from 'node:path'
 import { randomBytes } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
@@ -34,7 +35,7 @@ import {
 export const name = 'desktop-pet'
 export const inject = ['systemPrompt', 'webServer']
 
-const DSH_HOME = process.env.DSH_HOME ?? join(homedir(), '.dsh')
+const DSH_HOME = resolveDshHome()
 const CONFIG_FILE = join(DSH_HOME, 'desktop-pet.json')
 const PETS_DIR = join(DSH_HOME, 'pets')
 const HOST_DIR = join(PETS_DIR, '_host')

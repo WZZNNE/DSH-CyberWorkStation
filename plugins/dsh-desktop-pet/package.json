@@ -31,7 +31,8 @@
     "README.md"
   ],
   "peerDependencies": {
-    "@deepseek-ai/dsh-credentials": "*"
+    "@deepseek-ai/dsh-credentials": "*",
+    "@deepseek-ai/dsh-home-paths": "*"
   },
   "dsh": {
     "bundle": {

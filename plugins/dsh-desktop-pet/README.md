@@ -217,7 +217,3 @@ The host therefore reads the real build from the registry (`Environment.OSVersio
 supportedOS manifest) and, from build 22000 up, asks DWM for `DWMWA_SYSTEMBACKDROP_TYPE`
 (TRANSIENTWINDOW) instead; the legacy call is only made on Windows 10. Both callers paint an opaque
 plate of their own, so a refused effect still leaves a readable menu.
-
-## Tests
-
-`node --test .local/tests/dsh-desktop-pet/*.mjs` — 94 maintainer cases.

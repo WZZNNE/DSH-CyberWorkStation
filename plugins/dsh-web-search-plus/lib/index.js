@@ -21,11 +21,11 @@
  * credential references (SERPER_API_KEY, …) resolved through `ctx.credentials`;
  * the launcher stores them with `POST /dsh-web-search-plus/key`.
  */
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { readFileSync, writeFileSync, mkdirSync, renameSync, unlinkSync, watchFile, unwatchFile } from 'node:fs'
-import { homedir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { PROVIDERS, PROVIDER_IDS, searchWith } from './providers.js'
-import { normalizeConfig, validateConfig, decideTrigger, formatResults, formatToolText, normalizeTriggerText } from './inject.js'
+import { normalizeConfig, validateConfig, decideTrigger, formatResults, formatToolText, formatPageText, mergeSearchResults, normalizeTriggerText } from './inject.js'
 import { createRegexMatcher } from './regex-guard.js'
 import { fetchPageText, boundedSignal } from './page.js'
 import { fetchPinned } from './fetch.js'
@@ -35,9 +35,14 @@ export const inject = ['web', 'tools', 'systemPrompt', 'webServer']
 // `settings` and `llm` are read optionally through ctx.get: the provider-native mode needs them to
 // create the <model>:online entry; no other mode touches them.
 
-const DSH_HOME = process.env.DSH_HOME ?? join(homedir(), '.dsh')
+const DSH_HOME = resolveDshHome()
 const CONFIG_FILE = join(DSH_HOME, 'web-search.json')
 const SEARCH_TIMEOUT_MS = 25000
+// Tool-mode page visiting runs after the search inside the same tool call. The shipped
+// web_search budget is 60 s (agent presets, tool-web searchTimeoutMs), so the visits get a
+// bounded slice of what is left rather than the whole remainder.
+const VISIT_BUDGET_MS = 15000
+const VISIT_PAGE_TIMEOUT_MS = 12000
 const MAX_BODY = 64 * 1024
 
 /** @param {import('@deepseek-ai/cordis').Context} ctx */
@@ -194,6 +199,38 @@ export function apply(ctx) {
     return result
   }
 
+  /**
+   * Tool mode: open the top results and return their article text.
+   *
+   * Snippets from any search API are a sentence or two; without this the model needs a second
+   * round trip through `web_fetch` for anything it actually has to read — and a local model is
+   * exactly the kind that does not reliably take that second step. Opt-in through
+   * `toolVisit.links` (0 = off), bounded in total and per page, and every failure is dropped:
+   * a page that will not open must never fail the search that found it.
+   * @returns {Promise<Array<{ url: string, text: string, title?: string }>>}
+   */
+  async function visitSources(sources, signal) {
+    const { links, chars } = config.toolVisit
+    if (links <= 0 || sources.length === 0) return []
+    const bounded = boundedSignal(signal, VISIT_BUDGET_MS)
+    const targets = sources.slice(0, links)
+    // The label is attached per target, before the failures are dropped: filtering first and
+    // zipping by index afterwards would put one page's title on another page's text.
+    const visited = await Promise.all(targets.map(async source => {
+      const page = await fetchPageText(source.url, {
+        maxChars: chars,
+        blacklist: config.blacklist,
+        extractorUrl: config.extractorUrl,
+        signal: bounded,
+        timeoutMs: VISIT_PAGE_TIMEOUT_MS,
+      }).catch(() => null)
+      if (page === null || typeof page.text !== 'string' || page.text.trim().length === 0) return null
+      const title = page.title ?? source.title
+      return { ...page, ...(title ? { title } : {}) }
+    }))
+    return visited.filter(Boolean)
+  }
+
   // Which <model>:online variants exist (or are known impossible); cleared whenever the config reloads.
   const onlineReady = new Set()
   const onlineFailed = new Map()
@@ -241,7 +278,10 @@ export function apply(ctx) {
         text: 'Web search in this deployment is served by the model provider itself when the route supports it (OpenRouter searches server-side for every request); otherwise the web_search tool below is served by the configured search source. Cite the URLs you use.',
       })
     }
-    console.log(`[web-search-plus] mode=${config.mode} provider=${config.provider} fetch=${config.fetch.enabled ? 'on' : 'off'}`)
+    const visitNote = config.toolVisit.links > 0
+      ? ` toolVisit=${config.toolVisit.links}×${config.toolVisit.chars} via ${config.extractorUrl ? 'extractor ' + config.extractorUrl : 'built-in extraction'}`
+      : ''
+    console.log(`[web-search-plus] mode=${config.mode} provider=${config.provider} fetch=${config.fetch.enabled ? 'on' : 'off'}${visitNote}`)
     mountFetch().catch(error => console.warn('[web-search-plus] web_fetch mount failed: ' + String(error?.message ?? error)))
   }
   loadConfig()
@@ -279,17 +319,18 @@ export function apply(ctx) {
     if (queries.length === 0) return next()
     try {
       const results = await Promise.all(queries.slice(0, 4).map(q => runSearch(q, config.provider, config.maxResults, exec.signal)))
-      const seen = new Set()
-      const sources = []
-      for (const r of results) for (const s of r.sources) { if (!seen.has(s.url)) { seen.add(s.url); sources.push(s) } }
-      const contents = results.map((r, i) => (r.content ? (queries.length > 1 ? `### ${queries[i]}\n\n${r.content}` : r.content) : '')).filter(Boolean)
-      const merged = { ...(contents.length ? { content: contents.join('\n\n') } : {}), sources: sources.slice(0, config.maxResults), truncated: results.some(r => r.truncated) || sources.length > config.maxResults }
-      const value = { ...(merged.content ? { content: merged.content } : {}), sources: merged.sources.map(s => ({ url: s.url, ...(s.title ? { title: s.title } : {}), ...(s.snippet ? { snippet: s.snippet } : {}), ...(s.publishedAt ? { publishedAt: s.publishedAt } : {}) })), truncated: merged.truncated }
+      const merged = mergeSearchResults(queries, results, config.maxResults)
+      const pages = await visitSources(merged.sources, exec.signal)
+      // Core re-renders successful middleware results from value. Keep article text in the
+      // schema-approved content field so model text, code-mode values and replay agree.
+      const articleText = formatPageText(pages)
+      const content = [merged.content, articleText].filter(Boolean).join('\n\n')
+      const value = { ...(content ? { content } : {}), sources: merged.sources.map(s => ({ url: s.url, ...(s.title ? { title: s.title } : {}), ...(s.snippet ? { snippet: s.snippet } : {}), ...(s.publishedAt ? { publishedAt: s.publishedAt } : {}) })), truncated: merged.truncated }
       return {
         isError: false,
         value,
-        content: [{ type: 'text', text: formatToolText(merged) }],
-        meta: { sources: value.sources, truncated: value.truncated, ...(merged.content ? { answer: merged.content } : {}) },
+        content: [{ type: 'text', text: formatToolText(value) }],
+        meta: { sources: value.sources, truncated: value.truncated, ...(value.content ? { answer: value.content } : {}) },
       }
     } catch (error) {
       const message = `web_search via ${config.provider} failed: ${String(error?.message ?? error)}`
@@ -499,7 +540,7 @@ export function apply(ctx) {
       let pages = []
       if (cfg.visitLinks > 0) {
         // Visits run concurrently, each bounded by its own timeout, so the step waits for the slowest page only once.
-        const visited = await Promise.all(result.sources.slice(0, cfg.visitLinks).map(s => fetchPageText(s.url, { maxChars: cfg.visitChars, blacklist: cfg.blacklist, signal: payload.signal })))
+        const visited = await Promise.all(result.sources.slice(0, cfg.visitLinks).map(s => fetchPageText(s.url, { maxChars: cfg.visitChars, blacklist: cfg.blacklist, extractorUrl: cfg.extractorUrl, signal: payload.signal })))
         pages = visited.filter(Boolean)
       }
       block = formatResults(trigger.query, result, { template: cfg.template, budgetChars: cfg.budgetChars, pages })
@@ -659,4 +700,3 @@ export function apply(ctx) {
   }
   ctx.effect(() => ctx.webServer.register({ kind: 'prefix', path: '/dsh-web-search-plus', handler: route }), 'dsh-web-search-plus: routes')
 }
-

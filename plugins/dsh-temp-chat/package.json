@@ -27,5 +27,8 @@
       "platform": "web"
     }
   },
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-home-paths": "*"
+  }
 }

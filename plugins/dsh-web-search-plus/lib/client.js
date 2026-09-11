@@ -28,6 +28,8 @@ window.__ModuleLoader__.load({
     const makeT = zh => zh
       ? {
         label: '联网搜索', title: '联网搜索(全局)', save: '保存', saved: '已保存', failed: '请求失败:', test: '测试搜索', testNative: '测试搜索(真实 :online 请求,约 $0.01)', testing: '搜索中…',
+        visitPages: '打开正文(条)', visitChars: '每页字数', extractor: '正文抽取服务',
+        visitNote: '工具模式:搜到结果后再打开前 N 条网页,把正文一并交给模型——相当于付费 API 的 content 字段,少一次工具往返。0 = 关闭。抽取服务留空用内置的剥标签实现;填本地 trafilatura 服务(如 http://127.0.0.1:8899)正文更干净,服务不可用时自动回落。网页走的是 web_fetch 同一条受保护通道:只读公网地址,私网/回环一律拒绝。',
         mode: '方式', provider: '搜索来源', maxResults: '最多结果数', searxng: 'SearXNG 地址', key: 'API 密钥', keySave: '保存密钥', keyDelete: '删除密钥', keyDeleteConfirm: '删除已保存的 API 密钥?', keyDeleted: '密钥已删除', keySet: '已配置', keyMissing: '未配置',
         m_off: '关闭', m_tool: '让模型自己决定(工具调用,由下面的来源代答)', m_inject: '按触发词自动搜索(结果作为上下文注入)', m_provider: '走 API 自己的供应商搜索',
         dshCreds: '「DSH」已保存凭据', dshCredsNote: '「模型」页保存的 API 凭据一览(只读)。搜索供应商各用自家密钥;这些 DSH 凭据可在「多媒体 API」和「桌宠」面板里直接借用;绑定在哪些功能、别名、删除,统一在「凭据中心」页管理。', saving: '保存中…',
@@ -39,6 +41,8 @@ window.__ModuleLoader__.load({
       }
       : {
         label: 'Web search', title: 'Web search (global)', save: 'Save', saved: 'Saved', failed: 'Request failed: ', test: 'Test search', testNative: 'Test search (one real :online request, about $0.01)', testing: 'Searching…',
+        visitPages: 'Open top pages', visitChars: 'Chars per page', extractor: 'Extractor service',
+        visitNote: 'Tool mode: after the search, the top N result pages are opened and their article text goes to the model — the equivalent of a paid API\'s content field, without a second tool round trip. 0 = off. Leave the extractor empty for the built-in stripper, or point it at a local trafilatura service (e.g. http://127.0.0.1:8899) for cleaner text; it falls back on its own when the service is down. Pages ride the same guarded transport as web_fetch: public addresses only.',
         mode: 'Mode', provider: 'Source', maxResults: 'Max results', searxng: 'SearXNG URL', key: 'API key', keySave: 'Save key', keyDelete: 'Delete key', keyDeleteConfirm: 'Delete the saved API key?', keyDeleted: 'Key deleted', keySet: 'configured', keyMissing: 'not configured',
         m_off: 'Off', m_tool: 'Let the model decide (tool call served by the source below)', m_inject: 'Search on trigger words (results injected as context)', m_provider: "Use the API provider's own search",
         dshCreds: 'DSH stored credentials', dshCredsNote: 'Read-only view of the API credentials saved on the Models page. Search vendors use their own keys; these DSH credentials can be borrowed directly in the Media APIs and Desktop-pet panels. Bindings, aliases and removal live on the Credentials Center page.', saving: 'Saving…',
@@ -148,6 +152,28 @@ window.__ModuleLoader__.load({
           h('span', { style: S.label }, T.maxResults),
           h('input', { style: { ...S.input, width: '80px' }, type: 'number', min: 1, max: 20, value: draft.maxResults ?? 6, onChange: e => setDraft({ ...draft, maxResults: Number(e.target.value) }) }),
         ),
+        h('div', { style: S.row },
+          h('span', { style: S.label }, T.visitPages),
+          h('input', {
+            style: { ...S.input, width: '80px' }, type: 'number', min: 0, max: 5,
+            value: draft.toolVisit?.links ?? 0,
+            onChange: e => setDraft({ ...draft, toolVisit: { ...(draft.toolVisit ?? {}), links: Number(e.target.value) } }),
+          }),
+          h('span', { style: S.label }, T.visitChars),
+          h('input', {
+            style: { ...S.input, width: '100px' }, type: 'number', min: 200, max: 20000, step: 100,
+            value: draft.toolVisit?.chars ?? 2000,
+            onChange: e => setDraft({ ...draft, toolVisit: { ...(draft.toolVisit ?? {}), chars: Number(e.target.value) } }),
+          }),
+        ),
+        (draft.toolVisit?.links ?? 0) > 0 || (draft.visitLinks ?? 0) > 0 ? h('div', { style: S.row },
+          h('span', { style: S.label }, T.extractor),
+          h('input', {
+            style: { ...S.input, minWidth: '320px' }, value: draft.extractorUrl ?? '', placeholder: 'http://127.0.0.1:8899',
+            onChange: e => setDraft({ ...draft, extractorUrl: e.target.value }),
+          }),
+        ) : null,
+        h('div', { style: S.note }, T.visitNote),
         h('div', { style: S.row },
           h('label', { style: { ...S.label, display: 'inline-flex', gap: '6px', alignItems: 'center', cursor: 'pointer' } },
             h('input', { type: 'checkbox', checked: draft.fetch?.enabled !== false, onChange: e => setDraft({ ...draft, fetch: { ...(draft.fetch ?? {}), enabled: e.target.checked } }) }),

@@ -1,4 +1,8 @@
-> **dsh-vision-bridge-zh** — fork of [@goodandready/dsh-vision-bridge](https://www.npmjs.com/package/@goodandready/dsh-vision-bridge) 0.4.5 (MIT) with a Chinese UI (settings card "图片理解", composer chip, every label). Wire, routes (`/dsh-vision-bridge/*`), config file and behaviour are unchanged; the upstream README follows.
+> **dsh-vision-bridge-zh** — fork of [@goodandready/dsh-vision-bridge](https://www.npmjs.com/package/@goodandready/dsh-vision-bridge) 0.4.5 (MIT) with a Chinese UI and local reliability fixes. Existing routes (`/dsh-vision-bridge/*`) and configuration keys are retained.
+
+Local fixes: `vision_compare` and `vision_pixel_diff` send every input image in one request through a configured supported channel or the core catalog. `vision_pixel_diff` returns a visual assessment, without a numerical pixel-difference guarantee. OpenAI-compatible/Ollama and catalog channels support joint images; custom/webhook channels need their own multi-image protocol and currently report unsupported. Parallel-race waits for the first successful channel and cancels remaining requests.
+
+When `allowedImageDirs` is non-empty, direct local image, HTML, video and PDF inputs must resolve inside its directories. The filesystem provider resolves links and applies platform path rules before containment is checked. Browser URL tools accept HTTP(S) only; this does not constitute a sandbox for every subresource a permitted HTML page may load.
 
 # dsh-vision-bridge
 

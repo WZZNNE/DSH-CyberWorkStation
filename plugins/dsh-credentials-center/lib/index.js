@@ -34,14 +34,14 @@
  *   GET  /dsh-credentials-center/models                    → { ok, routes: [{ route, ns, displayName, baseURL, models: [{id,name,fromCatalog?}] }], default }
  *   POST /dsh-credentials-center/default-model { provider, model } → write agent-default-model
  */
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { readFileSync, writeFileSync, mkdirSync, renameSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 export const name = 'credentials-center'
 export const inject = ['webServer']
 
-const DSH_HOME = process.env.DSH_HOME ?? join(homedir(), '.dsh')
+const DSH_HOME = resolveDshHome()
 const ALIAS_FILE = join(DSH_HOME, 'credential-aliases.json')
 const MAX_BODY = 64 * 1024
 const REF = /^[A-Z][A-Z0-9_]{1,99}$/

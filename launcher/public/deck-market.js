@@ -78,8 +78,40 @@ function collectCards(selector, kind) {
 let currentPresetName = ''
 let deckWarnings = []
 let deckDirty = false // any edit on the deck page since the last load / save
-document.querySelector('#view-deck')?.addEventListener('input', () => { deckDirty = true })
-document.querySelector('#view-deck')?.addEventListener('change', () => { deckDirty = true })
+let deckEditVersion = 0
+let deckLoadEpoch = 0
+let deckSaving = false
+let presetReadSerial = 0
+let presetSelectionVersion = 0
+const markDeckDirty = () => { deckDirty = true; deckEditVersion++ }
+const deckReadGuard = () => {
+  const version = deckEditVersion
+  const epoch = deckLoadEpoch
+  return () => version === deckEditVersion && epoch === deckLoadEpoch
+}
+// These controls choose an operation's parameters; selecting a file must not
+// invalidate its own asynchronous reader when change bubbles to this page.
+const deckActionInputs = '#deck-import-file, #deck-preset-select, #deck-preset-name, #deck-io-format, #deck-io-merge'
+const markDeckInput = event => { if (!event.target.closest?.(deckActionInputs)) markDeckDirty() }
+document.querySelector('#view-deck')?.addEventListener('input', markDeckInput)
+document.querySelector('#view-deck')?.addEventListener('change', markDeckInput)
+$('#deck-preset-select')?.addEventListener('change', () => { presetSelectionVersion++ })
+const deckNotice = (zh, en) => window.LANG === 'en' ? en : zh
+const deckAppliedWithDraft = () => deckNotice('后端已应用本次操作；等待期间的新输入已保留，尚未保存。再次保存可提交当前草稿。', 'The server applied this operation. New input entered while waiting is preserved and remains unsaved; save again to submit the current draft.')
+async function withDeckOperation(action) {
+  if (deckSaving) return
+  deckSaving = true
+  deckLoadEpoch++
+  const controls = $$('#deck-save, #deck-preset-save, #deck-preset-load, #deck-preset-delete, #deck-import, #deck-import-file').map(element => [element, element.disabled])
+  for (const [element] of controls) element.disabled = true
+  try { await action(deckReadGuard()) } catch (error) {
+    deckDirty = true
+    toast(String(error?.message ?? error))
+  } finally {
+    deckSaving = false
+    for (const [element, disabled] of controls) element.disabled = disabled
+  }
+}
 function fillDeck(deck) {
   $('#deck-prompts').innerHTML = (deck.prompts ?? []).map(v => deckCard('prompts', v)).join('')
   $('#deck-regex').innerHTML = (deck.regex ?? []).map(v => deckCard('regex', v)).join('')
@@ -114,10 +146,19 @@ function collectDeck() {
     disabledTools: $('#deck-tools-off').value.split(',').map(x => x.trim()).filter(Boolean),
   }
 }
-async function refreshPresets() {
-  const d = await api('/api/deck/presets')
+async function refreshPresets(current = deckReadGuard()) {
   const s = $('#deck-preset-select')
-  s.innerHTML = '<option value="">' + T('deck_preset_none') + '</option>' + (d.presets ?? []).map(n => '<option value="' + esc(n) + '"' + (n === d.active ? ' selected' : '') + '>' + esc(n) + '</option>').join('')
+  const request = ++presetReadSerial
+  const selection = s.value
+  const selectionVersion = presetSelectionVersion
+  const stillCurrent = () => request === presetReadSerial && current() && selectionVersion === presetSelectionVersion && s.value === selection
+  try {
+    const d = await api('/api/deck/presets')
+    if (!stillCurrent()) return
+    if (!d || d.ok === false || !Array.isArray(d.presets)) { toast(d?.message || T('ws_load_failed')); return }
+    s.innerHTML = '<option value="">' + T('deck_preset_none') + '</option>' + d.presets.map(n => '<option value="' + esc(n) + '">' + esc(n) + '</option>').join('')
+    s.value = selection && d.presets.includes(selection) ? selection : d.presets.includes(d.active) ? d.active : ''
+  } catch (error) { if (stillCurrent()) toast(String(error?.message ?? error)) }
 }
 async function refreshDeckStatus() {
   const st = await api('/api/deck/status')
@@ -127,58 +168,81 @@ async function refreshDeckStatus() {
   el.textContent = T('deck_status_live', { p: st.counts?.prompts ?? 0, r: st.counts?.regex ?? 0, l: st.counts?.lorebook ?? 0, t: new Date(st.loadedAt ?? 0).toLocaleTimeString() }) + (st.loadError ? ' ⚠ ' + st.loadError : '') + (broken.length ? ' ⚠ ' + broken.join(' · ') : '') + (deckWarnings.length ? ' ⚠ ' + deckWarnings.join('; ') : '') + ((st.skippedWork ?? []).length ? ' ⚠ ' + T('deck_skipped_patterns', { list: st.skippedWork.join(', ') }) : '')
 }
 async function refreshDeck() {
-  if (deckDirty) { activateTab(localStorage.getItem('lc-deck-tab') || 'prompts'); refreshDeckStatus(); return } // unsaved edits survive a detour to another page
-  const { deck = {} } = await api('/api/deck')
-  fillDeck(deck)
+  if (deckDirty || deckSaving) { activateTab(localStorage.getItem('lc-deck-tab') || 'prompts'); refreshDeckStatus(); return }
+  deckLoadEpoch++
+  const current = deckReadGuard()
+  const result = await api('/api/deck')
+  if (!current()) return
+  if (!result || result.ok === false || !result.deck) { toast(result?.message || T('ws_load_failed')); return }
+  fillDeck(result.deck)
   activateTab(localStorage.getItem('lc-deck-tab') || 'prompts')
   $('#deck-help-text').textContent = T('deck_help_text')
   refreshPresets(); refreshDeckStatus()
-  await Promise.all([refreshWebSearch(), refreshSafety()])
-  deckDirty = false
+  await Promise.all([refreshWebSearch(current), refreshSafety(current)])
+  if (current()) deckDirty = false
 }
-$('#deck-add-prompt')?.addEventListener('click', () => $('#deck-prompts').insertAdjacentHTML('beforeend', deckCard('prompts')))
-$('#deck-add-regex')?.addEventListener('click', () => $('#deck-regex').insertAdjacentHTML('beforeend', deckCard('regex')))
-$('#deck-add-lore')?.addEventListener('click', () => $('#deck-lore').insertAdjacentHTML('beforeend', deckCard('lore')))
-document.addEventListener('click', e => { if (e.target.classList?.contains('deck-del')) e.target.closest('.deck-card').remove() })
+$('#deck-add-prompt')?.addEventListener('click', () => { $('#deck-prompts').insertAdjacentHTML('beforeend', deckCard('prompts')); markDeckDirty() })
+$('#deck-add-regex')?.addEventListener('click', () => { $('#deck-regex').insertAdjacentHTML('beforeend', deckCard('regex')); markDeckDirty() })
+$('#deck-add-lore')?.addEventListener('click', () => { $('#deck-lore').insertAdjacentHTML('beforeend', deckCard('lore')); markDeckDirty() })
+document.addEventListener('click', e => { if (e.target.closest?.('#view-deck .deck-del')) { e.target.closest('.deck-card').remove(); markDeckDirty() } })
 // One button for the whole page: deck file, web-search config and safety rules (each hot-reloaded by its plugin).
-$('#deck-save')?.addEventListener('click', async () => {
+$('#deck-save')?.addEventListener('click', () => withDeckOperation(async current => {
+  // Snapshot all panes inside the protected action, before its first await.
+  const deck = collectDeck()
+  const web = wsLoaded ? collectWebSearch() : null
+  const safety = sgLoaded ? collectSafety() : null
   const problems = []
   const skipped = []
-  const r = await api('/api/deck', collectDeck())
-  if (r.ok === false) problems.push(r.message || T('t_empty'))
+  const r = await api('/api/deck', deck)
+  if (!r || r.ok === false) problems.push(r?.message || T('t_empty'))
   let w = null; let s = null
-  if (wsLoaded) { w = await api('/api/websearch', collectWebSearch()); if (w.ok === false) problems.push(w.message) } else skipped.push(T('tab_websearch'))
-  if (sgLoaded) { s = await api('/api/safeguard', collectSafety()); if (s.ok === false) problems.push(s.message) } else skipped.push(T('tab_safety'))
+  if (web) { w = await api('/api/websearch/patch', web); if (!w || w.ok === false) problems.push(w?.message || T('t_empty')) } else skipped.push(T('tab_websearch'))
+  if (safety) { s = await api('/api/safeguard', safety); if (!s || s.ok === false) problems.push(s?.message || T('t_empty')) } else skipped.push(T('tab_safety'))
   const skippedNote = skipped.length ? ' · ' + T('deck_save_skipped', { tabs: skipped.join(', ') }) : ''
-  const warnNote = Array.isArray(r.warnings) && r.warnings.length ? ' · ⚠ ' + r.warnings.join('; ') : ''
-  deckWarnings = Array.isArray(r.warnings) ? r.warnings : []
-  toast((problems.length ? problems.join(' · ') : (r.message || T('t_saved'))) + warnNote + skippedNote)
+  const warnNote = Array.isArray(r?.warnings) && r.warnings.length ? ' · ⚠ ' + r.warnings.join('; ') : ''
+  deckWarnings = Array.isArray(r?.warnings) ? r.warnings : []
+  toast((problems.length ? problems.join(' · ') : (r?.message || T('t_saved'))) + warnNote + skippedNote)
   // re-read only the panes whose own write succeeded (a rejected pane keeps the user's edits on screen)
-  await Promise.all([w && w.ok !== false ? refreshWebSearch() : null, s && s.ok !== false ? refreshSafety() : null])
-  deckDirty = false
+  if (current()) await Promise.all([w && w.ok !== false ? refreshWebSearch(current) : null, s && s.ok !== false ? refreshSafety(current) : null])
+  if (current()) deckDirty = problems.length > 0 || skipped.length > 0
   setTimeout(refreshDeckStatus, 2000)
-})
+}))
 
 // ── Presets ──
-$('#deck-preset-save')?.addEventListener('click', async () => {
+$('#deck-preset-save')?.addEventListener('click', () => withDeckOperation(async current => {
   const name = $('#deck-preset-name').value.trim() || $('#deck-preset-select').value
   if (!name) return toast(T('deck_preset_name_ph'))
   const saved = await api('/api/deck', { ...collectDeck(), presetName: name })
-  if (saved.ok === false) return toast(saved.message)
-  const r = await api('/api/deck/presets/save', { name })
-  toast(r.message); currentPresetName = name; refreshPresets()
-})
-$('#deck-preset-load')?.addEventListener('click', async () => {
+  if (!saved || saved.ok === false) { deckDirty = true; toast(saved?.message || T('t_empty')); return }
+  let r
+  try { r = await api('/api/deck/presets/save', { name }) } catch (error) { r = { ok: false, message: String(error?.message ?? error) } }
+  if (!r || r.ok === false) {
+    deckDirty = true
+    toast(deckNotice('当前甲板已保存，但预设保存失败；草稿仍保留：', 'The current deck was saved, but saving the preset failed; the draft is preserved: ') + (r?.message || T('t_empty')))
+    return
+  }
+  if (current()) currentPresetName = name
+  toast(current() ? (r.message || T('t_saved')) : deckAppliedWithDraft())
+  await refreshPresets(current)
+}))
+$('#deck-preset-load')?.addEventListener('click', () => withDeckOperation(async current => {
   const name = $('#deck-preset-select').value
   if (!name) return toast(T('deck_preset_pick'))
   const r = await api('/api/deck/presets/load', { name })
-  toast(r.message); if (r.deck) { fillDeck(r.deck); refreshPresets() }
-})
-$('#deck-preset-delete')?.addEventListener('click', async () => {
+  if (!r || r.ok === false || !r.deck) { deckDirty = true; toast(r?.message || T('t_empty')); return }
+  if (!current()) { toast(deckAppliedWithDraft()); return }
+  fillDeck(r.deck)
+  toast(r.message || T('t_saved'))
+  await refreshPresets(current)
+}))
+$('#deck-preset-delete')?.addEventListener('click', () => withDeckOperation(async current => {
   const name = $('#deck-preset-select').value
   if (!name || !confirm(T('deck_preset_delete') + ': ' + name + '?')) return
-  const r = await api('/api/deck/presets/delete', { name }); toast(r.message); refreshPresets()
-})
+  const r = await api('/api/deck/presets/delete', { name })
+  if (!r || r.ok === false) { deckDirty = true; toast(r?.message || T('t_empty')); return }
+  toast(r.message || T('t_saved'))
+  await refreshPresets(current)
+}))
 
 // ── SillyTavern import / export ──
 $('#deck-export')?.addEventListener('click', async () => {
@@ -191,14 +255,24 @@ $('#deck-export')?.addEventListener('click', async () => {
   document.body.appendChild(a); a.click(); a.remove()
   setTimeout(() => URL.revokeObjectURL(a.href), 5000)
 })
-$('#deck-import')?.addEventListener('click', () => $('#deck-import-file').click())
+$('#deck-import')?.addEventListener('click', () => { if (!deckSaving) $('#deck-import-file').click() })
 $('#deck-import-file')?.addEventListener('change', async e => {
   const file = e.target.files?.[0]; if (!file) return
-  let data
-  try { data = JSON.parse(await file.text()) } catch { return toast(T('io_bad_json')) }
-  const r = await api('/api/deck/import', { format: $('#deck-io-format').value, data, merge: $('#deck-io-merge').checked })
-  toast(r.message || (r.ok ? T('t_saved') : T('t_empty'))); if (r.ok && r.deck) fillDeck(r.deck)
-  e.target.value = ''
+  try {
+    await withDeckOperation(async current => {
+      const format = $('#deck-io-format').value
+      const merge = $('#deck-io-merge').checked
+      let data
+      try { data = JSON.parse(await file.text()) } catch { throw new Error(T('io_bad_json')) }
+      if (!current()) { toast(deckNotice('读取文件期间草稿已变化，已取消导入；未向后端提交。请确认后重新选择文件。', 'The draft changed while reading the file. Import was cancelled without submitting to the server; review the draft and select the file again.')); return }
+      const r = await api('/api/deck/import', { format, data, merge })
+      if (!r || r.ok === false || !r.deck) { deckDirty = true; toast(r?.message || T('t_empty')); return }
+      if (!current()) { toast(deckAppliedWithDraft()); return }
+      fillDeck(r.deck)
+      toast(r.message || T('t_saved'))
+      await refreshPresets(current)
+    })
+  } finally { e.target.value = '' }
 })
 
 // ── Context summary (sampling tab) ──
@@ -245,8 +319,9 @@ function wsRenderProviderState() {
   else if (p.needsUrl) state.textContent = p.configured ? '✔ URL' : '✖ URL'
   else state.textContent = id === 'deepseek-official' ? T('ws_deepseek_note') : ''
 }
-async function refreshWebSearch() {
+async function refreshWebSearch(current = deckReadGuard()) {
   const [cfgResp, status] = await Promise.all([api('/api/websearch'), api('/api/websearch/status')])
+  if (!current()) return
   wsStatus = status && status.ok === true ? status : null
   if (!cfgResp || cfgResp.ok === false || !cfgResp.config || typeof cfgResp.config !== 'object') { wsLoaded = false; $('#ws-provider-state').textContent = '⚠ ' + (cfgResp?.message || T('ws_load_failed')); return }
   const c = cfgResp.config
@@ -279,13 +354,12 @@ $('#ws-provider')?.addEventListener('change', wsRenderProviderState)
 let wsConfig = null   // the last config read from the server, so a save keeps fields this tab has no UI for
 function collectWebSearch() {
   return {
-    providerNative: wsConfig?.providerNative,
     mode: $$('input[name="ws-mode"]').find(r => r.checked)?.value ?? 'off', provider: $('#ws-provider').value,
     searxngUrl: $('#ws-searxng').value.trim(), maxResults: Number($('#ws-maxresults').value), cacheTtlSec: Number($('#ws-cachettl').value),
     triggers: { backticks: $('#ws-trig-backticks').checked, always: $('#ws-trig-always').checked, maxWords: Number($('#ws-maxwords').value), phrases: $('#ws-phrases').value.split(',').map(x => x.trim()).filter(Boolean), regex: $('#ws-regex').value.trim(), regexQuery: $('#ws-regex-query').value.trim() || '$1' },
     template: $('#ws-template').value, budgetChars: Number($('#ws-budget').value), visitLinks: Number($('#ws-visit').value), visitChars: Number($('#ws-visitchars').value),
     blacklist: $('#ws-blacklist').value.split(',').map(x => x.trim()).filter(Boolean),
-    fetch: { ...(wsConfig?.fetch && typeof wsConfig.fetch === 'object' ? wsConfig.fetch : {}), enabled: $('#ws-fetch').checked },
+    fetch: { enabled: $('#ws-fetch').checked },
   }
 }
 $('#ws-key-save')?.addEventListener('click', async () => {
@@ -307,8 +381,9 @@ $('#ws-test')?.addEventListener('click', async () => {
 })
 
 // ── Safety rules tab ──
-async function refreshSafety() {
+async function refreshSafety(current = deckReadGuard()) {
   const d = await api('/api/safeguard')
+  if (!current()) return
   if (!d || d.ok === false || !d.config || typeof d.config !== 'object') { sgLoaded = false; $('#sg-deny').dataset.ph ??= $('#sg-deny').placeholder; $('#sg-deny').placeholder = '⚠ ' + (d?.message || T('ws_load_failed')); return }
   if ($('#sg-deny').dataset.ph) $('#sg-deny').placeholder = $('#sg-deny').dataset.ph
   $('#sg-deny').value = (d.config.denyPatterns ?? []).join('\n')
@@ -325,11 +400,112 @@ function collectSafety() {
 const KINDS = () => ({ 'effort-levels': T('kind_effort'), 'prompt-toggle': T('kind_toggle'), always: T('kind_always'), 'template-toggle': T('kind_template'), none: T('kind_none') })
 const specOf = e => (e === false ? 'false' : (e && typeof e === 'object' ? Object.entries(e).map(([k, v]) => (v === null || v === k ? k : k + '=' + v)).join(',') : ''))
 let lastLocalStatus = null
-function renderLocal(st) {
+const localDrafts = new Map()
+let localInputRevision = 0
+let localWriting = false
+let localReadSerial = 0
+let localMutationEpoch = 0
+const localKey = (route, model) => JSON.stringify([route, model])
+const localFieldValue = element => element.type === 'checkbox' ? element.checked : element.value
+const localUsableStatus = value => value && value.ok !== false && !value.offline && Array.isArray(value.routes)
+const localControls = '#local-probe, #local-teach-now, #local-autoteach, #local-routes [data-route-api], #local-routes .local-save, #local-routes .local-rec, #local-routes .local-online'
+function syncLocalControls() {
+  for (const element of $$(localControls)) {
+    element.dataset.localDisabled ??= element.disabled ? '1' : '0'
+    element.disabled = localWriting || element.dataset.localDisabled === '1'
+  }
+}
+function localDraftNote() {
+  const count = [...localDrafts.values()].reduce((n, fields) => n + fields.size, 0)
+  return count ? deckNotice(` · 保留 ${count} 个字段草稿（含筛选隐藏或暂不可用的字段）`, ` · ${count} field draft(s) retained, including filtered or unavailable fields`) : ''
+}
+function localFailure(message) {
+  $('#local-state').textContent = (message || T('local_offline')) + localDraftNote()
+}
+function rememberLocalInput(event) {
+  const field = event.target.closest?.('#local-routes [data-f]')
+  const row = field?.closest('tr[data-route][data-model]')
+  if (!row) return
+  const key = localKey(row.dataset.route, row.dataset.model)
+  const fields = localDrafts.get(key) ?? new Map()
+  // Even a return to the OLD server value is new intent during an outstanding
+  // save. Only a fresh accepted response can establish that it is already saved.
+  fields.set(field.dataset.f, { value: localFieldValue(field), revision: ++localInputRevision })
+  localDrafts.set(key, fields)
+}
+document.addEventListener('input', rememberLocalInput)
+document.addEventListener('change', rememberLocalInput)
+function localSubmission(route, model, fields) {
+  const key = localKey(route, model)
+  return { key, revisions: new Map(fields.map(field => [field, localDrafts.get(key)?.get(field)?.revision])) }
+}
+function clearLocalSubmission(submission) {
+  if (!submission) return
+  const fields = localDrafts.get(submission.key)
+  if (!fields) return
+  for (const [field, revision] of submission.revisions) {
+    if (revision !== undefined && fields.get(field)?.revision === revision) fields.delete(field)
+  }
+  if (!fields.size) localDrafts.delete(submission.key)
+}
+function restoreLocalDrafts(fresh) {
+  for (const row of $$('#local-routes tr[data-route][data-model]')) {
+    const key = localKey(row.dataset.route, row.dataset.model)
+    const fields = localDrafts.get(key)
+    if (!fields) continue
+    for (const field of row.querySelectorAll('[data-f]')) {
+      const draft = fields.get(field.dataset.f)
+      if (!draft) continue
+      if (fresh && draft.value === localFieldValue(field)) { fields.delete(field.dataset.f); continue }
+      if (field.type === 'checkbox') field.checked = draft.value
+      else field.value = draft.value
+    }
+    if (!fields.size) localDrafts.delete(key)
+  }
+}
+async function withLocalMutation(action) {
+  if (localWriting) return
+  localWriting = true
+  localMutationEpoch++
+  localReadSerial++ // Any earlier status response predates this write.
+  syncLocalControls()
+  try { await action() } catch (error) {
+    localFailure(String(error?.message ?? error)); toast(String(error?.message ?? error))
+  } finally {
+    localWriting = false
+    syncLocalControls()
+  }
+}
+async function finishLocalMutation(result, submission, message) {
+  if (!result || result.offline || result.ok === false) {
+    const problem = result?.message || T(result?.offline ? 'local_offline' : 't_empty')
+    localFailure(problem); toast(problem); return false
+  }
+  let status = result
+  if (!localUsableStatus(status)) {
+    try { status = await api('/api/local/status') } catch { status = null }
+    if (!localUsableStatus(status)) {
+      const notice = deckNotice('操作已提交，但状态刷新失败；字段草稿已保留，请刷新核对。', 'The operation was submitted, but status could not be refreshed. Field drafts are retained; refresh to verify.')
+      localFailure(notice); toast(notice); return false
+    }
+  }
+  clearLocalSubmission(submission)
+  renderLocal(status, true)
+  if (message) toast(message)
+  return true
+}
+function renderLocal(st, fresh = false) {
+  if (!localUsableStatus(st)) {
+    if (!lastLocalStatus) $('#local-routes').innerHTML = '<div class="help-box">' + T('local_offline') + '</div>'
+    localFailure(st?.message || T('local_offline'))
+    return
+  }
+  const focused = document.activeElement
+  const focusedRow = focused?.closest?.('#local-routes tr[data-route][data-model]')
+  const focus = focusedRow && focused.dataset.f ? { key: localKey(focusedRow.dataset.route, focusedRow.dataset.model), field: focused.dataset.f, start: focused.selectionStart, end: focused.selectionEnd } : null
   lastLocalStatus = st
   const q = ($('#local-filter')?.value ?? '').trim().toLowerCase()
   const box = $('#local-routes')
-  if (!st || st.offline || !Array.isArray(st.routes)) { box.innerHTML = '<div class="help-box">' + T('local_offline') + '</div>'; $('#local-state').textContent = ''; return }
   $('#local-autoteach').checked = st.autoTeach !== false
   const kinds = KINDS()
   const routeCard = r => {
@@ -375,57 +551,97 @@ function renderLocal(st) {
   box.innerHTML =
     '<h3 class="stat-label">' + T('local_group_local') + '</h3><div class="dim" style="margin:0 0 6px">' + T('local_efforts_help') + '</div>' + (locals.length ? locals.map(routeCard).join('') : '<div class="dim">' + T('local_none') + '</div>') +
     '<h3 class="stat-label" style="margin-top:14px">' + T('local_group_remote') + '</h3><div class="dim" style="margin:0 0 6px">' + T('local_remote_help') + '</div>' + (remotes.length ? remotes.map(routeCard).join('') : '<div class="dim">' + T('t_empty') + '</div>')
-  $('#local-state').textContent = (st.defaultModel ? T('local_default', { m: st.defaultModel.provider + ' / ' + st.defaultModel.model }) : '') + (st.autoTaught?.length ? ' · ' + T('local_taught', { n: st.autoTaught.length }) : '')
+  restoreLocalDrafts(fresh)
+  syncLocalControls()
+  if (focus) {
+    const row = $$('#local-routes tr[data-route][data-model]').find(row => localKey(row.dataset.route, row.dataset.model) === focus.key)
+    const field = row && [...row.querySelectorAll('[data-f]')].find(field => field.dataset.f === focus.field)
+    if (field) { field.focus(); if (typeof focus.start === 'number') { try { field.setSelectionRange(focus.start, focus.end) } catch { /* numeric inputs do not expose a text selection */ } } }
+  }
+  $('#local-state').textContent = (st.defaultModel ? T('local_default', { m: st.defaultModel.provider + ' / ' + st.defaultModel.model }) : '') + (st.autoTaught?.length ? ' · ' + T('local_taught', { n: st.autoTaught.length }) : '') + localDraftNote()
 }
 async function refreshLocal() {
+  if (localWriting) return
+  const request = ++localReadSerial
+  const epoch = localMutationEpoch
   $('#local-state').textContent = T('t_calc')
-  renderLocal(await api('/api/local/status'))
+  try {
+    const result = await api('/api/local/status')
+    if (request === localReadSerial && epoch === localMutationEpoch && !localWriting) renderLocal(result, true)
+  } catch (error) { if (request === localReadSerial && epoch === localMutationEpoch && !localWriting) localFailure(String(error?.message ?? error)) }
 }
 $('#local-refresh')?.addEventListener('click', refreshLocal)
 $('#local-filter')?.addEventListener('input', () => { if (lastLocalStatus) renderLocal(lastLocalStatus) })
-$('#local-probe')?.addEventListener('click', async () => {
+$('#local-probe')?.addEventListener('click', () => withLocalMutation(async () => {
   $('#local-state').textContent = T('local_probing')
   const r = await api('/api/local/probe', {})
-  if (r.offline) { renderLocal(r); return }
-  renderLocal(r); toast(T('local_probed'))
-})
+  await finishLocalMutation(r, null, T('local_probed'))
+}))
 document.addEventListener('click', async e => {
   const online = e.target.closest?.('.local-online')
   if (online) {
-    const tr = online.closest('tr')
-    const r = await api('/api/local/online-variant', { route: tr.dataset.route, modelId: tr.dataset.model, action: online.dataset.action })
-    if (r.offline) return toast(T('local_offline'))
-    toast(r.ok ? T(online.dataset.action === 'add' ? 'local_online_done' : 'local_online_removed', { id: r.variantId }) : (r.message || T('t_empty')))
-    renderLocal(r.ok ? r : await api('/api/local/status'))
-    return
+    return withLocalMutation(async () => {
+      const tr = online.closest('tr')
+      const action = online.dataset.action
+      const r = await api('/api/local/online-variant', { route: tr.dataset.route, modelId: tr.dataset.model, action })
+      await finishLocalMutation(r, null, T(action === 'add' ? 'local_online_done' : 'local_online_removed', { id: r?.variantId }))
+    })
   }
   const rec = e.target.closest?.('.local-rec'); const save = e.target.closest?.('.local-save')
   if (!rec && !save) return
-  const tr = e.target.closest('tr'); const route = tr.dataset.route; const modelId = tr.dataset.model
-  const g = f => tr.querySelector('[data-f="' + f + '"]')
-  let r
-  if (rec) r = await api('/api/local/apply-recommended', { route, modelId })
-  else {
-    const changes = { contextWindow: g('contextWindow').value === '' ? null : Number(g('contextWindow').value), maxTokens: g('maxTokens').value === '' ? null : Number(g('maxTokens').value) }
-    if (g('thinkingMode')) changes.thinkingMode = g('thinkingMode').value
-    // levels / wire flag travel only when the user changed them (the wire flag is a chat-completions switch)
-    if (g('effortSpec') && g('effortSpec').value.trim() !== g('effortSpec').dataset.orig) changes.effortSpec = g('effortSpec').value.trim()
-    if (g('wire') && (g('wire').checked ? '1' : '0') !== g('wire').dataset.orig) changes.supportsReasoningEffort = g('wire').checked
-    r = await api('/api/local/apply', { route, modelId, changes })
-  }
-  if (r.offline) return toast(T('local_offline'))
-  toast(r.ok ? T('local_applied') : (r.message || T('t_empty')))
-  renderLocal(r.ok ? r : await api('/api/local/status'))
-  refreshContextSummary()
+  return withLocalMutation(async () => {
+    const tr = e.target.closest('tr'); const route = tr.dataset.route; const modelId = tr.dataset.model
+    const g = f => tr.querySelector('[data-f="' + f + '"]')
+    let r; let submission
+    if (rec) {
+      const recommended = lastLocalStatus?.routes.find(r => r.route === route)?.models.find(m => m.id === modelId)?.recommended ?? {}
+      const fields = ['thinkingMode']
+      for (const field of ['contextWindow', 'maxTokens']) if (recommended[field] !== undefined) fields.push(field)
+      if (recommended.reasoningEfforts !== undefined) fields.push('effortSpec')
+      if (recommended.supportsReasoningEffort !== undefined) fields.push('wire')
+      submission = localSubmission(route, modelId, fields)
+      r = await api('/api/local/apply-recommended', { route, modelId })
+    } else {
+      const changes = { contextWindow: g('contextWindow').value === '' ? null : Number(g('contextWindow').value), maxTokens: g('maxTokens').value === '' ? null : Number(g('maxTokens').value) }
+      if (g('thinkingMode')) changes.thinkingMode = g('thinkingMode').value
+      // Compare with the fresh server baseline, never a previously restored draft.
+      if (g('effortSpec') && g('effortSpec').value.trim() !== g('effortSpec').dataset.orig) changes.effortSpec = g('effortSpec').value.trim()
+      if (g('wire') && (g('wire').checked ? '1' : '0') !== g('wire').dataset.orig) changes.supportsReasoningEffort = g('wire').checked
+      submission = localSubmission(route, modelId, Object.keys(changes).map(field => field === 'supportsReasoningEffort' ? 'wire' : field))
+      r = await api('/api/local/apply', { route, modelId, changes })
+    }
+    if (await finishLocalMutation(r, submission, T('local_applied'))) refreshContextSummary()
+  })
 })
 document.addEventListener('change', async e => {
   const s = e.target.closest?.('[data-route-api]'); if (!s) return
-  if (!confirm(T('local_api_confirm', { api: s.value }))) { refreshLocal(); return }
-  const r = await api('/api/local/route-api', { route: s.dataset.routeApi, api: s.value })
-  toast(r.ok ? T('local_applied') : (r.message || T('t_empty'))); refreshLocal()
+  const reset = () => { s.value = lastLocalStatus?.routes.find(r => r.route === s.dataset.routeApi)?.api || 'openai-completions' }
+  if (localWriting) { reset(); return }
+  if (!confirm(T('local_api_confirm', { api: s.value }))) { reset(); return }
+  return withLocalMutation(async () => {
+    const route = s.dataset.routeApi; const apiName = s.value
+    try {
+      const r = await api('/api/local/route-api', { route, api: apiName })
+      if (!await finishLocalMutation(r, null, T('local_applied'))) reset()
+    } catch (error) { reset(); throw error }
+  })
 })
-$('#local-autoteach')?.addEventListener('change', async e => { const r = await api('/api/local/settings', { autoTeach: e.target.checked }); toast(r.ok ? T('t_saved') : (r.message || T('local_offline'))) })
-$('#local-teach-now')?.addEventListener('click', async () => { $('#local-state').textContent = T('local_probing'); const r = await api('/api/local/settings', { teachNow: true }); if (r.offline) { renderLocal(r); return } toast(T('local_taught', { n: (r.taught ?? []).length })); renderLocal(r) })
+$('#local-autoteach')?.addEventListener('change', e => {
+  const reset = () => { e.target.checked = lastLocalStatus?.autoTeach !== false }
+  if (localWriting) { reset(); return }
+  return withLocalMutation(async () => {
+    const autoTeach = e.target.checked
+    try {
+      const r = await api('/api/local/settings', { autoTeach })
+      if (!await finishLocalMutation(r, null, T('t_saved'))) reset()
+    } catch (error) { reset(); throw error }
+  })
+})
+$('#local-teach-now')?.addEventListener('click', () => withLocalMutation(async () => {
+  $('#local-state').textContent = T('local_probing')
+  const r = await api('/api/local/settings', { teachNow: true })
+  await finishLocalMutation(r, null, T('local_taught', { n: (r?.taught ?? []).length }))
+}))
 refreshers.deck = refreshDeck
 refreshers.local = refreshLocal
 

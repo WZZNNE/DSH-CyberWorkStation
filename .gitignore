@@ -31,3 +31,6 @@ Desktop.ini
 
 # per-workspace uploads made by dsh-drop-files
 .dsh-uploads/
+
+# Generated showcase page (kept local; the README is the published document)
+docs/showcase/

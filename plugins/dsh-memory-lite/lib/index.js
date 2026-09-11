@@ -22,8 +22,8 @@
  *              the token meter's shadow-price protocol and the compaction invariant accept.
  *              Cold sessions are resumed, edited, flushed and disposed again.
  */
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { readFileSync, writeFileSync, mkdirSync, watchFile, unwatchFile } from 'node:fs'
-import { homedir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { normalizeConfig, validateConfig, minimalConfig } from './config.js'
@@ -36,7 +36,7 @@ import * as C from './context.js'
 export const name = 'memory-lite'
 export const inject = ['sessions', 'agents', 'llm', 'tools', 'systemPrompt']
 
-const DSH_HOME = process.env.DSH_HOME ?? join(homedir(), '.dsh')
+const DSH_HOME = resolveDshHome()
 const CONFIG_FILE = join(DSH_HOME, 'memory-lite.json')
 const MEMORY_DIR = join(DSH_HOME, 'memory')
 const MAX_BODY = 256 * 1024
@@ -71,7 +71,39 @@ export function apply(ctx) {
   const log = (level, msg) => { (level === 'warn' ? console.warn : console.log)(`[memory-lite] ${msg}`) }
   if (store.loadError) log('warn', `memory.json could not be loaded (${store.loadErrorKind}: ${store.loadError}); starting empty — the next write merges the file if it parses by then, moves it aside if it is unparsable, and is refused while it cannot be read`)
   /** Save the store and embed whatever a save-time merge of an external write brought in. */
-  const persist = () => { store.save(); if (store.mergedIds.length) { log('info', `merged ${store.mergedIds.length} externally written item(s)`); scheduleEmbed(store.mergedIds.splice(0)) } }
+  const persist = () => { store.save(); if (store.mergedIds.length) { log('info', `merged ${store.mergedIds.length} externally written item(s)`); scheduleEmbed(store.mergedIds.splice(0)); void reconcileSources() } }
+  const uncheckedSources = new Set()
+  let reconcileReady = Promise.resolve()
+  const available = item => !C.staleItem(item) && !(C.automaticItem(item) && uncheckedSources.has(item.sessionId))
+  // Resolve legacy provenance before anything can recall it. Unreadable sources remain visible
+  // in the manager but are withheld from the model until an explicit refresh can verify them.
+  function reconcileSources() {
+    // Migrate v5 metadata before a later prune can remove its only copy.
+    let migrated = false
+    for (const item of store.items) {
+      if (store.withdrawals[item.id]) continue
+      const legacy = C.staleItem(item) ? { revision: item.meta.staleAfterEdit, sourceEditSeq: item.meta.staleAfterEdit, text: item.text.slice(0, 500) }
+        : item.meta?.withdrawnRecall ? { ...item.meta.withdrawnRecall, text: item.meta.withdrawnRecall.text.slice(0, 500), correctedText: item.text.slice(0, 4000) } : null
+      if (legacy) { store.withdrawals[item.id] = legacy; migrated = true }
+    }
+    for (const item of store.items) if (C.automaticItem(item)) uncheckedSources.add(item.sessionId)
+    store.version++
+    reconcileReady = reconcileReady.then(async () => {
+      let changed = migrated || store.withdrawalsDirty
+      for (const id of [...uncheckedSources]) {
+        try {
+          const live = ctx.sessions.get(id)
+          const events = live ? [...live.events] : (await persistence()?.inspect(id))?.events
+          if (!Array.isArray(events)) throw new Error('source session is unavailable')
+          changed = C.invalidateSource(store, id, C.chatEditRevision(events)) || changed
+          uncheckedSources.delete(id)
+        } catch (error) { log('warn', `automatic memory from ${id || '(unknown source)'} is withheld: ${String(error?.message ?? error)}`) }
+      }
+      store.version++
+      if (changed) { persist(); log('info', 'withdrawn automatic memories from edited source sessions; records and pins were retained for review') }
+    }).catch(error => log('warn', `source reconciliation failed: ${String(error?.message ?? error)}`))
+    return reconcileReady
+  }
 
   const loadConfig = () => {
     let raw = null
@@ -166,9 +198,9 @@ export function apply(ctx) {
 
   // ── recall ──
   let indexCache = { version: -1, index: null }
-  const lexicalIndex = () => { if (indexCache.version !== store.version) indexCache = { version: store.version, index: buildIndex(store.items) }; return indexCache.index }
+  const lexicalIndex = () => { if (indexCache.version !== store.version) indexCache = { version: store.version, index: buildIndex(store.items.filter(available)) }; return indexCache.index }
   function recall(query, { cwd, topK, strict, qv } = {}) {
-    const candidates = store.items.filter(i => visibleIn(i, cwd))
+    const candidates = store.items.filter(i => available(i) && visibleIn(i, cwd))
     return rank(candidates, query, { topK: topK ?? config.topK, cwd, strict, vectors: vectorsFor(), queryVector: qv ?? null, index: lexicalIndex() })
   }
   const fmtDate = ts => new Date(ts).toISOString().slice(0, 10)
@@ -195,6 +227,7 @@ export function apply(ctx) {
   // ── deposit compaction summaries ──
   ctx.on('session/event', (session, event) => {
     try {
+      if (C.isChatEdit(event) && C.invalidateSource(store, session.id, event.seq)) persist()
       if (!config.enabled || !config.depositSummaries || event.type !== 'compaction/summary') return
       if (event.data?.provider === C.EDIT_PROVIDER) return
       if (isSubagentSession(session.header)) return
@@ -202,7 +235,7 @@ export function apply(ctx) {
       if (!text) return
       if (text.length > MAX_SUMMARY_TEXT) log('warn', `compaction summary of ${session.id} is ${text.length} chars; the store keeps the first ${MAX_SUMMARY_TEXT}`)
       const cwd = cwdOf(session)
-      const item = store.replaceSessionSummary(session.id, { text, cwd, scope: cwd ? 'workspace' : 'global', source: 'compaction', meta: { provider: event.data.provider, model: event.data.model, shadowedTokenCount: event.data.shadowedTokenCount, summarySeq: event.seq } })
+      const item = store.replaceSessionSummary(session.id, { text, cwd, scope: cwd ? 'workspace' : 'global', source: 'compaction', meta: { provider: event.data.provider, model: event.data.model, shadowedTokenCount: event.data.shadowedTokenCount, summarySeq: event.seq, sourceRevision: C.replacementRevision(session.events) } })
       store.prune(config.maxItems)
       persist()
       scheduleEmbed([item.id])
@@ -224,17 +257,19 @@ export function apply(ctx) {
     const id = session.id
     if (extracting.has(id) || maintenanceAgents.has(id) || !turnEnded.has(id)) return
     turnEnded.delete(id)
+    extracting.add(id)
+    try {
+    await reconcileReady
+    await ready
     const events = [...session.events]
+    const sourceRevision = C.replacementRevision(events)
     const turns = C.userTurnCount(events)
     const mark = store.watermarks[id] ?? { lastSeq: -1, userTurns: 0 }
     if (turns - mark.userTurns < config.extractEveryTurns) return
     const target = routedTarget(session, agent)
-    await ready
     if (!target || !peers.llm?.createUserMessage || !peers.llm?.BlockAssembler) return
     const { text, lastSeq } = C.transcriptAfter(events, mark.lastSeq, config.extractMaxChars)
     if (text.trim().length < 40) return
-    extracting.add(id)
-    try {
       const assembler = new peers.llm.BlockAssembler()
       const messages = [
         peers.llm.createUserMessage({ content: [{ type: 'text', text: `Transcript excerpt:\n\n${text}` }], source: { kind: 'plugin', plugin: name } }),
@@ -245,15 +280,19 @@ export function apply(ctx) {
       const finish = assembler.finish
       if (finish && finish.kind === 'error') throw new Error(finish.failure?.message ?? 'model call failed')
       const answer = C.textOf(assembler.blocks())
+      if (C.replacementRevision(session.events) !== sourceRevision) {
+        log('info', `discarded extraction for ${id}: its source surface changed during the request`)
+        return
+      }
       const cwd = cwdOf(session)
-      const existing = store.items.filter(i => i.kind === 'fact' && visibleIn(i, cwd)).map(i => i.text)
+      const existing = store.items.filter(i => available(i) && i.kind === 'fact' && visibleIn(i, cwd)).map(i => i.text)
       const facts = dedupeFacts(parseFacts(answer), existing)
       const added = []
       for (const f of facts) {
-        const item = store.add({ kind: 'fact', text: f.text, cwd: f.global ? '' : cwd, scope: f.global || !cwd ? 'global' : 'workspace', sessionId: id, source: 'extract', meta: { provider: target.provider, model: target.model } })
+        const item = store.add({ kind: 'fact', text: f.text, cwd: f.global ? '' : cwd, scope: f.global || !cwd ? 'global' : 'workspace', sessionId: id, source: 'extract', meta: { provider: target.provider, model: target.model, sourceRevision } })
         added.push(item.id)
       }
-      store.watermarks[id] = { lastSeq, userTurns: turns, at: Date.now() }
+      store.watermarks[id] = { lastSeq, userTurns: turns, invalidatedAtSeq: Math.max(mark.invalidatedAtSeq ?? -1, C.chatEditRevision(events)), at: Date.now() }
       store.prune(config.maxItems)
       persist()
       scheduleEmbed(added)
@@ -272,15 +311,30 @@ export function apply(ctx) {
   // source), so a step that never lands (reject / abort) does not mark its items as used.
   ctx.on('session/disposed', session => { extracting.delete(session?.id); turnEnded.delete(session?.id) })
   ctx.on('agent/pre-step', async (payload, next) => {
-    const decision = await next()
+    let decision = await next()
     try {
-      if (!config.enabled || config.inject === 'off' || decision.kind !== 'enter' || decision.messages.length === 0 || isSubagent(payload.agent)) return decision
+      if (!config.enabled || decision.kind !== 'enter' || isSubagent(payload.agent)) return decision
+      await reconcileReady
+      const session = payload.agent.session
+      const withdrawn = C.pendingInvalidations(session.events, store.items, name, store.withdrawals)
+      if (withdrawn.length) {
+        await ready
+        if (peers.llm?.createUserMessage) {
+          const notice = peers.llm.createUserMessage({
+            content: [{ type: 'text', text: '[Memory update] Apply these updates to earlier recalled entries. A withdrawal invalidates the previous assertion; explicit user confirmation restores the indicated content.\n' + withdrawn.map(i => i.confirmed
+              ? `- ${i.id}: The user explicitly confirmed this memory as valid again. You may use this confirmed content when relevant: ${clip(i.correctedText ?? i.text, 4000)}`
+              : `- ${i.id}: Withdraw the previous assertion: ${clip(i.text, 500)}${i.correctedText ? '\n  User-confirmed correction: ' + clip(i.correctedText, 4000) : ''}`).join('\n') }],
+            source: { kind: 'plugin', plugin: name, memoryInvalidations: withdrawn.map(i => ({ id: i.id, revision: i.revision })) },
+          })
+          decision = { ...decision, messages: [...decision.messages, notice] }
+        }
+      }
+      if (config.inject === 'off' || decision.messages.length === 0) return decision
       let at = -1
       for (let i = decision.messages.length - 1; i >= 0; i--) if (isUserTyped(decision.messages[i])) { at = i; break }
       if (at < 0) return decision
       const userMsg = decision.messages[at]
       const text = C.textOf(userMsg.content)
-      const session = payload.agent.session
       const firstTurn = C.userTurnCount(session.events) === 0
       if (config.inject === 'first-turn' && !firstTurn) return decision
       const cwd = cwdOf(session)
@@ -288,7 +342,7 @@ export function apply(ctx) {
       const qv = text.trim() ? await queryVector(text) : null
       const picks = []
       if (firstTurn) {
-        for (const item of store.list({ cwd }).filter(i => i.pinned).slice(0, config.topK * 2)) picks.push({ item, score: 1 })
+        for (const item of store.list({ cwd }).filter(i => available(i) && i.pinned).slice(0, config.topK * 2)) picks.push({ item, score: 1 })
       }
       if (text.trim()) {
         for (const hit of recall(text, { cwd, topK: config.topK, strict: !firstTurn, qv })) if (!picks.some(p => p.item.id === hit.item.id)) picks.push(hit)
@@ -297,7 +351,7 @@ export function apply(ctx) {
       if (fresh.length === 0) return decision
       await ready
       if (!peers.llm?.createUserMessage) return decision
-      const { text: block, used } = formatInjection(fresh)
+      const { text: block, used } = formatInjection(fresh.filter(p => available(p.item)))
       if (used.length === 0) return decision
       const injected = peers.llm.createUserMessage({ content: [{ type: 'text', text: block }], source: { kind: 'plugin', plugin: name, memoryIds: used } })
       return { kind: 'enter', messages: [...decision.messages.slice(0, at + 1), injected, ...decision.messages.slice(at + 1)] }
@@ -329,14 +383,24 @@ export function apply(ctx) {
             },
           },
           render: (_args, value) => [{ type: 'text', text: value.items.length === 0 ? 'No matching memory.' : value.items.map(i => `- (${i.id} · ${i.kind} · ${i.createdAt}${i.pinned ? ' · pinned' : ''}) ${i.text}`).join('\n') }],
+          presentationMeta: (_args, value) => ({ plugin: name, memoryIds: value.items.map(item => item.id) }),
         },
         isConcurrencySafe: () => true,
         async execute(args, exec) {
+          await reconcileReady
           const cwd = cwdOf(exec.agent?.session)
           const limit = Math.min(10, Math.max(1, Math.trunc(Number(args.limit) || 5)))
           const qv = await queryVector(args.query)
           const hits = recall(args.query, { cwd, topK: limit, strict: false, qv })
-          return { items: hits.map(h => ({ id: h.item.id, kind: h.item.kind, text: clip(h.item.text, 4000), createdAt: fmtDate(h.item.createdAt), pinned: h.item.pinned })), total: store.items.filter(i => visibleIn(i, cwd)).length }
+          if (hits.length && peers.llm?.createUserMessage) {
+            // The core ferries this through nested run_code calls and lands it with
+            // result context. Do not mark exposure merely because execute ran.
+            exec.deferContext(peers.llm.createUserMessage({
+              content: [{ type: 'text', text: 'Memory lookup references: ' + hits.map(hit => hit.item.id).join(', ') + '. The tool result contains the recalled content.' }],
+              source: { kind: 'plugin', plugin: name, memoryIds: hits.map(hit => hit.item.id), memoryRecallCallId: exec.callId },
+            }))
+          }
+          return { items: hits.map(h => ({ id: h.item.id, kind: h.item.kind, text: clip(h.item.text, 4000), createdAt: fmtDate(h.item.createdAt), pinned: h.item.pinned })), total: store.items.filter(i => available(i) && visibleIn(i, cwd)).length }
         },
       })
       const noteTool = peers.tools.defineTool({
@@ -667,7 +731,7 @@ export function apply(ctx) {
       configFile: CONFIG_FILE, memoryDir: MEMORY_DIR,
     }
   }
-  const itemView = i => ({ ...i })
+  const itemView = i => ({ ...i, ...(C.automaticItem(i) && uncheckedSources.has(i.sessionId) ? { sourceUnchecked: true } : {}) })
   const route = async (req, res) => {
     const url = new URL(req.url, 'http://127.0.0.1')
     const p = url.pathname
@@ -685,6 +749,7 @@ export function apply(ctx) {
         return json(res, 200, await status())
       }
       if (req.method === 'GET' && p === '/dsh-memory-lite/items') {
+        await reconcileSources()
         const q = (url.searchParams.get('q') ?? '').slice(0, 500)
         const kind = url.searchParams.get('kind') ?? undefined
         const cwd = url.searchParams.has('cwd') ? url.searchParams.get('cwd') : undefined
@@ -714,8 +779,23 @@ export function apply(ctx) {
       }
       if (req.method === 'POST' && p === '/dsh-memory-lite/items/update') {
         const body = await readBody(req)
+        const before = store.get(String(body.id ?? ''))
+        const oldText = before?.text
+        const staleRevision = C.staleItem(before ?? {}) ? before.meta.staleAfterEdit : undefined
         const item = store.update(String(body.id ?? ''), body)
         if (!item) return json(res, 404, { ok: false, message: 'no such item' })
+        if (typeof body.text === 'string') {
+          const previous = store.withdrawals[item.id]
+          if (oldText === item.text && staleRevision !== undefined) {
+            store.withdrawals[item.id] = { revision: Math.max(Date.now(), (previous?.revision ?? staleRevision) + 1), sourceEditSeq: staleRevision, text: oldText.slice(0, 500), correctedText: item.text.slice(0, 4000), confirmed: true }
+            delete item.meta.withdrawnRecall
+          } else if (oldText !== item.text && (staleRevision !== undefined || item.meta.withdrawnRecall || previous)) {
+            const revision = Math.max(Date.now(), (previous?.revision ?? item.meta.withdrawnRecall?.revision ?? staleRevision ?? -1) + 1)
+            item.meta.withdrawnRecall = { revision, text: oldText.slice(0, 500) }
+            store.withdrawals[item.id] = { revision, ...(staleRevision !== undefined ? { sourceEditSeq: staleRevision } : {}), text: oldText.slice(0, 500), correctedText: item.text.slice(0, 4000) }
+          }
+          item.source = 'user'; delete item.meta.staleAfterEdit
+        }
         persist()
         if (typeof body.text === 'string') scheduleEmbed([item.id])
         return json(res, 200, { ok: true, item })
@@ -744,9 +824,11 @@ export function apply(ctx) {
         store.prune(config.maxItems)
         persist()
         scheduleEmbed(store.items.filter(i => !store.vectors.byId[i.id]).map(i => i.id))
+        await reconcileSources()
         return json(res, 200, { ok: true, ...result, total: store.items.length })
       }
       if (req.method === 'POST' && p === '/dsh-memory-lite/recall') {
+        await reconcileSources()
         const body = await readBody(req)
         const query = String(body.query ?? '').slice(0, 2000)
         const cwd = typeof body.cwd === 'string' ? body.cwd : ''
@@ -812,12 +894,13 @@ export function apply(ctx) {
 
   // ── wiring ──
   loadConfig()
+  void reconcileSources()
   // An external write of memory.json (the launcher's config restore, a hand edit) is reloaded; the store's own atomic
   // writes also trip the watcher, which then re-reads the content it just wrote (harmless).
   const reloadStore = (cur, prev) => {
     if (cur.mtimeMs === prev.mtimeMs && cur.size === prev.size) return
     if (store.lastSavedAt && Math.abs(cur.mtimeMs - store.lastSavedAt) < 50) return
-    if (store.load()) { log('info', `memory.json changed on disk: ${store.items.length} item(s) reloaded`); scheduleEmbed(store.items.filter(i => !store.vectors.byId[i.id]).map(i => i.id)) }
+    if (store.load()) { log('info', `memory.json changed on disk: ${store.items.length} item(s) reloaded`); void reconcileSources(); scheduleEmbed(store.items.filter(i => !store.vectors.byId[i.id]).map(i => i.id)) }
     else log('warn', `memory.json changed on disk but could not be loaded (${store.loadErrorKind}: ${store.loadError}); keeping the loaded store — an unparsable file is moved aside on the next write, an unreadable one makes writes refuse until it can be read`)
   }
   ctx.effect(() => {

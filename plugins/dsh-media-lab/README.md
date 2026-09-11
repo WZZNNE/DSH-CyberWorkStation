@@ -89,8 +89,3 @@ Every adapter is written against the provider's own documentation, and pinned by
 - MiniMax video — <https://platform.minimax.io/docs/api-reference/video-generation-v2-create>
 - OpenRouter video (`frame_images`, `resolution`) — <https://openrouter.ai/docs/features/multimodal/video-generation>
 - OpenRouter images (`input_references`, `resolution`, `seed`) — <https://openrouter.ai/docs/features/multimodal/image-generation>
-
-## Tests
-
-`node --test .local/tests/dsh-media-lab/*.mjs` — 104 maintainer cases (60 adapter cases driven by a
-scripted fetch, 33 host-shell cases against a temporary `DSH_HOME`, 6 model-scout, 5 source/config).

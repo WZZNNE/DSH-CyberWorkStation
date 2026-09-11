@@ -5,14 +5,14 @@
  * that one file — a page refresh applies it. Route registration follows the
  * ctx.webServer.register prefix pattern (same as dsh-token-usage).
  */
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { readFileSync, statSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 export const name = 'skin-loader'
 export const inject = ['webServer']
 
-const SKIN_FILE = join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'frontend-skin.css')
+const SKIN_FILE = join(resolveDshHome(), 'frontend-skin.css')
 
 /**
  * Mount the skin route.

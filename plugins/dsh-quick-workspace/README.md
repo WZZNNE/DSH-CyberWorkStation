@@ -29,9 +29,3 @@ the whole authority, a POST must be `application/json`, the body is counted in b
 
 Without that fence any web page could have made this route create directories, which is what a review
 round found: a cross-site POST created a directory on the running instance before the fence landed.
-
-## Tests
-
-`node --test .local/tests/dsh-quick-workspace/*.mjs` — 2 maintainer cases: the fence (five ways of
-being someone else, none of which creates anything) and the panel's own request (creation, listing,
-the 413 cap, an array body).

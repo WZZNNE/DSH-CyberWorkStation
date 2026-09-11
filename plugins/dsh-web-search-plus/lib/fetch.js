@@ -15,7 +15,7 @@ import zlib from 'node:zlib'
 import { isSafeUrl, isPrivateAddress, boundedSignal } from './page.js'
 import { promises as dns } from 'node:dns'
 
-export const FETCH_USER_AGENT = 'dsh-web-search-plus/0.4.1 (+web_fetch; DeepSeek Harness)'
+export const FETCH_USER_AGENT = 'dsh-web-search-plus/0.5.0 (+web_fetch; DeepSeek Harness)'
 const MAX_URL_LENGTH = 2048
 
 /** Text-like content types the tool can hand to the model; anything else is refused before the body is read. */

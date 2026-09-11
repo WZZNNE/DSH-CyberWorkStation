@@ -1,12 +1,13 @@
 /**
- * Page visiting for inject mode: SSRF guard + minimal HTML → text extraction.
+ * Page visiting for inject mode and for tool-mode search results: SSRF guard +
+ * HTML → text extraction (the local extractor when configured, else the stripper below).
  * Only public http(s) hostnames are fetched: IP literals (IPv4, bracketed IPv6,
  * IPv4-mapped / NAT64 forms) and private / loopback / link-local / ULA names are
  * refused syntactically, the hostname is then resolved and every address is
  * checked against the same private ranges before the request goes out, and
  * redirects are followed manually with the same checks per hop. Bodies are
  * read as a stream and cut at a byte cap. A resolve-then-fetch check still
- * leaves a DNS-rebinding window; the visitor is opt-in (visitLinks > 0).
+ * leaves a DNS-rebinding window; the visitor is opt-in (visitLinks / toolVisit.links > 0).
  */
 import { promises as dns } from 'node:dns'
 import { isIP } from 'node:net'
@@ -151,22 +152,45 @@ export async function readCapped(r, cap = MAX_BODY_BYTES) {
 }
 
 /**
+ * Markup → readable text: the local extractor when one is configured, the built-in
+ * stripper otherwise. The service is best-effort by contract, so a stopped container
+ * costs page quality and never a failed visit.
+ * @returns {Promise<{ text: string, title?: string }>}
+ */
+async function toReadableText(html, { url, maxChars, extractorUrl, signal, extractFetchFn }) {
+  if (extractorUrl) {
+    const { extractViaService } = await import('./extract.js')
+    const out = await extractViaService(html, { url, maxChars, extractorUrl, signal, fetchFn: extractFetchFn })
+    // The service also reports a date, and it is dropped on purpose: htmldate falls back to a
+    // last-modified or crawl date when a page carries no publication date (a docs page came back
+    // dated today), and a confident wrong date in front of the model is worse than none.
+    if (out !== null) return { text: out.text, ...(out.title ? { title: out.title } : {}) }
+  }
+  // Eight times the character budget is far more markup than the caller's budget needs.
+  return { text: htmlToText(html, { maxInput: Math.max(64_000, maxChars * 8) }) }
+}
+
+/**
  * Fetch one page and return its text, or null when blocked/failed.
  *
  * With no injected `fetchFn` this rides the same address-pinned transport as `web_fetch`
  * (`./fetch.js`), so the visitor cannot be walked into a private address by a name that answers
  * differently on the second lookup. A test that injects `fetchFn` keeps the older path.
  * @param {string} url
- * @param {{ fetchFn?: typeof fetch, lookupFn?: Function, maxChars?: number, blacklist?: string[], signal?: AbortSignal, timeoutMs?: number }} opts
+ * @param {{ fetchFn?: typeof fetch, lookupFn?: Function, maxChars?: number, blacklist?: string[], signal?: AbortSignal, timeoutMs?: number, extractorUrl?: string, extractFetchFn?: typeof fetch }} opts
+ * @returns {Promise<{ url: string, text: string, title?: string } | null>}
  */
-export async function fetchPageText(url, { fetchFn, lookupFn, maxChars = 1200, blacklist = [], signal, timeoutMs = 12000 } = {}) {
+export async function fetchPageText(url, { fetchFn, lookupFn, maxChars = 1200, blacklist = [], signal, timeoutMs = 12000, extractorUrl = '', extractFetchFn } = {}) {
   if (fetchFn === undefined) {
     const { fetchPinned } = await import('./fetch.js')
     let page
     try { page = await fetchPinned(url, { blacklist, lookupFn, signal, timeoutMs, maxBodyChars: Math.max(64_000, maxChars * 8) }) } catch { return null }
     if (page.statusCode < 200 || page.statusCode >= 300) return null
-    const text = page.body.kind === 'html' ? htmlToText(page.body.content, { maxInput: Math.max(64_000, maxChars * 8) }) : page.body.content
-    return { url: page.url, text: text.length > maxChars ? text.slice(0, maxChars - 1) + '…' : text }
+    const read = page.body.kind === 'html'
+      ? await toReadableText(page.body.content, { url: page.url, maxChars, extractorUrl, signal, extractFetchFn })
+      : { text: page.body.content }
+    const text = read.text.length > maxChars ? read.text.slice(0, maxChars - 1) + '…' : read.text
+    return { url: page.url, text, ...(read.title ? { title: read.title } : {}) }
   }
   let current = url
   for (let hop = 0; hop < 4; hop++) {
@@ -187,9 +211,11 @@ export async function fetchPageText(url, { fetchFn, lookupFn, maxChars = 1200, b
     const type = r.headers.get('content-type') ?? ''
     if (!/text\/html|application\/xhtml|text\/plain/i.test(type)) return null
     const body = await readCapped(r)
-    // Eight times the character budget is far more markup than 1 200 characters of text needs.
-    const text = /text\/plain/i.test(type) ? body : htmlToText(body, { maxInput: Math.max(64_000, maxChars * 8) })
-    return { url: current, text: text.length > maxChars ? text.slice(0, maxChars - 1) + '…' : text }
+    const read = /text\/plain/i.test(type)
+      ? { text: body }
+      : await toReadableText(body, { url: current, maxChars, extractorUrl, signal, extractFetchFn })
+    const text = read.text.length > maxChars ? read.text.slice(0, maxChars - 1) + '…' : read.text
+    return { url: current, text, ...(read.title ? { title: read.title } : {}) }
   }
   return null
 }

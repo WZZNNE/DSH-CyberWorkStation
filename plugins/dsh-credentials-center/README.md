@@ -17,7 +17,3 @@
 **Spare keys.** A reference can hold several secrets: each spare is a record of its own in the same credential store (`REF__SLOT_<id>`), its label lives in the aliases file. "Use" makes a spare the secret in force and keeps the one it replaces as a new spare unless a spare already holds it; "keep the current" stores a hand-typed secret before switching; rename / delete. "In use" is derived by comparing values at view time, so a secret typed by hand marks no spare. Writes are serialized; a failed switch withdraws its own copy; a reference that still holds spares cannot be forgotten; a read-only reference (one supplied by the environment) cannot be replaced. Routes: `GET …/slots?ref=`, `POST …/slots/add|keep|use|rename|remove`; values are never returned. The launcher's Credentials page has the same panel through `/api/creds/slots*`.
 
 One page for every API credential the harness and the suite use. Lists each credential reference (env-style name) with where it is bound (model routes, media APIs, web-search vendors, desktop pets, memory embeddings), whether it is configured and where it is stored, an alias and a note; lets you add / replace / delete the secret through the core credential service (never a plain file). A dsh Settings section plus a launcher page.
-
-## 测试
-
-`node --test .local/tests/dsh-credentials-center/*.mjs` — 18 条维护者用例:各配置来源的绑定汇总、路由/模型清单(listRoutes),以及 list / set / unset / alias / models / default-model 路由对假凭据库与假设置服务的行为(防线、校验、不回显密钥、revision 冲突重试、无服务时降级)。

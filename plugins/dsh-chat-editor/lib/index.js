@@ -3,7 +3,7 @@
  * own and the assistant's, in three modes the user picks per action:
  *
  *  - display : the browser shows the edited / hidden text; the session log and the model's
- *              context are untouched (`$DSH_HOME/chat-edits.json`, text-anchored).
+ *              context are untouched (`$DSH_HOME/chat-edits.json`, session/seq identity).
  *  - context : what the MODEL sees changes, written the way the core writes compaction —
  *              `compaction/prune` (the shadow price of the replaced range) immediately
  *              followed by a `user/message` with `surfaceOp: {op:'replace', …}` and
@@ -19,17 +19,18 @@
  * Routes live under `/dsh-chat-editor/*` (loopback Host + same-origin JSON only); the
  * browser half is `lib/client.js`.
  */
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { readFileSync, writeFileSync, mkdirSync, renameSync, existsSync, unlinkSync, watchFile, unwatchFile } from 'node:fs'
-import { homedir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import * as V from './view.js'
 import { normalizeDoc, setOverride, clearOverrides, overridesFor } from './overrides.js'
+import { editState, editableMessages, effectiveOverrides, resolveEditTarget, activeTurnRange } from './edit-state.js'
 
 export const name = 'chat-editor'
 export const inject = ['sessions', 'agents']
 
-const DSH_HOME = process.env.DSH_HOME ?? join(homedir(), '.dsh')
+const DSH_HOME = resolveDshHome()
 const EDITS_FILE = join(DSH_HOME, 'chat-edits.json')
 const MAX_BODY = 512 * 1024
 const MAX_TEXT = 20000
@@ -49,13 +50,16 @@ export function apply(ctx) {
   // ── display overrides ──
   let doc = { version: 1, sessions: {} }
   const loadDoc = () => {
-    try { doc = normalizeDoc(JSON.parse(readFileSync(EDITS_FILE, 'utf8').replace(/^﻿/, ''))) } catch { doc = { version: 1, sessions: {} } }
+    try {
+      const raw = JSON.parse(readFileSync(EDITS_FILE, 'utf8').replace(/^﻿/, ''))
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw) || !raw.sessions || typeof raw.sessions !== 'object' || Array.isArray(raw.sessions)) throw new Error('invalid document shape')
+      doc = normalizeDoc(raw)
+    } catch (error) { log('warn', `display overrides not reloaded; retaining last good value (${error?.code ?? error?.name ?? 'read failure'})`) }
   }
   const saveDoc = next => {
-    doc = next
     mkdirSync(dirname(EDITS_FILE), { recursive: true })
     const tmp = EDITS_FILE + '.tmp-' + process.pid + '-' + Math.random().toString(36).slice(2, 8)
-    try { writeFileSync(tmp, JSON.stringify(doc, null, 1)); renameSync(tmp, EDITS_FILE) } catch (error) { try { unlinkSync(tmp) } catch { /* nothing to clean */ } throw error }
+    try { writeFileSync(tmp, JSON.stringify(next, null, 1)); renameSync(tmp, EDITS_FILE); doc = next } catch (error) { try { unlinkSync(tmp) } catch { /* nothing to clean */ } throw error }
   }
   loadDoc()
 
@@ -151,7 +155,7 @@ export function apply(ctx) {
    * Replace one inclusive surface range with a single user-role node, priced by the
    * shadow-price protocol. Boundaries must not split an assistant tool-call/result pair.
    */
-  async function replaceRange(id, start, end, content, meta) {
+  async function replaceRange(id, start, end, content, meta, expectedNodes) {
     await ready
     if (!peers.llm?.createUserMessage) throw fail(503, 'editing needs @deepseek-ai/dsh-llm resolvable from the plugin (run launcher/peer-links.mjs)')
     const meter = tokenMeter()
@@ -171,6 +175,7 @@ export function apply(ctx) {
       if (!pairing.toolPairingBalancedBefore(session, start)) throw fail(400, 'the range would split a tool call from its result; delete the whole turn instead')
       if (!pairing.toolPairingBalancedAfter(session, end)) throw fail(400, 'the range would split a step (or the step is still open); delete the whole turn instead')
       const shadowedSeqs = nodes.slice(si, ei + 1)
+      if (expectedNodes && (shadowedSeqs.length !== expectedNodes.length || shadowedSeqs.some((seq, i) => seq !== expectedNodes[i]))) throw fail(409, 'the selected surface range changed; reload and retry')
       let shadowedTokenCount = 0
       for (const seq of shadowedSeqs) {
         const msg = typeof session.deriveEventMessage === 'function' ? session.deriveEventMessage(session.events[seq]) : null
@@ -290,15 +295,16 @@ export function apply(ctx) {
 
       if (req.method === 'GET' && p === '/dsh-chat-editor/overrides') {
         const id = sessionIdOf(url.searchParams.get('sessionId'))
-        return json(res, 200, { ok: true, sessionId: id, overrides: overridesFor(doc, id) })
+        const { events } = await readSession(id)
+        return json(res, 200, { ok: true, sessionId: id, overrides: effectiveOverrides(events, overridesFor(doc, id)) })
       }
 
       if (req.method === 'GET' && p === '/dsh-chat-editor/messages') {
         const id = sessionIdOf(url.searchParams.get('sessionId'))
         const limit = Math.min(1000, Math.max(1, Number(url.searchParams.get('limit')) || 500))
         const { header, events, live } = await readSession(id)
-        const messages = V.messageList(events, { limit })
-        const ov = new Map(overridesFor(doc, id).map(o => [o.seq, o]))
+        const messages = editableMessages(events, { limit })
+        const ov = new Map(effectiveOverrides(events, overridesFor(doc, id)).map(o => [o.seq, o]))
         for (const m of messages) {
           const o = ov.get(m.seq)
           // All three switches, not a two-way projection: dropping `collapsed` here is what made
@@ -326,15 +332,19 @@ export function apply(ctx) {
         const clearing = body.hidden !== true && body.collapsed !== true && (typeof body.text !== 'string' || body.text.trim().length === 0)
         let original = typeof body.original === 'string' ? body.original : ''
         let role = ''
+        let baseEditSeq = -1
         if (!clearing) {
           const { events } = await readSession(id)
           const event = V.findMessage(events, { seq })
           if (!event) throw fail(404, `no message at seq ${seq}`)
+          const record = editState(events).records.get(seq)
+          if (record?.hidden && typeof body.text === 'string') throw fail(400, 'this message was deleted; it cannot be restored by a display edit')
+          baseEditSeq = record?.revision ?? -1
           role = V.roleOf(event)
           if (original.trim().length === 0) original = V.messageText(event)
           if (original.trim().length === 0) throw fail(400, 'this message has no text to anchor a display override on')
         }
-        saveDoc(setOverride(doc, id, seq, { original, text: body.text, hidden: body.hidden === true, collapsed: body.collapsed === true, role }))
+        saveDoc(setOverride(doc, id, seq, { original, text: body.text, hidden: body.hidden === true, collapsed: body.collapsed === true, role, baseEditSeq }))
         return json(res, 200, { ok: true, overrides: overridesFor(doc, id) })
       }
 
@@ -354,10 +364,11 @@ export function apply(ctx) {
         const { events } = await readSession(id)
         const event = V.findMessage(events, { seq })
         if (!event) throw fail(404, `no message at seq ${seq}`)
-        const role = V.roleOf(event)
+        const target = resolveEditTarget(events, seq)
+        const role = target.role
         if (role === 'tool') throw fail(400, 'tool results are not editable here (their content belongs to the tool that produced it)')
         if (role === 'checkpoint') throw fail(400, 'compaction summaries are edited on the launcher\'s Memory & context page')
-        const result = await replaceRange(id, seq, seq, V.editedContent(role, text), { editedSeq: seq, editKind: 'edit', editedRole: role })
+        const result = await replaceRange(id, target.activeSeq, target.activeSeq, V.editedContent(role, text), { editedSeq: seq, editKind: 'edit', editedRole: role }, [target.activeSeq])
         return json(res, 200, { ...result, role })
       }
 
@@ -370,8 +381,11 @@ export function apply(ctx) {
         const event = V.findMessage(events, { seq })
         if (!event) throw fail(404, `no message at seq ${seq}`)
         if (V.roleOf(event) === 'checkpoint') throw fail(400, 'compaction summaries are edited on the launcher\'s Memory & context page')
-        const range = scope === 'turn' ? V.turnRange(events, seq) : { start: seq, end: seq, count: 1 }
-        const result = await replaceRange(id, range.start, range.end, V.deletedContent(range.count), { editedSeq: seq, editKind: 'delete', deletedCount: range.count })
+        const target = resolveEditTarget(events, seq)
+        const range = scope === 'turn' ? activeTurnRange(events, seq) : { start: target.activeSeq, end: target.activeSeq, count: 1 }
+        const nodes = V.foldNodes(events)
+        const expectedNodes = nodes.slice(nodes.indexOf(range.start), nodes.indexOf(range.end) + 1)
+        const result = await replaceRange(id, range.start, range.end, V.deletedContent(range.count), { editedSeq: seq, editKind: 'delete', deletedCount: range.count }, expectedNodes)
         return json(res, 200, { ...result, scope, count: range.count })
       }
 
