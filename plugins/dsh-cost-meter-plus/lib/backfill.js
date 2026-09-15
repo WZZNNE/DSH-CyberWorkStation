@@ -78,6 +78,22 @@ export function readSessionRecords(path) {
   return records
 }
 
+/**
+ * The log generations a session directory may hold: the legacy `session.jsonl(.zstd)` and, since dsh 0.1.5
+ * migrates on open, `session.v<N>.jsonl(.zstd)` beside it (the legacy file is preserved). Pick the newest
+ * generation, compressed over plaintext, so a migrated session is read once and from its current log.
+ */
+export function pickSessionLog(names) {
+  let best = null
+  for (const name of names) {
+    const m = /^session(?:\.v(\d+))?\.jsonl(\.zstd)?$/.exec(name)
+    if (!m) continue
+    const candidate = { name, version: m[1] === undefined ? 0 : Number(m[1]), zstd: m[2] !== undefined }
+    if (best === null || candidate.version > best.version || (candidate.version === best.version && candidate.zstd && !best.zstd)) best = candidate
+  }
+  return best?.name ?? null
+}
+
 export function listSessionLogs(root) {
   const paths = []
   let projects
@@ -96,15 +112,18 @@ export function listSessionLogs(root) {
     }
     for (const session of sessions) {
       if (!session.isDirectory()) continue
-      for (const name of ['session.jsonl.zstd', 'session.jsonl']) {
-        const path = join(root, project.name, session.name, name)
-        try {
-          if (statSync(path).isFile()) {
-            paths.push(path)
-            break
-          }
-        } catch {
-        }
+      let names
+      try {
+        names = readdirSync(join(root, project.name, session.name))
+      } catch {
+        continue
+      }
+      const name = pickSessionLog(names)
+      if (name === null) continue
+      const path = join(root, project.name, session.name, name)
+      try {
+        if (statSync(path).isFile()) paths.push(path)
+      } catch {
       }
     }
   }

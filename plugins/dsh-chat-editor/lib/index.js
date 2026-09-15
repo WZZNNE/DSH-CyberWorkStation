@@ -20,12 +20,14 @@
  * browser half is `lib/client.js`.
  */
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
+import { adoptSourceExtras, inboxHasPending, liveEventAt, liveEvents, readStoredSession, recordSourceExtras, statStoredSession } from './session-read.js'
 import { readFileSync, writeFileSync, mkdirSync, renameSync, existsSync, unlinkSync, watchFile, unwatchFile } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import * as V from './view.js'
 import { normalizeDoc, setOverride, clearOverrides, overridesFor } from './overrides.js'
 import { editState, editableMessages, effectiveOverrides, resolveEditTarget, activeTurnRange } from './edit-state.js'
+import { reanchorOverrides } from './overrides.js'
 
 export const name = 'chat-editor'
 export const inject = ['sessions', 'agents']
@@ -83,12 +85,20 @@ export function apply(ctx) {
     return { setup: async agentCtx => { await ps.mount(agentCtx, resolved.id) }, presetId: resolved.id }
   }
 
-  async function readSession(id) {
+  /** `raw: true` returns the events as the core stores them (no sidecar merge): the shape to seed a fork from. */
+  async function readSession(id, options = {}) {
     const live = ctx.sessions.get(id)
-    if (live) return { header: live.header, events: [...live.events], live: true }
+    if (live) return { header: live.header, events: liveEvents(live, options), live: true }
     const p = persistence()
     if (!p) throw fail(503, 'session persistence is not available in this deployment')
-    try { const insp = await p.inspect(id); return { header: insp.meta, events: [...insp.events], live: false } } catch (error) { throw fail(404, `session not found: ${String(error?.message ?? error).slice(0, 160)}`) }
+    try { const insp = await readStoredSession(p, id, options); return { header: insp.header, events: insp.events, live: false } } catch (error) { throw fail(404, `session not found: ${String(error?.message ?? error).slice(0, 160)}`) }
+  }
+  const messageIdAt = (events, seq) => { const event = events.find(e => e?.seq === seq); const id = event ? V.messageIdOf(event) : ''; return id.length > 0 ? id : undefined }
+  /** The display overrides of a session anchored on the current log (message id first); a moved anchor is persisted. */
+  function anchoredOverrides(id, events) {
+    const result = reanchorOverrides(doc, id, events, V.messageText, V.roleOf)
+    if (result.changed) { doc = result.doc; saveDoc(doc) }
+    return result.entries
   }
 
   /** Agents this plugin resumed for an edit, and forks it created (disposed with the plugin). */
@@ -103,7 +113,7 @@ export function apply(ctx) {
       const agent = handle?.agent
       const id = agent?.session?.id
       const live = id !== undefined && ctx.sessions.get(id) !== undefined
-      if (live || agent?.status === 'running' || agent?.inbox?.hasPending) continue
+      if (live || agent?.status === 'running' || inboxHasPending(agent)) continue
       ownedHandles.splice(i, 1)
       i -= 1
       handle?.dispose?.().catch(() => {})
@@ -125,12 +135,12 @@ export function apply(ctx) {
     }
     const p = persistence()
     if (!p) throw fail(503, 'session persistence is not available in this deployment')
-    const header = (await p.list()).find(h => h.id === id)
+    const header = (await statStoredSession(p, id))?.header
     if (!header) throw fail(404, 'session not found')
     if (isSubagentSession(header)) throw fail(400, 'subagent sessions are read-only here')
     let insp
-    try { insp = await p.inspect(id) } catch (error) { throw fail(404, `session log cannot be read: ${String(error?.message ?? error).slice(0, 160)}`) }
-    const { setup } = await presetSetup(insp.meta, insp.events)
+    try { insp = await readStoredSession(p, id) } catch (error) { throw fail(404, `session log cannot be read: ${String(error?.message ?? error).slice(0, 160)}`) }
+    const { setup } = await presetSetup(insp.header, insp.events)
     const handle = await ctx.agents.resume({ resumeSessionId: id, agentOptions: agentOptions(), ...(setup ? { setup } : {}) })
     const flush = flushOnce(handle.agent)
     try {
@@ -138,7 +148,7 @@ export function apply(ctx) {
     } finally {
       try { await flush() } catch { /* dispose drains too */ }
       // The resumed agent is published like any other; if a prompt reached it meanwhile, keep it alive.
-      if (handle.agent.status === 'running' || handle.agent.inbox?.hasPending === true) {
+      if (handle.agent.status === 'running' || inboxHasPending(handle.agent)) {
         ownedHandles.push(handle)
     releaseIdleHandles()
         log('warn', `session ${id} received work during an edit; its agent stays alive instead of being disposed`)
@@ -178,12 +188,15 @@ export function apply(ctx) {
       if (expectedNodes && (shadowedSeqs.length !== expectedNodes.length || shadowedSeqs.some((seq, i) => seq !== expectedNodes[i]))) throw fail(409, 'the selected surface range changed; reload and retry')
       let shadowedTokenCount = 0
       for (const seq of shadowedSeqs) {
-        const msg = typeof session.deriveEventMessage === 'function' ? session.deriveEventMessage(session.events[seq]) : null
+        const msg = typeof session.deriveEventMessage === 'function' ? session.deriveEventMessage(liveEventAt(session, seq)) : null
         if (msg) shadowedTokenCount += meter.estimateMessage(msg)
       }
-      const message = peers.llm.createUserMessage({ content, source: { kind: 'plugin', plugin: V.EDIT_PLUGIN, ...meta } })
+      // The log carries only the documented source members; the edit metadata (editedSeq / editKind / …) lives in the
+      // sidecar keyed by message id, where a core format migration cannot refuse it or renumber it away.
+      const message = peers.llm.createUserMessage({ content, source: { kind: 'plugin', plugin: V.EDIT_PLUGIN } })
+      if (!recordSourceExtras(session.id, message.id, meta)) throw fail(503, 'the edit metadata sidecar (session-source-extras.json) cannot be written; the edit is refused rather than recorded without its kind')
       session.append('compaction/prune', { shadowedRange: { start, end }, shadowedSeqs: [...shadowedSeqs], shadowedTokenCount })
-      const replacement = session.append('user/message', message, { surfaceOp: { op: 'replace', start, end }, sourceEventSeqs: [...shadowedSeqs] })
+      const replacement = session.append('user/message', message, { surfaceOp: { op: 'replace', startSeq: start, endSeq: end }, sourceEventSeqs: [...shadowedSeqs] })
       try { await flush() } catch (error) { throw fail(500, `the edit is committed (seq ${replacement.seq}) but the session could not be saved yet: ${String(error?.message ?? error).slice(0, 160)}`) }
       return { ok: true, resumed, replacementSeq: replacement.seq, shadowedSeqs: [...shadowedSeqs], shadowedTokenCount, newTokenCount: meter.estimateMessage(message) }
     }))
@@ -192,7 +205,9 @@ export function apply(ctx) {
   /** Branch the conversation before a message's turn, the way the core's own fork RPC does. */
   async function forkAt(id, seq, text) {
     await ready
-    const { header, events } = await readSession(id)
+    // The seed must be the core's own bytes: the sidecar members are never written into a log, the child
+    // inherits them through the sidecar's parent link instead (adoptSourceExtras below).
+    const { header, events } = await readSession(id, { raw: true })
     if (isSubagentSession(header)) throw fail(400, 'subagent sessions are read-only here')
     const target = V.findMessage(events, { seq })
     if (!target) throw fail(404, `no message at seq ${seq}`)
@@ -205,13 +220,17 @@ export function apply(ctx) {
     while (cut < events.length && events[cut]?.type !== 'turn/start') cut++
     const { setup, presetId } = await presetSetup(header, events.slice(0, cut))
     const childId = `session-${randomUUID()}`
+    // The core's own fork recipe (api/session-controller commands.ts): the copied prefix is INHERITED, the child
+    // is a seeded session. An unseeded child that inherits a tagged end-seed marker (a parent the core forked)
+    // would be refused by the stored-format decoder on its next open.
     const handle = await ctx.agents.create({
       sessionId: childId,
       seed: events.slice(0, cut),
+      inheritedEventCount: cut,
       meta: {
         ...(header.cwd === undefined ? {} : { cwd: header.cwd }),
         parentSession: id,
-        seedLength: cut,
+        isSeeded: true,
         ...(presetId === undefined ? {} : { agentPreset: presetId }),
       },
       agentOptions: agentOptions(),
@@ -219,6 +238,7 @@ export function apply(ctx) {
     })
     ownedHandles.push(handle)
     releaseIdleHandles()
+    if (!adoptSourceExtras(childId, id)) log('warn', `fork ${childId}: the source-extras sidecar could not record the parent link; edits made in the parent may render as plain rows in the child`)
     // The child joins the parent's workspace so it shows up in the same list.
     try {
       const ws = ctx.get('workspaceRegistry')?.list?.().find(w => w.sessionIds.includes(id))
@@ -296,7 +316,7 @@ export function apply(ctx) {
       if (req.method === 'GET' && p === '/dsh-chat-editor/overrides') {
         const id = sessionIdOf(url.searchParams.get('sessionId'))
         const { events } = await readSession(id)
-        return json(res, 200, { ok: true, sessionId: id, overrides: effectiveOverrides(events, overridesFor(doc, id)) })
+        return json(res, 200, { ok: true, sessionId: id, overrides: effectiveOverrides(events, anchoredOverrides(id, events)) })
       }
 
       if (req.method === 'GET' && p === '/dsh-chat-editor/messages') {
@@ -304,7 +324,7 @@ export function apply(ctx) {
         const limit = Math.min(1000, Math.max(1, Number(url.searchParams.get('limit')) || 500))
         const { header, events, live } = await readSession(id)
         const messages = editableMessages(events, { limit })
-        const ov = new Map(effectiveOverrides(events, overridesFor(doc, id)).map(o => [o.seq, o]))
+        const ov = new Map(effectiveOverrides(events, anchoredOverrides(id, events)).map(o => [o.seq, o]))
         for (const m of messages) {
           const o = ov.get(m.seq)
           // All three switches, not a two-way projection: dropping `collapsed` here is what made
@@ -333,10 +353,12 @@ export function apply(ctx) {
         let original = typeof body.original === 'string' ? body.original : ''
         let role = ''
         let baseEditSeq = -1
+        let messageId
         if (!clearing) {
           const { events } = await readSession(id)
           const event = V.findMessage(events, { seq })
           if (!event) throw fail(404, `no message at seq ${seq}`)
+          messageId = V.messageIdOf(event) || undefined
           const record = editState(events).records.get(seq)
           if (record?.hidden && typeof body.text === 'string') throw fail(400, 'this message was deleted; it cannot be restored by a display edit')
           baseEditSeq = record?.revision ?? -1
@@ -344,7 +366,7 @@ export function apply(ctx) {
           if (original.trim().length === 0) original = V.messageText(event)
           if (original.trim().length === 0) throw fail(400, 'this message has no text to anchor a display override on')
         }
-        saveDoc(setOverride(doc, id, seq, { original, text: body.text, hidden: body.hidden === true, collapsed: body.collapsed === true, role, baseEditSeq }))
+        saveDoc(setOverride(doc, id, seq, { original, text: body.text, hidden: body.hidden === true, collapsed: body.collapsed === true, role, baseEditSeq, messageId }))
         return json(res, 200, { ok: true, overrides: overridesFor(doc, id) })
       }
 
@@ -368,7 +390,7 @@ export function apply(ctx) {
         const role = target.role
         if (role === 'tool') throw fail(400, 'tool results are not editable here (their content belongs to the tool that produced it)')
         if (role === 'checkpoint') throw fail(400, 'compaction summaries are edited on the launcher\'s Memory & context page')
-        const result = await replaceRange(id, target.activeSeq, target.activeSeq, V.editedContent(role, text), { editedSeq: seq, editKind: 'edit', editedRole: role }, [target.activeSeq])
+        const result = await replaceRange(id, target.activeSeq, target.activeSeq, V.editedContent(role, text), { editedSeq: seq, editedMessageId: messageIdAt(events, seq), editKind: 'edit', editedRole: role }, [target.activeSeq])
         return json(res, 200, { ...result, role })
       }
 
@@ -385,7 +407,7 @@ export function apply(ctx) {
         const range = scope === 'turn' ? activeTurnRange(events, seq) : { start: target.activeSeq, end: target.activeSeq, count: 1 }
         const nodes = V.foldNodes(events)
         const expectedNodes = nodes.slice(nodes.indexOf(range.start), nodes.indexOf(range.end) + 1)
-        const result = await replaceRange(id, range.start, range.end, V.deletedContent(range.count), { editedSeq: seq, editKind: 'delete', deletedCount: range.count }, expectedNodes)
+        const result = await replaceRange(id, range.start, range.end, V.deletedContent(range.count), { editedSeq: seq, editedMessageId: messageIdAt(events, seq), editKind: 'delete', deletedCount: range.count }, expectedNodes)
         return json(res, 200, { ...result, scope, count: range.count })
       }
 

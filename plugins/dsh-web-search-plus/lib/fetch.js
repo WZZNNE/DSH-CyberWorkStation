@@ -119,6 +119,7 @@ export async function fetchPinned(url, { blacklist = [], lookupFn, isPrivate, us
     const address = resolved.addresses.find(a => a.family === 4) ?? resolved.addresses[0]
     let res
     try { res = await requestOnce(target, address, { userAgent, signal: bounded }) } catch (error) {
+      if (signal?.aborted) throw new Error(`web_fetch cancelled: the call to ${target.host} was aborted by the caller`)
       if (bounded.aborted) throw new Error(`web_fetch stopped: ${target.host} did not answer within ${timeoutMs} ms`)
       // Node appends its own --use-openssl-ca advice to TLS failures; the model has no use for it.
       throw new Error(`web_fetch could not reach ${target.host}: ${String(error?.message ?? error).split('\n')[0].replace(/\s*Consider using .*$/, '').slice(0, 200)}`)
@@ -149,7 +150,7 @@ export async function fetchPinned(url, { blacklist = [], lookupFn, isPrivate, us
         chunks.push(c)
       })
       res.on('end', resolve)
-      res.on('error', error => (cut ? resolve() : reject(bounded.aborted ? new Error(`web_fetch stopped: no complete reply within ${timeoutMs} ms`) : error)))
+      res.on('error', error => (cut ? resolve() : reject(signal?.aborted ? new Error(`web_fetch cancelled: the call to ${target.host} was aborted by the caller`) : bounded.aborted ? new Error(`web_fetch stopped: no complete reply within ${timeoutMs} ms`) : error)))
       res.on('close', resolve)
     })
     const raw = decompress(Buffer.concat(chunks), res.headers['content-encoding'])

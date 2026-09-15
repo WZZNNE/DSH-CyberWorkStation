@@ -21,6 +21,7 @@
  */
 import { lstatSync, mkdirSync, realpathSync, statSync, writeFileSync } from 'node:fs'
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { listStoredSessions } from './session-read.js'
 
 export const name = 'drop-files'
 export const inject = ['webServer', 'sessions']
@@ -101,7 +102,7 @@ export function samePath(a, b) {
 
 /**
  * Whether `workspace` is the working directory of a session dsh knows. The named session first
- * (live, then the persisted snapshot header — `listSnapshots()` is async in the core), then any
+ * (live, then the persisted snapshot header — `list()` is async in the core), then any
  * live session with that directory, then any snapshot with it.
  */
 export async function knownWorkspace({ sessions, persistence }, workspace, sessionId) {
@@ -112,7 +113,7 @@ export async function knownWorkspace({ sessions, persistence }, workspace, sessi
   }
   if (live().some(s => samePath(cwdOf(s), workspace))) return true
   let snapshots = []
-  try { snapshots = await persistence?.listSnapshots?.() ?? [] } catch { snapshots = [] }
+  try { snapshots = await listStoredSessions(persistence) } catch { snapshots = [] }
   if (!Array.isArray(snapshots)) return false
   if (sessionId) { const own = snapshots.find(s => s?.header?.id === sessionId); if (own && samePath(cwdOf(own), workspace)) return true }
   return snapshots.some(s => samePath(cwdOf(s), workspace))

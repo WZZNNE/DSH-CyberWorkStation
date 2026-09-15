@@ -23,6 +23,7 @@
  *              Cold sessions are resumed, edited, flushed and disposed again.
  */
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
+import { inboxHasPending, listStoredSessions, liveEvents, readStoredSession, recordSourceExtras, statStoredSession } from './session-read.js'
 import { readFileSync, writeFileSync, mkdirSync, watchFile, unwatchFile } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { randomUUID } from 'node:crypto'
@@ -93,7 +94,7 @@ export function apply(ctx) {
       for (const id of [...uncheckedSources]) {
         try {
           const live = ctx.sessions.get(id)
-          const events = live ? [...live.events] : (await persistence()?.inspect(id))?.events
+          const events = live ? liveEvents(live) : (await readStoredSession(persistence(), id)).events
           if (!Array.isArray(events)) throw new Error('source session is unavailable')
           changed = C.invalidateSource(store, id, C.chatEditRevision(events)) || changed
           uncheckedSources.delete(id)
@@ -125,7 +126,7 @@ export function apply(ctx) {
   const tokenMeter = () => ctx.get('tokenMeter')
   /**
    * The compaction engine of one agent. In the web profile the engine rows are disabled on the
-   * host plane and mounted inside the agent preset's `isolate` realm (apps/cli/config/agent-presets/<preset>/agent.cordis.yml),
+   * host plane and mounted inside the agent preset's `isolate` realm (packages/preset/agent-presets/presets/<preset>/agent.cordis.yml since 0.1.2),
    * so it is read through `agentPresets.serviceFor(agent, 'compaction')`; a rosterless deployment keeps it on the host.
    */
   const presetsService = () => ctx.get('agentPresets')
@@ -235,7 +236,7 @@ export function apply(ctx) {
       if (!text) return
       if (text.length > MAX_SUMMARY_TEXT) log('warn', `compaction summary of ${session.id} is ${text.length} chars; the store keeps the first ${MAX_SUMMARY_TEXT}`)
       const cwd = cwdOf(session)
-      const item = store.replaceSessionSummary(session.id, { text, cwd, scope: cwd ? 'workspace' : 'global', source: 'compaction', meta: { provider: event.data.provider, model: event.data.model, shadowedTokenCount: event.data.shadowedTokenCount, summarySeq: event.seq, sourceRevision: C.replacementRevision(session.events) } })
+      const item = store.replaceSessionSummary(session.id, { text, cwd, scope: cwd ? 'workspace' : 'global', source: 'compaction', meta: { provider: event.data.provider, model: event.data.model, shadowedTokenCount: event.data.shadowedTokenCount, summarySeq: event.seq, sourceRevision: C.replacementRevision(liveEvents(session)) } })
       store.prune(config.maxItems)
       persist()
       scheduleEmbed([item.id])
@@ -261,7 +262,7 @@ export function apply(ctx) {
     try {
     await reconcileReady
     await ready
-    const events = [...session.events]
+    const events = liveEvents(session)
     const sourceRevision = C.replacementRevision(events)
     const turns = C.userTurnCount(events)
     const mark = store.watermarks[id] ?? { lastSeq: -1, userTurns: 0 }
@@ -280,7 +281,7 @@ export function apply(ctx) {
       const finish = assembler.finish
       if (finish && finish.kind === 'error') throw new Error(finish.failure?.message ?? 'model call failed')
       const answer = C.textOf(assembler.blocks())
-      if (C.replacementRevision(session.events) !== sourceRevision) {
+      if (C.replacementRevision(liveEvents(session)) !== sourceRevision) {
         log('info', `discarded extraction for ${id}: its source surface changed during the request`)
         return
       }
@@ -309,14 +310,17 @@ export function apply(ctx) {
   // ── injection at pre-step ──
   // Already-injected ids are read back from the session log every time (the injected message carries them in its
   // source), so a step that never lands (reject / abort) does not mark its items as used.
-  ctx.on('session/disposed', session => { extracting.delete(session?.id); turnEnded.delete(session?.id) })
+  // one warning per session while the sidecar refuses writes: a long tool loop must not log it on every step
+  const sidecarWarned = new Set()
+  const warnSidecar = (sessionId, what) => { if (sidecarWarned.has(sessionId)) return; sidecarWarned.add(sessionId); log('warn', `${what} for ${sessionId} withheld: the source-extras sidecar cannot be written (reported once per session)`) }
+  ctx.on('session/disposed', session => { extracting.delete(session?.id); turnEnded.delete(session?.id); sidecarWarned.delete(session?.id) })
   ctx.on('agent/pre-step', async (payload, next) => {
     let decision = await next()
     try {
       if (!config.enabled || decision.kind !== 'enter' || isSubagent(payload.agent)) return decision
       await reconcileReady
       const session = payload.agent.session
-      const withdrawn = C.pendingInvalidations(session.events, store.items, name, store.withdrawals)
+      const withdrawn = C.pendingInvalidations(liveEvents(session), store.items, name, store.withdrawals)
       if (withdrawn.length) {
         await ready
         if (peers.llm?.createUserMessage) {
@@ -324,9 +328,12 @@ export function apply(ctx) {
             content: [{ type: 'text', text: '[Memory update] Apply these updates to earlier recalled entries. A withdrawal invalidates the previous assertion; explicit user confirmation restores the indicated content.\n' + withdrawn.map(i => i.confirmed
               ? `- ${i.id}: The user explicitly confirmed this memory as valid again. You may use this confirmed content when relevant: ${clip(i.correctedText ?? i.text, 4000)}`
               : `- ${i.id}: Withdraw the previous assertion: ${clip(i.text, 500)}${i.correctedText ? '\n  User-confirmed correction: ' + clip(i.correctedText, 4000) : ''}`).join('\n') }],
-            source: { kind: 'plugin', plugin: name, memoryInvalidations: withdrawn.map(i => ({ id: i.id, revision: i.revision })) },
+            source: { kind: 'plugin', plugin: name },
           })
-          decision = { ...decision, messages: [...decision.messages, notice] }
+          // Without the recorded ids the notice would never count as delivered and would repeat every step:
+          // skip it (the withdrawal stays pending) until the sidecar is writable again.
+          if (recordSourceExtras(session.id, notice.id, { memoryInvalidations: withdrawn.map(i => ({ id: i.id, revision: i.revision })) })) { sidecarWarned.delete(session.id); decision = { ...decision, messages: [...decision.messages, notice] } }
+          else warnSidecar(session.id, 'memory update notice')
         }
       }
       if (config.inject === 'off' || decision.messages.length === 0) return decision
@@ -335,10 +342,11 @@ export function apply(ctx) {
       if (at < 0) return decision
       const userMsg = decision.messages[at]
       const text = C.textOf(userMsg.content)
-      const firstTurn = C.userTurnCount(session.events) === 0
+      const sessionEvents = liveEvents(session)
+      const firstTurn = C.userTurnCount(sessionEvents) === 0
       if (config.inject === 'first-turn' && !firstTurn) return decision
       const cwd = cwdOf(session)
-      const seen = C.injectedMemoryIds(session.events, name)
+      const seen = C.injectedMemoryIds(sessionEvents, name)
       const qv = text.trim() ? await queryVector(text) : null
       const picks = []
       if (firstTurn) {
@@ -353,7 +361,10 @@ export function apply(ctx) {
       if (!peers.llm?.createUserMessage) return decision
       const { text: block, used } = formatInjection(fresh.filter(p => available(p.item)))
       if (used.length === 0) return decision
-      const injected = peers.llm.createUserMessage({ content: [{ type: 'text', text: block }], source: { kind: 'plugin', plugin: name, memoryIds: used } })
+      const injected = peers.llm.createUserMessage({ content: [{ type: 'text', text: block }], source: { kind: 'plugin', plugin: name } })
+      // memoryIds ride the sidecar (keyed by message id), not the log: format migrations refuse undocumented source members
+      if (!recordSourceExtras(session.id, injected.id, { memoryIds: used })) { warnSidecar(session.id, 'memory injection'); return decision }
+      sidecarWarned.delete(session.id)
       return { kind: 'enter', messages: [...decision.messages.slice(0, at + 1), injected, ...decision.messages.slice(at + 1)] }
     } catch (error) {
       log('warn', `injection skipped: ${String(error?.message ?? error)}`)
@@ -392,13 +403,14 @@ export function apply(ctx) {
           const limit = Math.min(10, Math.max(1, Math.trunc(Number(args.limit) || 5)))
           const qv = await queryVector(args.query)
           const hits = recall(args.query, { cwd, topK: limit, strict: false, qv })
-          if (hits.length && peers.llm?.createUserMessage) {
+          if (hits.length && peers.llm?.createUserMessage && typeof exec.deferContext === 'function') {
             // The core ferries this through nested run_code calls and lands it with
             // result context. Do not mark exposure merely because execute ran.
-            exec.deferContext(peers.llm.createUserMessage({
+            const reference = peers.llm.createUserMessage({
               content: [{ type: 'text', text: 'Memory lookup references: ' + hits.map(hit => hit.item.id).join(', ') + '. The tool result contains the recalled content.' }],
-              source: { kind: 'plugin', plugin: name, memoryIds: hits.map(hit => hit.item.id), memoryRecallCallId: exec.callId },
-            }))
+              source: { kind: 'plugin', plugin: name },
+            })
+            if (recordSourceExtras(exec.agent?.session?.id, reference.id, { memoryIds: hits.map(hit => hit.item.id), memoryRecallCallId: exec.callId })) exec.deferContext(reference)
           }
           return { items: hits.map(h => ({ id: h.item.id, kind: h.item.kind, text: clip(h.item.text, 4000), createdAt: fmtDate(h.item.createdAt), pinned: h.item.pinned })), total: store.items.filter(i => available(i) && visibleIn(i, cwd)).length }
         },
@@ -449,7 +461,7 @@ export function apply(ctx) {
   async function listSessions() {
     await ready
     const p = persistence()
-    const snapshots = p ? await (typeof p.listSnapshots === 'function' ? p.listSnapshots().then(list => list.map(s => ({ meta: s.header ?? s.meta, revision: s.revision ?? null }))) : p.list().then(list => list.map(meta => ({ meta, revision: null })))) : []
+    const snapshots = (await listStoredSessions(p)).map(s => ({ meta: s.header, revision: s.revision }))
     const live = new Map(ctx.sessions.list().map(s => [s.id, s]))
     const rows = []
     const seen = new Set()
@@ -468,14 +480,14 @@ export function apply(ctx) {
       const s = live.get(row.id)
       row.live = !!s
       row.running = ctx.agents.get(row.id)?.status === 'running'
-      if (s) { Object.assign(row, metaFromEvents([...s.events], [...s.surface.nodes])); continue }
+      if (s) { Object.assign(row, metaFromEvents(liveEvents(s), [...s.surface.nodes])); continue }
       const cached = metaCache.get(row.id)
       if (cached && (row.revision === null || cached.revision === row.revision)) { Object.assign(row, cached); continue }
       if (!p || inspected >= LIST_INSPECT_BUDGET || Date.now() - started > LIST_INSPECT_MS) { partial = true; continue }
       inspected++
       try {
-        const insp = await p.inspect(row.id)
-        const events = [...insp.events]
+        const insp = await readStoredSession(p, row.id)
+        const events = insp.events
         const meta = { revision: row.revision, ...metaFromEvents(events, foldNodes(events)) }
         metaCache.set(row.id, meta)
         Object.assign(row, meta)
@@ -510,7 +522,7 @@ export function apply(ctx) {
     const meter = tokenMeter()
     if (live) {
       header = live.header
-      events = [...live.events]
+      events = liveEvents(live)
       nodes = [...live.surface.nodes]
       if (meter) { const m = meter.measure(live); measured = { totalTokens: m.totalTokens, surfaceTokens: m.surfaceTokens, baseline: m.baseline?.kind ?? null } }
       target = routedTarget(live, ctx.agents.get(id))
@@ -518,9 +530,9 @@ export function apply(ctx) {
       const p = persistence()
       if (!p) throw fail(503, 'session persistence is not available in this deployment')
       let insp
-      try { insp = await p.inspect(id) } catch (error) { throw fail(404, `session not found: ${String(error?.message ?? error).slice(0, 160)}`) }
-      header = insp.meta
-      events = [...insp.events]
+      try { insp = await readStoredSession(p, id) } catch (error) { throw fail(404, `session not found: ${String(error?.message ?? error).slice(0, 160)}`) }
+      header = insp.header
+      events = insp.events
       nodes = foldNodes(events)
       if (meter && peers.session?.deriveEventMessage) {
         let surfaceTokens = 0
@@ -569,13 +581,13 @@ export function apply(ctx) {
     }
     const p = persistence()
     if (!p) throw fail(503, 'session persistence is not available in this deployment')
-    const header = (await p.list()).find(h => h.id === id)
+    const header = (await statStoredSession(p, id))?.header
     if (!header) throw fail(404, 'session not found')
     if (isSubagentSession(header)) throw fail(400, 'subagent sessions are read-only here')
     // the preset the log recorded is composed exactly like the web UI's cold resume does; an unknown preset is a refusal, never a silent default
     let insp
-    try { insp = await p.inspect(id) } catch (error) { throw fail(404, `session log cannot be read: ${String(error?.message ?? error).slice(0, 160)}`) }
-    const setup = await resumeSetupFor(insp.meta, insp.events)
+    try { insp = await readStoredSession(p, id) } catch (error) { throw fail(404, `session log cannot be read: ${String(error?.message ?? error).slice(0, 160)}`) }
+    const setup = await resumeSetupFor(insp.header, insp.events)
     maintenanceAgents.add(id)
     let handle
     try { handle = await ctx.agents.resume({ resumeSessionId: id, agentOptions: defaultAgentOptions(), ...(setup ? { setup } : {}) }) } catch (error) { maintenanceAgents.delete(id); throw error }
@@ -587,7 +599,7 @@ export function apply(ctx) {
       try { await flush() } catch { /* the dispose drain is the fallback checkpoint */ }
       // The resumed agent is published like any other (the web UI adopts a live agent by id). If a prompt reached it
       // while the job ran, disposing now would abort that turn under the user: keep it alive for the plugin's lifetime.
-      if (handle.agent.status === 'running' || handle.agent.inbox?.hasPending === true) {
+      if (handle.agent.status === 'running' || inboxHasPending(handle.agent)) {
         adoptedHandles.push(handle)
         log('warn', `session ${id} received work during maintenance; its agent stays alive instead of being disposed`)
       } else {
@@ -607,7 +619,7 @@ export function apply(ctx) {
     if (summary.length > MAX_SUMMARY_CHARS) throw fail(400, `summary longer than ${MAX_SUMMARY_CHARS} characters`)
     return withAgent(id, (agent, resumed, flush) => runMaintenance(agent, async () => {
       const session = agent.session
-      const events = session.events
+      const events = liveEvents(session)
       const state = C.inspectOpenState(events)
       if (state.openTurn !== null) throw fail(409, `turn ${state.openTurn} is still open; wait for it to finish`)
       if (state.activeCompaction) throw fail(409, 'a compaction is in progress on this session')
@@ -640,7 +652,7 @@ export function apply(ctx) {
           model: C.EDIT_MODEL,
         })
         message = peers.llm.createUserMessage({ content, source: peers.compaction.compactCheckpointSource(compactionId) })
-        checkpoint = session.append('user/message', message, { surfaceOp: { op: 'replace', start: checkpointSeq, end: checkpointSeq }, sourceEventSeqs: [startEvent.seq, summaryEvent.seq, checkpointSeq] })
+        checkpoint = session.append('user/message', message, { surfaceOp: { op: 'replace', startSeq: checkpointSeq, endSeq: checkpointSeq }, sourceEventSeqs: [startEvent.seq, summaryEvent.seq, checkpointSeq] })
         endEvent = session.append('compaction/end', lifecycle)
       } catch (error) {
         try { session.append('compaction/end', { ...lifecycle, error: String(error?.message ?? error) }) } catch { /* unmatched start stays visible in the log */ }
@@ -828,8 +840,9 @@ export function apply(ctx) {
         return json(res, 200, { ok: true, ...result, total: store.items.length })
       }
       if (req.method === 'POST' && p === '/dsh-memory-lite/recall') {
-        await reconcileSources()
+        // read the body first: a request whose stream is already flowing must not lose its chunks while the store reconciles
         const body = await readBody(req)
+        await reconcileSources()
         const query = String(body.query ?? '').slice(0, 2000)
         const cwd = typeof body.cwd === 'string' ? body.cwd : ''
         const qv = await queryVector(query)

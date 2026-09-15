@@ -167,7 +167,7 @@ export const DEFAULT_PROVIDER_PRICE_TABLE = {
 }
 
 export const PROVIDER_MODEL_FAMILIES = {
-  deepseek: { 'deepseek-v4-flash': 'DeepSeek v4', 'deepseek-v4-pro': 'DeepSeek v4' },
+  deepseek: { 'deepseek-flash': 'DeepSeek v4', 'deepseek-v4-flash': 'DeepSeek v4', 'deepseek-v4-flash-vision-exp': 'DeepSeek v4', 'deepseek-v4-pro': 'DeepSeek v4' },
   openai: {
     'gpt-5.6-sol': 'GPT-5.6', 'gpt-5.6-terra': 'GPT-5.6', 'gpt-5.6-luna': 'GPT-5.6',
     'gpt-5.5': 'GPT-5.5', 'gpt-5.5-pro': 'GPT-5.5',
@@ -228,14 +228,34 @@ export function buildPriceCatalog() {
   return catalog
 }
 
+// Official prices, https://api-docs.deepseek.com/quick_start/pricing checked 2026-09-15: `deepseek-flash`
+// (DeepSeek-V4.1-Flash) is the current default model; the legacy names `deepseek-v4-flash` and
+// `deepseek-v4-flash-vision-exp` are still accepted by the API but served by V4.1-Flash and billed at its price.
+const flashPrice = () => ({
+  cacheHit: 0.003,
+  cacheMiss: 0.15,
+  output: 0.6,
+  offPeak: { cacheHit: 0.003, cacheMiss: 0.15, output: 0.6 },
+  peak: { cacheHit: 0.006, cacheMiss: 0.3, output: 1.2 },
+})
+/** The pre-upgrade default for `deepseek-v4-flash` (and the table's fallback); a stored entry still equal to it was never edited. */
+export const PRE_0_1_5_FLASH_PRICE = { cacheHit: 0.007, cacheMiss: 0.22, output: 0.66, peak: { cacheHit: 0.014, cacheMiss: 0.44, output: 1.32 } }
+const sameTier = (a, b) => !!a && a.cacheHit === b.cacheHit && a.cacheMiss === b.cacheMiss && a.output === b.output
+export const isPre015FlashPrice = e => sameTier(e, PRE_0_1_5_FLASH_PRICE)
+  && (e.offPeak === undefined || sameTier(e.offPeak, PRE_0_1_5_FLASH_PRICE))
+  && (e.peak === undefined || sameTier(e.peak, PRE_0_1_5_FLASH_PRICE.peak))
+/** The ids the pre-upgrade default applied to: the legacy Flash names (the V4.1 id never had an old default). */
+export const PRE_0_1_5_FLASH_IDS = ['deepseek-v4-flash', 'deepseek-v4-flash-vision-exp']
 export const DEFAULT_PRICE_TABLE = {
   models: {
+    'deepseek-flash': flashPrice(),
     'deepseek-v4-flash': {
-      cacheHit: 0.007,
-      cacheMiss: 0.22,
-      output: 0.66,
-      offPeak: { cacheHit: 0.007, cacheMiss: 0.22, output: 0.66 },
-      peak: { cacheHit: 0.014, cacheMiss: 0.44, output: 1.32 },
+      ...flashPrice(),
+      legacyBase: { cacheHit: 0.0028, cacheMiss: 0.14, output: 0.28 },
+    },
+    // the experimental vision variant was billed on the V4-Flash sheet before the 2026-08-16 boundary too
+    'deepseek-v4-flash-vision-exp': {
+      ...flashPrice(),
       legacyBase: { cacheHit: 0.0028, cacheMiss: 0.14, output: 0.28 },
     },
     'deepseek-v4-pro': {
@@ -247,7 +267,7 @@ export const DEFAULT_PRICE_TABLE = {
       legacyBase: { cacheHit: 0.003625, cacheMiss: 0.435, output: 0.87 },
     },
   },
-  default: { cacheHit: 0.007, cacheMiss: 0.22, output: 0.66 },
+  default: { cacheHit: 0.003, cacheMiss: 0.15, output: 0.6 },
 }
 
 function completeTier(raw) {
@@ -417,7 +437,7 @@ export function providerPriceEntryFor(provider, modelId, prices, options) {
       ? targetModel
       : (mode === 'auto' ? matchModelId(targetModel, Object.keys(models)) : null)
     if (hit !== null && hit !== undefined) {
-      return { entry: models[hit], billingMode: 'deepseek-peak', priced: true }
+      return { entry: models[hit], billingMode: 'deepseek-peak', priced: models[hit]?.unpriced !== true }
     }
     const entry = priceEntryFor(targetModel, prices)
     return { entry, billingMode: 'deepseek-peak', priced: entry?.unpriced !== true }
@@ -499,21 +519,23 @@ export function peakPhaseAt(atMs, windows) {
 
 export function tierFor(entry, atMs, peak) {
   const base = entry ?? { cacheHit: 0, cacheMiss: 0, output: 0 }
+  // a tier member that is not an object (null from a hand edit) is no tier at all
+  const tier = t => (t !== null && typeof t === 'object' && !Array.isArray(t) ? t : undefined)
   const asTier = price => price.reasoning === undefined
     ? { cacheHit: price.cacheHit, cacheMiss: price.cacheMiss, output: price.output }
     : { cacheHit: price.cacheHit, cacheMiss: price.cacheMiss, output: price.output, reasoning: price.reasoning }
   if (Number.isFinite(atMs) && atMs < Date.parse(LEGACY_BASE_BOUNDARY)) {
-    const lb = base.legacyBase
+    const lb = tier(base.legacyBase)
     return lb === undefined ? asTier(base) : asTier(lb)
   }
   if (peak?.enabled !== true) return asTier(base)
   const effectiveAtMs = typeof peak.effectiveAtMs === 'number' ? peak.effectiveAtMs : undefined
   if (isPeakHour(atMs, effectiveAtMs, peak.windows)) {
-    const p = base.peak
+    const p = tier(base.peak)
     return p === undefined ? asTier(base) : asTier(p)
   }
   if (effectiveAtMs !== undefined && atMs >= effectiveAtMs) {
-    const off = base.offPeak
+    const off = tier(base.offPeak)
     return off === undefined ? asTier(base) : asTier(off)
   }
   return asTier(base)
@@ -526,12 +548,13 @@ export function costOf(tokens, entry, atMs, peak) {
   const cacheRead = Math.max(0, Number(tokens?.cacheRead) || 0)
   const cacheWrite = Math.max(0, Number(tokens?.cacheWrite) || 0)
   const reasoning = Math.max(0, Number(tokens?.reasoning) || 0)
-  const reasoningPrice = typeof tier.reasoning === 'number' ? tier.reasoning : 0
-  const cost = (input * tier.cacheMiss
-    + output * tier.output
-    + (cacheRead + cacheWrite) * tier.cacheHit
-    + reasoning * reasoningPrice) / 1_000_000
-  return Math.max(0, cost)
+  // a tier member that is not a finite number prices as 0 rather than turning the day's total into NaN
+  const rate = v => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
+  const cost = (input * rate(tier.cacheMiss)
+    + output * rate(tier.output)
+    + (cacheRead + cacheWrite) * rate(tier.cacheHit)
+    + reasoning * rate(tier.reasoning)) / 1_000_000
+  return Number.isFinite(cost) ? Math.max(0, cost) : 0
 }
 
 export function formatMoney(usdCost, display) {

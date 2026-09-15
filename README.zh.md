@@ -3,9 +3,9 @@
 **中文** | [English](README.md)
 
 > 把 DeepSeek Harness 从命令行工具变成可视化工作站：桌面启动器 + 22 个插件 + 10 个 Skill，本体零改动。
-> 当前内置本体：**dsh 0.1.1-rc.2**（上游 tag `dsh-v0.1.1-rc.2`）。
+> 当前内置本体：**dsh 0.1.5-rc.2**（上游 tag `dsh-v0.1.5-rc.2`）。
 
-`core: 0.1.1-rc.2` · `plugins: 22` · `skills: 10` · `license: MIT`
+`core: 0.1.5-rc.2` · `plugins: 22` · `skills: 10` · `license: MIT`
 
 ![仪表盘](docs/screenshots/2026-09/01-launcher-dashboard.webp)
 
@@ -38,10 +38,9 @@
   - 图 22 · 设置 → 多媒体 API
   - 图 23 · 设置 → 桌宠
   - 图 24 · 设置 → 用量与费用
-  - 图 25 · 设置 → 文件提及
-  - 图 26 · 设置 → 侧边卡片
-  - 图 27 · 轨迹
-  - 图 28 · 上下文
+  - 图 25 · 设置 → 侧边卡片
+  - 图 26 · 轨迹
+  - 图 27 · 上下文
 - [03 · 截图里看不到的部分](#beyond)
 - [04 · 上下文与记忆管理](#memory)
 - [05 · 全部插件清单：原创 / 二改 / 照搬](#roster)
@@ -67,7 +66,7 @@
 - **不改本体。** 所有能力都是外挂的插件和独立程序，升级本体不会丢功能。
 - **图形化。** 以前要改 `settings.yaml`、敲 `dsh plugin` 命令的事，现在都在页面上点几下；配置改完 1.5 秒内生效，不用重启。
 - **密钥有归处。** API Key 只进 dsh 的凭据库（装了钥匙串插件就进 Windows 凭据管理器），不写进配置文件；所有面板只能从本机访问。
-- **能复用就复用。** 22 个套件插件里 19 个原创、3 个二次开发；另有 9 个社区插件原样采纳，全部列在「插件清单」里。
+- **能复用就复用。** 22 个套件插件里 19 个原创、3 个二次开发；另有 8 个社区插件原样采纳，全部列在「插件清单」里。
 
 ### 组成一览
 
@@ -75,7 +74,7 @@
 |---|---|---|
 | DSH 启动器 | 13 个页面 · 中英双语 · 3 款皮肤 | `launcher/`，双击 `DSH启动器.exe`；本体约 1.5 秒启动 |
 | 套件插件 | 22 个（原创 19 · 二改 3） | `plugins/`，安装时自动注册 |
-| 社区插件 | 9 个 + 1 个 MCP 记忆服务器 | 在启动器插件市场里装，不进仓库 |
+| 社区插件 | 8 个 + 1 个 MCP 记忆服务器 | 在启动器插件市场里装，不进仓库 |
 | 本体内置可选能力 | 10 个上游包 | 持久终端、定时提醒、LSP、MCP 客户端、Claude Code / Codex hook 桥 |
 | 工程 Skill | 7 个（Claude Code） | 架构 / 插件 / 前端 / 运维 / 玩法 / 测试 / 本地模型 |
 | dsh 内 Skill | 3 个 | 皮肤工坊、控制甲板编写、桌宠制作 |
@@ -90,7 +89,7 @@ flowchart LR
   subgraph D["dsh 本体 · 127.0.0.1:3080 · 零改动"]
     D0["dsh 运行时 · 会话 · 工具 · Web UI"]
     D1["22 个套件插件"]
-    D2["9 个社区插件 + 本体可选能力"]
+    D2["8 个社区插件 + 本体可选能力"]
   end
   L -- "启动 / 停止 / 安装 / 更新" --> D
   L -- "改配置，1.5 秒生效" --> D1
@@ -148,7 +147,7 @@ setup.cmd
 - 两个被 profile 补丁引用的插件（凭据钥匙串、LAN 防线）卸载前会被拦住，并给出迁移步骤，避免下次启动加载不存在的模块。
 - 插件市场按 dsh 生态过滤 npm 结果；皮肤包不会混进插件列表（另有皮肤市场）。
 
-> **图里没体现的** 9 个社区插件就是从这一页装的。`dsh-context` 需要 0.40 以上版本，自检会点名过旧的版本。
+> **图里没体现的** 8 个社区插件就是从这一页装的。`dsh-context` 需要 0.40 以上版本，自检会点名过旧的版本。
 
 ### 图 03 · Skill 管理
 
@@ -156,7 +155,7 @@ setup.cmd
 
 **功能**
 
-列出两处 Skill：用户目录 `~/.dsh/skills` 里的（套件随安装放进去的 `control-deck-authoring`、`desktop-pet`、`skin-studio`）和本体源码自带的 11 个开发规程。每行显示来源与描述。下方「Skill 市场」按关键词搜 GitHub 仓库，一键下载解压到用户目录。
+列出两处 Skill：用户目录 `~/.dsh/skills` 里的（套件随安装放进去的 `control-deck-authoring`、`desktop-pet`、`skin-studio`）和本体源码自带的 12 个开发规程。每行显示来源与描述。下方「Skill 市场」按关键词搜 GitHub 仓库，一键下载解压到用户目录。
 
 **我们做了什么**
 
@@ -306,7 +305,7 @@ SillyTavern 级的提示词工程台。顶栏：**预设**（保存 / 载入 / �
 
 ## 02 · dsh 本体里的界面
 
-下面 15 张图是 dsh 自己的页面。有的面板是套件插件加的（原创或二改），有的是社区插件（照搬），有的是本体自带——每张图都标明归属。
+下面 14 张图是 dsh 自己的页面。有的面板是套件插件加的（原创或二改），有的是社区插件（照搬），有的是本体自带——每张图都标明归属。
 
 ### 图 14 · 消息编辑
 
@@ -428,7 +427,7 @@ SillyTavern 级的提示词工程台。顶栏：**预设**（保存 / 载入 / �
 **我们做了什么**
 
 - 四种方式对应四种场景：关闭 = 离线；让模型自己决定 = 模型按需调用搜索工具；按触发词 = 给不支持工具调用的本地模型（SillyTavern 式，命中反引号 / 短语 / 正则就先搜再答）；供应商搜索 = OpenRouter 服务端搜索，任何模型都行，按次另计费。
-- `web_fetch` 让任何模型都能读网页，只读公网地址，私网与回环地址一律拒绝。
+- `web_fetch` 让任何模型都能读网页，只读公网地址，私网与回环地址一律拒绝。本体自带的预设会按会话挂自己的 `web_fetch`，插件通过执行钩子给这些调用套上同一套守卫，开关与地址规则两边都生效。
 - 「打开正文」省掉一次工具往返；正文抽取可选接本地 trafilatura。
 - 密钥经 dsh 凭据库保存；「测试搜索」直接看结果与耗时。
 
@@ -483,21 +482,7 @@ SillyTavern 级的提示词工程台。顶栏：**预设**（保存 / 载入 / �
 - 上游 [dsh-cost-meter](https://github.com/Han-1413141/dsh-cost-meter) 提供本会话 / 当日 / 历史费用、官方价格同步、90+ 模型价格目录、7 家 Coding Plan 额度、预算与提醒、中英双语。
 - 我们加的：多厂商余额（DeepSeek / OpenRouter / 本地 / OpenAI 各按其能力显示）、OpenRouter 价格自动同步、侧栏缓存命中条、会话行 token 拆分、本地路由免费、设置页"先看钱"的排序。
 
-### 图 25 · 设置 → 文件提及
-
-*dsh-at-file · 社区（照搬）*
-
-![设置 → 文件提及](docs/screenshots/2026-09/25-dsh-settings-file-mentions.webp)
-
-**功能**
-
-输入框输入 `@` 搜索工作区文件并插入路径引用；「忽略粘贴文本中的 @」；文件过滤分全局 / 工作区两层规则。
-
-**我们做了什么**
-
-未修改。套件的拖文件插件与它配合：拖进来的文件以 `@.dsh-uploads/<名>` 写进输入框，走同一种引用。
-
-### 图 26 · 设置 → 侧边卡片
+### 图 25 · 设置 → 侧边卡片
 
 *dsh-better-sidebar · 社区（照搬）*
 
@@ -511,7 +496,7 @@ VS Code 式右侧工作台（文件、编辑器、终端、Git、浏览器、后
 
 未修改。图 15 右侧的「文件」面板就是它。
 
-### 图 27 · 轨迹
+### 图 26 · 轨迹
 
 *本体自带*
 
@@ -525,9 +510,9 @@ VS Code 式右侧工作台（文件、编辑器、终端、Git、浏览器、后
 
 本体自带，未改动。与下一张「上下文」对照：轨迹回答"做了什么"，上下文回答"模型此刻背着什么"。
 
-### 图 28 · 上下文
+### 图 27 · 上下文
 
-*dsh-context 0.40.1 · 社区（照搬）*
+*dsh-context 0.52.2 · 社区（照搬）*
 
 ![上下文](docs/screenshots/2026-09/28-dsh-context-tab.webp)
 
@@ -655,7 +640,7 @@ flowchart TB
 
 ## 05 · 全部插件清单：原创 / 二改 / 照搬
 
-**原创** = 我们从零写的（可能在用法上参照别的软件，但没有用它的代码，会注明）；**二改** = 以别人的开源项目为基础改出来的，保留上游许可，注明改了什么；**照搬** = 原样使用的第三方项目，一行未改。版本号为 2026-09-11 本机实测。
+**原创** = 我们从零写的（可能在用法上参照别的软件，但没有用它的代码，会注明）；**二改** = 以别人的开源项目为基础改出来的，保留上游许可，注明改了什么；**照搬** = 原样使用的第三方项目，一行未改。版本号为本机实测。
 
 ### 程序
 
@@ -703,19 +688,18 @@ flowchart TB
 
 ### 社区插件 · 照搬
 
-9 个 + 1 个 MCP 服务器，在启动器插件市场里装，一行未改。另有两个候选被否决：`dsh-auto-approval`（与当前本体不兼容）、`dsh-filesnap`（卸载后录过的会话打不开）。
+8 个 + 1 个 MCP 服务器，在启动器插件市场里装，一行未改。另有两个候选被否决：`dsh-auto-approval`（与当前本体不兼容）、`dsh-filesnap`（卸载后录过的会话打不开）。
 
 | 插件 / 程序 | 版本 | 归属 | 上游 / 许可 | 职责 | 界面位置 |
 |---|---|---|---|---|---|
-| `dsh-context` | 0.40.1 | 照搬 | bowenliang123 · Apache-2.0 | 上下文仪表盘（构成、趋势、事件、浏览器、文件活动）与 `/context` 命令。需要 0.40 以上。 | 会话「上下文」分页 |
-| `dsh-at-file` | 0.6.3 | 照搬 | omdsh-dev · MIT | 输入框 `@` 引用工作区文件。 | dsh 设置「文件提及」 |
-| `dsh-better-sidebar` | 0.17.1 | 照搬 | omdsh-dev · MIT | VS Code 式右侧工作台：文件 / 编辑器 / 终端 / Git / 浏览器 / 后台任务。 | dsh 设置「侧边卡片」、右侧面板 |
-| `@linxin666/dsh-remote-web-ui` | 0.3.10 | 照搬 | zhu1090093659/dsh-web · Apache-2.0 | 手机 / 电脑扫码配对远程使用同一份 Web GUI，一次性令牌、可吊销设备、可选 Cloudflare 隧道。 | 侧栏手机图标 |
-| `dsh-automation` | 0.1.4 | 照搬 | Ephemeral-AI-Lab · MIT | 会话内定时 / 循环自提示。 | 对话 |
-| `dsh-chat-import` | 0.8.2 | 照搬 | Nwflower · MIT | 导入 Claude Code / Codex / ChatGPT / Cursor / Gemini 等 19 种 agent 的会话；双向同步。 | 侧栏「导入会话」、dsh 设置「会话导入」 |
-| `dsh-voice-input-plugin` | 0.1.1 | 照搬 | CrazyGummies · MIT | 输入框麦克风，浏览器语音识别，零密钥。 | 输入框 |
+| `dsh-context` | 0.52.2 | 照搬 | bowenliang123 · Apache-2.0 | 上下文仪表盘（构成、趋势、事件、浏览器、文件活动）与 `/context` 命令。需要 0.40 以上。 | 会话「上下文」分页 |
+| `dsh-better-sidebar` | 0.19.1 | 照搬 | omdsh-dev · MIT | VS Code 式右侧工作台：文件 / 编辑器 / 终端 / Git / 浏览器 / 后台任务。 | dsh 设置「侧边卡片」、右侧面板 |
+| `@linxin666/dsh-remote-web-ui` | 0.3.22 | 照搬 | zhu1090093659/dsh-web · Apache-2.0 | 手机 / 电脑扫码配对远程使用同一份 Web GUI，一次性令牌、可吊销设备、可选 Cloudflare 隧道。 | 侧栏手机图标 |
+| `dsh-automation` | 0.2.0-alpha.0 | 照搬 | Ephemeral-AI-Lab · MIT | 会话内定时 / 循环自提示。需要 Node ≥ 24（Node 22 请留在 0.1.4）。 | 对话 |
+| `dsh-chat-import` | 0.11.5 | 照搬 | Nwflower · MIT | 导入 Claude Code / Codex / ChatGPT / Cursor / Gemini 等 19 种 agent 的会话；双向同步。 | 侧栏「导入会话」、dsh 设置「会话导入」 |
+| `dsh-voice-input-web` | 0.1.2 | 照搬 | CrazyGummies · MIT | 输入框麦克风，浏览器语音识别，零密钥。 | 输入框 |
 | `dsh-notification` | 0.1.1 | 照搬 | nishit130 · MIT | agent 完成 / 出错 / 等待审批时的桌面与 webhook 通知。 | （后台） |
-| `@syncended/dsh-retry` | 0.2.2 | 照搬 | syncended · MIT | 模型临时错误自动重试，中断会话恢复。 | （后台） |
+| `@syncended/dsh-retry` | 0.2.3 | 照搬 | syncended · MIT | 模型临时错误自动重试，中断会话恢复。 | （后台） |
 | `@modelcontextprotocol/server-memory` | 2026.7.4 | 照搬 | Model Context Protocol 项目 · MIT | MCP 知识图谱记忆服务器，经本体 MCP 客户端挂载。 | 模型工具 |
 
 ### 本体与内置可选能力 · 照搬
@@ -724,12 +708,12 @@ deepseek-harness 官方代码，零改动。
 
 | 插件 / 程序 | 版本 | 归属 | 上游 / 许可 | 职责 | 界面位置 |
 |---|---|---|---|---|---|
-| `deepseek-harness（core/）` | 0.1.1-rc.2 | 上游 | deepseek-ai · MIT | 全量内置的上游源码，一行未改；启动器可升级到任意上游版本。自带 11 个开发规程 Skill。 | core/ |
-| `dsh-terminal / -bash / tool-terminal` | 0.1.1-rc.2 | 上游 | in-tree | 持久终端与六个模型工具。 | profile 补丁 |
-| `dsh-schedule` | 0.1.1-rc.2 | 上游 | in-tree | 定时提醒。 | profile 补丁 |
-| `dsh-lsp / lsp-stdio / tool-lsp` | 0.1.1-rc.2 | 上游 | in-tree | LSP 代码智能（TypeScript）。 | profile 补丁 |
-| `dsh-mcp-client` | 0.1.1-rc.2 | 上游 | in-tree | MCP 客户端。 | profile 补丁 |
-| `dsh-hooks-claude-code / -codex` | 0.1.1-rc.2 | 上游 | in-tree | Claude Code / Codex hooks 桥。 | profile 补丁 |
+| `deepseek-harness（core/）` | 0.1.5-rc.2 | 上游 | deepseek-ai · MIT | 全量内置的上游源码，一行未改；启动器可升级到任意上游版本。自带 12 个开发规程 Skill。 | core/ |
+| `dsh-terminal / -bash / tool-terminal` | 0.1.5-rc.2 | 上游 | in-tree | 持久终端与六个模型工具。 | profile 补丁 |
+| `dsh-schedule` | 0.1.5-rc.2 | 上游 | in-tree | 定时提醒。 | profile 补丁 |
+| `dsh-lsp / lsp-stdio / tool-lsp` | 0.1.5-rc.2 | 上游 | in-tree | LSP 代码智能（TypeScript）。 | profile 补丁 |
+| `dsh-mcp-client` | 0.1.5-rc.2 | 上游 | in-tree | MCP 客户端。 | profile 补丁 |
+| `dsh-hooks-claude-code / -codex` | 0.1.5-rc.2 | 上游 | in-tree | Claude Code / Codex hooks 桥。 | profile 补丁 |
 
 ### 统计
 
@@ -738,10 +722,10 @@ deepseek-harness 官方代码，零改动。
 | 原创程序 | 1（DSH 启动器） |
 | 原创插件 | 19 |
 | 二改插件 | 3（cost-meter-plus、token-usage-plus、vision-bridge-zh） |
-| 照搬的社区插件 | 9 + 1 个 MCP 服务器 |
+| 照搬的社区插件 | 8 + 1 个 MCP 服务器 |
 | 照搬的本体内置可选包 | 10 |
 | 原创 Skill | 7 工程 + 3 dsh 内 |
-| 本体自带 Skill | 11（照搬） |
+| 本体自带 Skill | 12（照搬） |
 | 原创皮肤 | 启动器 3 · 前端 2 |
 | 本体代码改动 | 0 行 |
 
@@ -775,7 +759,7 @@ deepseek-harness 官方代码，零改动。
 
 ### 随本体而来（照搬）
 
-本体自带 11 个开发规程 Skill（代码评审、文档标准、推送前检查、翻译等），在启动器 Skill 页列为 repo 来源。
+本体自带 12 个开发规程 Skill（代码评审、文档标准、推送前检查、翻译等），在启动器 Skill 页列为 repo 来源。
 
 ---
 
@@ -808,6 +792,6 @@ deepseek-harness 官方代码，零改动。
 - 本体：[deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)（MIT）。
 - 启动器美术由即梦 AI 生成；夜之城背景与桌宠序列帧由 gpt-image-2 生成。
 
-截图拍摄于 2026-09-11，本体 0.1.1-rc.2；启动器截图为 dsh 未运行状态。
+截图拍摄于 2026-09-11，本体当时为 0.1.1-rc.2（现为 0.1.5-rc.2）；启动器截图为 dsh 未运行状态。
 
 ---

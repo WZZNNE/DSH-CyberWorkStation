@@ -155,8 +155,9 @@ export function foldSurfaceBasic(events) {
     const op = e.surfaceOp
     if (op === 'append') { nodes.push(e.seq); continue }
     if (!op || typeof op !== 'object' || op.op !== 'replace') continue
-    const startIdx = nodes.indexOf(op.start)
-    const endIdx = nodes.indexOf(op.end)
+    // 0.1.5 replace ops carry startSeq/endSeq; 0.1.1 logs still in memory carry start/end
+    const startIdx = nodes.indexOf(op.startSeq ?? op.start)
+    const endIdx = nodes.indexOf(op.endSeq ?? op.end)
     if (startIdx < 0 || endIdx < 0 || startIdx > endIdx) continue
     nodes.splice(startIdx, endIdx - startIdx + 1, e.seq)
   }

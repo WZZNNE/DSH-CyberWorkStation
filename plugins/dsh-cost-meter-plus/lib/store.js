@@ -10,6 +10,8 @@ import {
   DEFAULT_PEAK_EFFECTIVE_AT,
   DEFAULT_PEAK_WINDOWS,
   DEFAULT_PRICE_TABLE,
+  isPre015FlashPrice,
+  PRE_0_1_5_FLASH_IDS,
   DEFAULT_PROVIDER_PRICE_TABLE,
   costOf,
   normalizePrice,
@@ -548,6 +550,46 @@ export function sanitizeConfig(raw) {
   const base = defaultConfig()
   const cfg = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
   const out = mergeDeep(base, cfg)
+  // 2026-09-15: the legacy `deepseek-v4-flash` name is billed at the Flash price now. A stored entry that still equals
+  // the pre-upgrade default was never edited by the user and follows the new default (its legacy tier kept); a
+  // hand-edited price stays exactly as written. The comparison reads the entry AS STORED (`cfg`): the merge above
+  // fills tiers the old entry never had (off-peak) from the new default, which must not read as a user edit.
+  const storedModels = cfg.prices && typeof cfg.prices === 'object' && cfg.prices.models && typeof cfg.prices.models === 'object' ? cfg.prices.models : {}
+  // any member beyond the tier numbers (notes, sourceUrl, reasoning, …) means the user touched the entry
+  const TIER_KEYS = new Set(['cacheHit', 'cacheMiss', 'output', 'offPeak', 'peak', 'legacyBase'])
+  // the user's entry with its tier members as the price reader completes them (the `input` alias becomes cacheMiss,
+  // an invalid tier such as `peak: null` is dropped rather than handed to the cost formula), other members as written
+  const restoreAsWritten = stored => {
+    if (!stored || typeof stored !== 'object' || Array.isArray(stored)) return null
+    const numbers = normalizePrice(stored)
+    if (numbers === null) return null
+    const { cacheHit: _h, cacheMiss: _m, output: _o, offPeak: _op, peak: _p, legacyBase: _lb, ...rest } = stored
+    return { ...structuredClone(rest), ...numbers }
+  }
+  const untouchedLegacy = e => !!e && typeof e === 'object' && !Array.isArray(e) && Object.keys(e).every(k => TIER_KEYS.has(k)) && isPre015FlashPrice(e)
+  if (out.prices && typeof out.prices === 'object' && out.prices.models && typeof out.prices.models === 'object') {
+    for (const id of PRE_0_1_5_FLASH_IDS) {
+      const stored = storedModels[id]
+      const fresh = DEFAULT_PRICE_TABLE.models[id]
+      if (fresh && untouchedLegacy(stored)) out.prices.models[id] = { ...structuredClone(fresh), ...(stored.legacyBase ? { legacyBase: structuredClone(stored.legacyBase) } : {}) }
+    }
+    // A hand-edited entry is used exactly as written: the merge above would graft the default's off-peak / peak
+    // tiers onto it and peak billing would then never use the user's numbers. Only the historical legacy tier
+    // (a fact about the vendor, not a price edit) is filled in when the entry lacks it.
+    for (const [id, stored] of Object.entries(storedModels)) {
+      if (!stored || typeof stored !== 'object' || Array.isArray(stored)) continue
+      if (PRE_0_1_5_FLASH_IDS.includes(id) && untouchedLegacy(stored)) continue // re-priced above
+      const fresh = DEFAULT_PRICE_TABLE.models[id]
+      // the user's numbers, completed the way every price is read (the `input` alias becomes cacheMiss, nothing is
+      // left undefined for the cost formula), every other member kept as written
+      const restored = restoreAsWritten(stored)
+      if (restored === null) continue
+      out.prices.models[id] = { ...restored, ...(restored.legacyBase === undefined && fresh?.legacyBase ? { legacyBase: structuredClone(fresh.legacyBase) } : {}) }
+    }
+    const storedDefault = cfg.prices?.default
+    if (untouchedLegacy(storedDefault)) out.prices.default = { ...DEFAULT_PRICE_TABLE.default }
+    else { const restored = restoreAsWritten(storedDefault); if (restored !== null) out.prices.default = restored }
+  }
   const isNum = v => typeof v === 'number' && Number.isFinite(v)
   const oneOf = (v, list, fallback) => (typeof v === 'string' && list.includes(v) ? v : fallback)
   for (const [key, def] of Object.entries(base)) {

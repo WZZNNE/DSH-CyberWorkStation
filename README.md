@@ -3,9 +3,9 @@
 [中文](README.zh.md) | **English**
 
 > Turns DeepSeek Harness from a command-line tool into a visual workstation: a desktop launcher + 22 plugins + 10 skills, zero changes to the core.
-> Vendored core: **dsh 0.1.1-rc.2** (upstream tag `dsh-v0.1.1-rc.2`).
+> Vendored core: **dsh 0.1.5-rc.2** (upstream tag `dsh-v0.1.5-rc.2`).
 
-`core: 0.1.1-rc.2` · `plugins: 22` · `skills: 10` · `license: MIT`
+`core: 0.1.5-rc.2` · `plugins: 22` · `skills: 10` · `license: MIT`
 
 ![Dashboard](docs/screenshots/2026-09/01-launcher-dashboard.webp)
 
@@ -39,7 +39,7 @@
 - **The core is untouched.** Every capability is a plugin or a separate program; upgrading the core loses nothing.
 - **Everything is graphical.** What used to mean editing `settings.yaml` or typing `dsh plugin` commands is now a few clicks; configuration changes take effect within 1.5 seconds, no restart.
 - **Keys have a home.** API keys go only into dsh's credential store (with the keyring plugin, the Windows Credential Manager), never into config files; every panel is reachable from this machine only.
-- **Reuse before rewriting.** Of the 22 suite plugins, 19 are original and 3 are forks; 9 community plugins are adopted unchanged — all listed in the roster.
+- **Reuse before rewriting.** Of the 22 suite plugins, 19 are original and 3 are forks; 8 community plugins are adopted unchanged — all listed in the roster.
 
 ### At a glance
 
@@ -47,7 +47,7 @@
 |---|---|---|
 | DSH Launcher | 13 pages · zh / en · 3 skins | `launcher/`, double-click `DSH启动器.exe`; the core starts in about 1.5 s |
 | Suite plugins | 22 (19 original · 3 forks) | `plugins/`, registered automatically at setup |
-| Community plugins | 9 + 1 MCP memory server | installed from the launcher's plugin market, not in the repo |
+| Community plugins | 8 + 1 MCP memory server | installed from the launcher's plugin market, not in the repo |
 | Optional in-tree core capabilities | 10 upstream packages | persistent terminal, scheduling, LSP, MCP client, Claude Code / Codex hook bridges |
 | Engineering skills | 7 (Claude Code) | architecture / plugins / frontend / ops / playbook / testing / local models |
 | In-dsh skills | 3 | skin studio, control-deck authoring, desktop-pet making |
@@ -62,7 +62,7 @@ flowchart LR
   subgraph D["dsh core · 127.0.0.1:3080 · unmodified"]
     D0["dsh runtime · sessions · tools · Web UI"]
     D1["22 suite plugins"]
-    D2["9 community plugins + optional core capabilities"]
+    D2["8 community plugins + optional core capabilities"]
   end
   L -- "start / stop / install / update" --> D
   L -- "edit config, live within 1.5 s" --> D1
@@ -120,7 +120,7 @@ Type an npm package name or a `link:` local path to install; the table lists eve
 - The two plugins referenced by the profile patch (credential keyring, LAN fence) are blocked from uninstalling, with migration steps, so the next boot never loads a missing module.
 - The market filters npm results to the dsh ecosystem; skin packages never end up in the plugin list (there is a separate skin market).
 
-> **Not in the picture** The 9 community plugins were installed from this page. `dsh-context` needs version 0.40 or later; the self-check names outdated versions.
+> **Not in the picture** The 8 community plugins were installed from this page. `dsh-context` needs version 0.40 or later; the self-check names outdated versions.
 
 ### Fig. 03 · Skills
 
@@ -128,7 +128,7 @@ Type an npm package name or a `link:` local path to install; the table lists eve
 
 **What it does**
 
-Two sources of skills: the user folder `~/.dsh/skills` (the suite installs `control-deck-authoring`, `desktop-pet`, `skin-studio` there) and the 11 development-process skills shipped with the core's source. Each row shows source and description. The Skill Market searches GitHub repositories by keyword and unpacks one into the user folder.
+Two sources of skills: the user folder `~/.dsh/skills` (the suite installs `control-deck-authoring`, `desktop-pet`, `skin-studio` there) and the 12 development-process skills shipped with the core's source. Each row shows source and description. The Skill Market searches GitHub repositories by keyword and unpacks one into the user folder.
 
 **What we built**
 
@@ -278,7 +278,7 @@ Update, skin conversion and backup-restore output all land here; the access toke
 
 ## 02 · Inside dsh itself
 
-The next 15 figures are dsh's own pages. Some panels come from suite plugins (original or forked), some from community plugins (adopted), some are stock — each figure states which.
+The next 14 figures are dsh's own pages. Some panels come from suite plugins (original or forked), some from community plugins (adopted), some are stock — each figure states which.
 
 ### Fig. 14 · Message editor
 
@@ -400,7 +400,7 @@ Configured once (the launcher's Control Deck tab shares the same configuration).
 **What we built**
 
 - Four modes for four situations: off = offline; let the model decide = the model calls the search tool when it needs to; trigger words = for local models without tool calling (SillyTavern-style: a backtick phrase, keyword or regex hit searches first, then answers); provider search = OpenRouter's server-side search, any model, billed per search.
-- `web_fetch` lets any model read web pages — public addresses only; private and loopback addresses are refused.
+- `web_fetch` lets any model read web pages — public addresses only; private and loopback addresses are refused. The core's shipped presets mount their own `web_fetch` per session; the plugin applies the same guard to those calls through an execute hook, so the switch and the address rules hold either way.
 - "Open page text" saves a tool round trip; text extraction can use a local trafilatura service.
 - Keys are stored in dsh's credential store; "Test search" shows results and timing.
 
@@ -455,21 +455,7 @@ UI language; **official account balance** (total, grant, top-up, refresh); today
 - Upstream [dsh-cost-meter](https://github.com/Han-1413141/dsh-cost-meter) provides per-session / daily / historical cost, official price sync, a 90+ model price catalog, 7 Coding Plan quotas, budgets and alerts, zh / en UI.
 - We added: multi-vendor balances (DeepSeek / OpenRouter / local / OpenAI, each shown as its API allows), automatic OpenRouter price sync, a cache-hit bar in the sidebar, per-session token split, free local routes, and a "money first" order on the settings page.
 
-### Fig. 25 · Settings → File mentions
-
-*dsh-at-file · community (adopted)*
-
-![Settings → File mentions](docs/screenshots/2026-09/25-dsh-settings-file-mentions.webp)
-
-**What it does**
-
-Type `@` in the composer to search workspace files and insert a path reference; "ignore @ in pasted text"; two-level file filters (global / workspace).
-
-**What we built**
-
-Not modified. The suite's file-drop plugin works with it: dropped files are inserted as `@.dsh-uploads/<name>`, the same kind of reference.
-
-### Fig. 26 · Settings → Sidebar cards
+### Fig. 25 · Settings → Sidebar cards
 
 *dsh-better-sidebar · community (adopted)*
 
@@ -483,7 +469,7 @@ Settings of the VS Code-style right-hand workbench (files, editor, terminal, Git
 
 Not modified. The Files panel on the right of Fig. 15 is this plugin.
 
-### Fig. 27 · Trajectory
+### Fig. 26 · Trajectory
 
 *stock*
 
@@ -497,9 +483,9 @@ The session trajectory view: Duration / Turns / Calls scales, a time strip, and 
 
 Stock, unchanged. Compare with the next figure: the trajectory answers "what was done", the context tab answers "what the model is carrying right now".
 
-### Fig. 28 · Context
+### Fig. 27 · Context
 
-*dsh-context 0.40.1 · community (adopted)*
+*dsh-context 0.52.2 · community (adopted)*
 
 ![Context](docs/screenshots/2026-09/28-dsh-context-tab.webp)
 
@@ -627,7 +613,7 @@ Each item has a scope: **global** (about you) or **this workspace only** (about 
 
 ## 05 · Full plugin roster: original / fork / adopted
 
-**Original** = written from scratch (a feature may follow another program's behaviour, but none of its code; noted where so); **fork** = built on someone else's open-source project, upstream license kept, changes listed; **adopted** = third-party projects used as-is, not a line changed. Versions measured on this machine on 2026-09-11.
+**Original** = written from scratch (a feature may follow another program's behaviour, but none of its code; noted where so); **fork** = built on someone else's open-source project, upstream license kept, changes listed; **adopted** = third-party projects used as-is, not a line changed. Versions as installed on this machine.
 
 ### Program
 
@@ -675,19 +661,18 @@ Standalone program, not a dsh plugin.
 
 ### Community plugins · adopted
 
-9 plugins + 1 MCP server, installed from the launcher's plugin market, not a line changed. Two candidates were rejected: `dsh-auto-approval` (incompatible with the current core) and `dsh-filesnap` (recorded sessions cannot be opened after uninstalling it).
+8 plugins + 1 MCP server, installed from the launcher's plugin market, not a line changed. Two candidates were rejected: `dsh-auto-approval` (incompatible with the current core) and `dsh-filesnap` (recorded sessions cannot be opened after uninstalling it).
 
 | Plugin | Version | Provenance | Upstream / license | Role | Where |
 |---|---|---|---|---|---|
-| `dsh-context` | 0.40.1 | adopted | bowenliang123 · Apache-2.0 | Context dashboard (composition, trend, events, browser, file activity) and the `/context` command. Needs 0.40+. | session → Context tab |
-| `dsh-at-file` | 0.6.3 | adopted | omdsh-dev · MIT | `@` file references in the composer. | dsh Settings → File mentions |
-| `dsh-better-sidebar` | 0.17.1 | adopted | omdsh-dev · MIT | VS Code-style right sidebar: files / editor / terminal / Git / browser / background tasks. | dsh Settings → Sidebar cards, right panel |
-| `@linxin666/dsh-remote-web-ui` | 0.3.10 | adopted | zhu1090093659/dsh-web · Apache-2.0 | Scan-to-pair remote for phones / PCs sharing the same web GUI, one-time tokens, revocable devices, optional Cloudflare tunnel. | sidebar phone icon |
-| `dsh-automation` | 0.1.4 | adopted | Ephemeral-AI-Lab · MIT | Timed / recurring self-prompts inside a session. | chat |
-| `dsh-chat-import` | 0.8.2 | adopted | Nwflower · MIT | Import sessions from 19 agents (Claude Code / Codex / ChatGPT / Cursor / Gemini…); two-way sync. | sidebar "Import session", dsh Settings → Session import |
-| `dsh-voice-input-plugin` | 0.1.1 | adopted | CrazyGummies · MIT | Microphone in the composer, browser speech recognition, no keys. | composer |
+| `dsh-context` | 0.52.2 | adopted | bowenliang123 · Apache-2.0 | Context dashboard (composition, trend, events, browser, file activity) and the `/context` command. Needs 0.40+. | session → Context tab |
+| `dsh-better-sidebar` | 0.19.1 | adopted | omdsh-dev · MIT | VS Code-style right sidebar: files / editor / terminal / Git / browser / background tasks. | dsh Settings → Sidebar cards, right panel |
+| `@linxin666/dsh-remote-web-ui` | 0.3.22 | adopted | zhu1090093659/dsh-web · Apache-2.0 | Scan-to-pair remote for phones / PCs sharing the same web GUI, one-time tokens, revocable devices, optional Cloudflare tunnel. | sidebar phone icon |
+| `dsh-automation` | 0.2.0-alpha.0 | adopted | Ephemeral-AI-Lab · MIT | Timed / recurring self-prompts inside a session. Needs Node ≥ 24 (stay on 0.1.4 under Node 22). | chat |
+| `dsh-chat-import` | 0.11.5 | adopted | Nwflower · MIT | Import sessions from 19 agents (Claude Code / Codex / ChatGPT / Cursor / Gemini…); two-way sync. | sidebar "Import session", dsh Settings → Session import |
+| `dsh-voice-input-web` | 0.1.2 | adopted | CrazyGummies · MIT | Microphone in the composer, browser speech recognition, no keys. | composer |
 | `dsh-notification` | 0.1.1 | adopted | nishit130 · MIT | Desktop and webhook notifications when the agent finishes, errors or waits for approval. | (background) |
-| `@syncended/dsh-retry` | 0.2.2 | adopted | syncended · MIT | Automatic retries on transient model errors, interrupted-session recovery. | (background) |
+| `@syncended/dsh-retry` | 0.2.3 | adopted | syncended · MIT | Automatic retries on transient model errors, interrupted-session recovery. | (background) |
 | `@modelcontextprotocol/server-memory` | 2026.7.4 | adopted | Model Context Protocol project · MIT | MCP knowledge-graph memory server, mounted through the core's MCP client. | model tools |
 
 ### Core and optional in-tree capabilities · adopted
@@ -696,12 +681,12 @@ Official deepseek-harness code, zero changes.
 
 | Package | Version | Provenance | Upstream / license | Role | Where |
 |---|---|---|---|---|---|
-| `deepseek-harness (core/)` | 0.1.1-rc.2 | upstream | deepseek-ai · MIT | The full upstream source, vendored and unmodified; the launcher upgrades it to any upstream version. Ships 11 development-process skills. | core/ |
-| `dsh-terminal / -bash / tool-terminal` | 0.1.1-rc.2 | upstream | in-tree | Persistent terminal and six model tools. | profile patch |
-| `dsh-schedule` | 0.1.1-rc.2 | upstream | in-tree | Scheduled reminders. | profile patch |
-| `dsh-lsp / lsp-stdio / tool-lsp` | 0.1.1-rc.2 | upstream | in-tree | LSP code intelligence (TypeScript). | profile patch |
-| `dsh-mcp-client` | 0.1.1-rc.2 | upstream | in-tree | MCP client. | profile patch |
-| `dsh-hooks-claude-code / -codex` | 0.1.1-rc.2 | upstream | in-tree | Claude Code / Codex hook bridges. | profile patch |
+| `deepseek-harness (core/)` | 0.1.5-rc.2 | upstream | deepseek-ai · MIT | The full upstream source, vendored and unmodified; the launcher upgrades it to any upstream version. Ships 12 development-process skills. | core/ |
+| `dsh-terminal / -bash / tool-terminal` | 0.1.5-rc.2 | upstream | in-tree | Persistent terminal and six model tools. | profile patch |
+| `dsh-schedule` | 0.1.5-rc.2 | upstream | in-tree | Scheduled reminders. | profile patch |
+| `dsh-lsp / lsp-stdio / tool-lsp` | 0.1.5-rc.2 | upstream | in-tree | LSP code intelligence (TypeScript). | profile patch |
+| `dsh-mcp-client` | 0.1.5-rc.2 | upstream | in-tree | MCP client. | profile patch |
+| `dsh-hooks-claude-code / -codex` | 0.1.5-rc.2 | upstream | in-tree | Claude Code / Codex hook bridges. | profile patch |
 
 ### Totals
 
@@ -710,10 +695,10 @@ Official deepseek-harness code, zero changes.
 | Original programs | 1 (the DSH Launcher) |
 | Original plugins | 19 |
 | Forked plugins | 3 (cost-meter-plus, token-usage-plus, vision-bridge-zh) |
-| Adopted community plugins | 9 + 1 MCP server |
+| Adopted community plugins | 8 + 1 MCP server |
 | Adopted optional core packages | 10 |
 | Original skills | 7 engineering + 3 in-dsh |
-| Skills shipped with the core | 11 (adopted) |
+| Skills shipped with the core | 12 (adopted) |
 | Original skins | 3 launcher · 2 frontend |
 | Lines changed in the core | 0 |
 
@@ -747,7 +732,7 @@ Two kinds: engineering skills for **Claude Code** (`skills/`, copy to `~/.claude
 
 ### Shipped with the core (adopted)
 
-The core ships 11 development-process skills (code review, documentation standards, pre-push checks, translation…), listed on the launcher's Skills page as repo skills.
+The core ships 12 development-process skills (code review, documentation standards, pre-push checks, translation…), listed on the launcher's Skills page as repo skills.
 
 ---
 
@@ -780,4 +765,4 @@ Other artwork: the pet's holographic UI set (bubble, input bar, send key) ships 
 - Core: [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) (MIT).
 - Launcher artwork generated with 即梦 AI; the Night City backdrop and the pet frames with gpt-image-2.
 
-Screenshots taken 2026-09-11 on dsh 0.1.1-rc.2; launcher screenshots show dsh not running.
+Screenshots taken 2026-09-11 on dsh 0.1.1-rc.2 (the vendored core is 0.1.5-rc.2 now); launcher screenshots show dsh not running.

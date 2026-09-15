@@ -46,6 +46,9 @@ export const inject = ['webServer']
 const DSH_HOME = resolveDshHome()
 const CONFIG_FILE = join(DSH_HOME, 'provider-sync.json')
 const CATALOG_URL = 'https://openrouter.ai/api/v1/models'
+// OpenRouter speaks the OpenAI chat-completions protocol. Since 0.1.5 pi-ai refuses a route whose `models[]` names
+// an id its installed catalog does not describe unless the route declares its `api`, so the sync writes it once.
+export const OPENROUTER_API = 'openai-completions'
 const NS = 'llm-pi-ai'
 const ONLINE = ':online'
 // openrouter.ai/docs/use-cases/reasoning-tokens — `none` exists too, but "off" sends nothing at
@@ -231,6 +234,9 @@ export function apply(ctx) {
           state = { autoEfforts: merged.autoEfforts, written: merged.written, anthropicNote: config.anthropicNote }
           routesDone[route] = { models: merged.list.length, added: merged.added, updated: merged.updated, noted: merged.noted, reasoning: merged.reasoning, at: new Date().toISOString() }
           if (merged.added > 0 || merged.updated > 0) ops.push({ op: 'set', path: ['providers', route, 'models'], value: merged.list })
+          // the resolved value (user over base layer) decides: a protocol composed in the base layer is left alone
+          const resolvedApi = described?.value?.providers?.[route]?.api ?? cfg?.api
+          if (resolvedApi === undefined && merged.list.length > 0) ops.push({ op: 'set', path: ['providers', route, 'api'], value: OPENROUTER_API })
         }
         if (ops.length === 0) break
         try {

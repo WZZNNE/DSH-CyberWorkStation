@@ -32,7 +32,8 @@ window.__ModuleLoader__.load({
     const hoverStyle = { ...style, background: 'var(--dsw-alias-interactive-bg-hover)', color: 'var(--dsw-alias-label-primary)' }
 
     function TempChatButton(props) {
-      const sessions = props.useSessions()
+      // the runtime hands out selector hooks (bind.ts): a bare call has no selector to run
+      const sessions = props.useSessions(s => s)
       const [busy, setBusy] = React.useState(false)
       const [note, setNote] = React.useState('')
       const [hover, setHover] = React.useState(false)

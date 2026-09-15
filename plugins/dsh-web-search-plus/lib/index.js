@@ -88,11 +88,11 @@ export function apply(ctx) {
   let fallbackWarned = false
   const llmReady = import('@deepseek-ai/dsh-llm').then(m => { createUserMessage = typeof m.createUserMessage === 'function' ? m.createUserMessage : null }).catch(() => { createUserMessage = null })
 
-  // ── web_fetch: the page reader. The shipped presets register web_search only (tool-web with
-  // fetch: false, "the model would choose the request target"); this plugin mounts the same core
-  // tool at the host plane — visible to every agent — with the core's HTTP provider called directly
-  // and a public-address guard in front (no loopback / private / link-local names or addresses, no
-  // blacklisted hosts). Nothing here goes through the Windows sandbox, so HTTPS works.
+  // ── web_fetch: the page reader. This plugin mounts the core's own tool at the host plane (visible to every
+  // agent whose preset does not mount tool-web fetch itself) with the core's HTTP provider called directly and a
+  // public-address guard in front (no loopback / private / link-local names or addresses, no blacklisted hosts);
+  // the execute hook below applies the same guard to the per-session registration the 0.1.5 shipped presets
+  // (standard / cordis / ptc, tool-web fetch: true) resolve instead. Nothing here goes through the Windows sandbox, so HTTPS works.
   const fetchDeps = Promise.all([
     import('@deepseek-ai/dsh-tool-web').catch(() => null),
     import('@deepseek-ai/dsh-tools').catch(() => null),
@@ -103,6 +103,35 @@ export function apply(ctx) {
   let fetchReason = ''
   let disposed = false
   const unmountFetch = () => { for (const d of fetchDisposers.splice(0)) { try { d() } catch { /* already gone */ } } }
+  /** The guarded page read: every hop validated and connected to the address the check saw, no second lookup of the name. */
+  async function guardedFetch(toolWeb, args, signal) {
+    const f = config.fetch
+    const input = toolWeb.parseFetchArgs(args)
+    const result = await fetchPinned(input.url, { blacklist: config.blacklist, timeoutMs: f.timeoutMs + 5000, maxResponseBytes: f.maxResponseBytes, maxBodyChars: f.maxBodyChars, signal })
+    // The core re-renders a middleware result from `value` with the RESOLVED tool's own output cap (a preset's
+    // web_fetch: 200,000 characters), so this deployment's cap travels inside the value.
+    const cap = Math.min(f.maxBodyChars, f.maxOutputChars)
+    const content = typeof result.body.content === 'string' && result.body.content.length > cap ? result.body.content.slice(0, cap) : result.body.content
+    return { url: result.url, statusCode: result.statusCode, body: { kind: result.body.kind, content }, truncated: result.truncated || content !== result.body.content }
+  }
+  // Since 0.1.5 the shipped presets (standard / cordis / ptc) mount the core's own `web_fetch` per session, which
+  // shadows the host-plane registration below. The reader is therefore also an execute hook: whichever
+  // `web_fetch` registration a session resolves, the call runs through the same guarded read while the switch is on.
+  ctx.on('tools/execute', async (exec, next) => {
+    if (exec.name !== 'web_fetch' || !config.fetch.enabled || config.mode === 'off') return next()
+    // a malformed call goes to the resolved tool, whose schema check raises the canonical argument error
+    if (typeof exec.arguments?.url !== 'string') return next()
+    const [toolWebModule] = await fetchDeps
+    if (!toolWebModule) return next()
+    try {
+      const value = await guardedFetch(toolWebModule, exec.arguments, exec.signal)
+      return { isError: false, value, content: [{ type: 'text', text: toolWebModule.formatFetchOutput(value, config.fetch.maxOutputChars) }], meta: toolWebModule.fetchMetaFromValue(value, config.fetch.maxOutputChars) }
+    } catch (error) {
+      const reason = String(error?.message ?? error)
+      const message = reason.startsWith('web_fetch ') ? reason : `web_fetch failed: ${reason}`
+      return { isError: true, error: { message, info: { name: 'WebSearchPlusError', code: 'WEB_FETCH_PLUS_FAILED' } }, content: [{ type: 'text', text: message }] }
+    }
+  })
   async function mountFetch() {
     const generation = ++fetchGeneration
     unmountFetch()
@@ -116,6 +145,11 @@ export function apply(ctx) {
     fetchMissing = [['@deepseek-ai/dsh-tool-web', toolWeb], ['@deepseek-ai/dsh-tools', tools]].filter(([, m]) => !m).map(([n]) => n)
     if (typeof ctx.tools?.register !== 'function' || typeof ctx.systemPrompt?.section !== 'function') fetchMissing.push('tools / systemPrompt service')
     if (fetchMissing.length > 0) { fetchReason = `${fetchMissing.join(', ')} unavailable`; console.warn(`[web-search-plus] web_fetch not mounted: ${fetchReason}`); return }
+    // Since 0.1.2 the base bundle mounts tool-web with `fetch: true`; the web-app bundle disables that row at the
+    // host plane, but a headless or custom profile keeps it, and `tools.register` throws on a second `web_fetch`.
+    let existing
+    try { existing = typeof ctx.tools.get === 'function' ? ctx.tools.get('web_fetch') : undefined } catch { existing = undefined }
+    if (existing) { fetchReason = 'the core already mounts web_fetch in this profile'; console.warn(`[web-search-plus] web_fetch not mounted: ${fetchReason}`); return }
     const f = config.fetch
     const disposers = []
     const undo = () => { for (const d of disposers.splice(0)) { try { d() } catch { /* gone */ } } }
@@ -151,12 +185,7 @@ export function apply(ctx) {
       },
       timeoutMs: f.timeoutMs,
       isConcurrencySafe: () => true,
-      async execute(args, exec) {
-        const input = toolWeb.parseFetchArgs(args)
-        // Every hop is validated and connected to the address the check saw: no second lookup of the name.
-        const result = await fetchPinned(input.url, { blacklist: config.blacklist, timeoutMs: f.timeoutMs + 5000, maxResponseBytes: f.maxResponseBytes, maxBodyChars: f.maxBodyChars, signal: exec?.signal })
-        return { url: result.url, statusCode: result.statusCode, body: { kind: result.body.kind, content: result.body.content }, truncated: result.truncated }
-      },
+      execute: (args, exec) => guardedFetch(toolWeb, args, exec?.signal),
       presentCall: toolWeb.presentFetchCall,
       presentResult: (args, result) => toolWeb.presentFetchResult(args, result),
     })))
@@ -611,7 +640,7 @@ export function apply(ctx) {
     for (const id of PROVIDER_IDS) providers[id] = { ...PROVIDERS[id], configured: PROVIDERS[id].needsUrl ? config.searxngUrl.length > 0 : await keyConfigured(id) }
     let keyWritable = false
     try { keyWritable = (await credentials()?.describe?.(credentialRef('SERPER_API_KEY')))?.writable === true } catch { /* unknown */ }
-    return { config, providers, keyWritable, cacheEntries: cache.size, providerNative: { ready: [...onlineReady], unavailable: [...onlineFailed.keys()] }, fetch: { enabled: config.fetch.enabled, mounted: fetchDisposers.length > 0, missing: fetchMissing, reason: fetchDisposers.length > 0 ? '' : fetchReason } }
+    return { config, providers, keyWritable, cacheEntries: cache.size, providerNative: { ready: [...onlineReady], unavailable: [...onlineFailed.keys()] }, fetch: { enabled: config.fetch.enabled, mounted: fetchDisposers.length > 0, hooked: config.fetch.enabled && config.mode !== 'off' && !!(await fetchDeps)[0], missing: fetchMissing, reason: fetchDisposers.length > 0 ? '' : fetchReason } }
   }
   const route = async (req, res) => {
     const url = new URL(req.url, 'http://127.0.0.1')

@@ -7,8 +7,9 @@ export function visibleConversationHistory(events, depth, includeNames = false) 
     if (!['user/message', 'assistant/message', 'tool/result'].includes(event.type)) continue
     if (event.surfaceOp === 'append') nodes.push(event.seq)
     else if (event.surfaceOp?.op === 'replace') {
-      const start = nodes.indexOf(event.surfaceOp.start)
-      const end = nodes.indexOf(event.surfaceOp.end)
+      // 0.1.5 replace ops carry startSeq / endSeq; a 0.1.1 log still in memory carries start / end
+      const start = nodes.indexOf(event.surfaceOp.startSeq ?? event.surfaceOp.start)
+      const end = nodes.indexOf(event.surfaceOp.endSeq ?? event.surfaceOp.end)
       if (start >= 0 && end >= start) nodes.splice(start, end - start + 1, event.seq)
     }
   }

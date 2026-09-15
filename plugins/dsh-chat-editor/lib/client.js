@@ -400,6 +400,8 @@ window.__ModuleLoader__.load({
     }
 
     exports.apply = apply
+    // Declared so the client runner mounts this half after the slots service exists (0.1.5 orders by inject).
+    exports.inject = ['slots']
     return module.exports
   },
 })

@@ -19,6 +19,7 @@
  * this file executes only after checking the permission level. See `pet.js`.
  */
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
+import { listStoredSessions, liveEvents, readStoredSession } from './session-read.js'
 import { execFile, spawn } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, unlinkSync, watchFile, unwatchFile, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -1134,7 +1135,7 @@ export function apply(ctx) {
       task.sessionId = sessionId
       // The title is a log event (`session/title`), never a header field.
       const live = agent?.session
-      if (live && Array.isArray(live.events)) task.title = titleOf({ events: live.events }, live.header) || task.title
+      if (live) task.title = titleOf({ events: liveEvents(live) }, live.header) || task.title
       task.at = Date.now()
       const pet = activePet()
       if (!config.enabled || !pet?.taskAwareness.enabled) return
@@ -1174,11 +1175,11 @@ export function apply(ctx) {
   async function refreshProfile(petId) {
     const pet = petById(petId)
     const persistence = ctx.get('sessionPersistence')
-    if (!persistence?.list || !persistence.inspect) throw new Error('session persistence is not available in this deployment')
-    const headers = orderSessions(await persistence.list())
+    if (!persistence) throw new Error('session persistence is not available in this deployment')
+    const headers = orderSessions((await listStoredSessions(persistence)).map(s => s.header))
     const picked = []
     for (const header of headers.slice(0, 40)) {
-      try { picked.push({ header, inspection: await persistence.inspect(header.id) }) } catch { /* a log that cannot be read is skipped */ }
+      try { picked.push({ header, inspection: await readStoredSession(persistence, header.id) }) } catch { /* a log that cannot be read is skipped */ }
     }
     const digest = buildDigest(picked)
     if (digest.sessionsRead === 0) throw new Error('there is no chat history to read yet')
@@ -1528,7 +1529,7 @@ export function apply(ctx) {
         try {
           for (const s of ctx.sessions.list()) {
             let title = ''
-            try { title = titleOf({ events: [...s.events] }, s.header) || '' } catch { /* untitled */ }
+            try { title = titleOf({ events: liveEvents(s) }, s.header) || '' } catch { /* untitled */ }
             rows.push({
               id: String(s.id).slice(0, 40),
               title: String(title || '未命名会话').replace(/\s+/g, ' ').slice(0, 40),

@@ -2,6 +2,96 @@
 
 All notable changes to DSH CyberWorkStation. The vendored core (`core/`) tracks the upstream [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) release named in each entry.
 
+## v1.11.0 — 2026-09-15
+
+Core bump **0.1.1-rc.2 → 0.1.5-rc.2** (upstream tag `dsh-v0.1.5-rc.2`) and the plugin fixes it needed.
+0.1.6-alpha.1 was published the same day and skipped on purpose: the community plugins target 0.1.5-rc.
+
+### Core and community plugins
+- Vendored core 0.1.5-rc.2; `launcher/vendor-core.mjs` no longer overflows Node's 1 MB `spawnSync`
+  buffer on a large mirror (robocopy `/NP` + 64 MB buffer). Community plugins bumped:
+  dsh-context 0.52.2, dsh-better-sidebar 0.19.1, @linxin666/dsh-remote-web-ui 0.3.22,
+  dsh-chat-import 0.11.5, @syncended/dsh-retry 0.2.3, dsh-automation 0.2.0-alpha.0 (this one needs Node ≥ 24;
+  on Node 22 stay on 0.1.4); `dsh-voice-input-plugin` follows its upstream rename to `dsh-voice-input-web` 0.1.2.
+- `dsh-at-file` 0.6.3 is dropped from the profile: it imports the removed `settingsNamespace`
+  export and, on a core without per-plugin isolation, takes the whole plugin tree down. dsh 0.1.5
+  carries its own `@` file references and general file upload.
+
+### Plugins on the 0.1.5 contracts
+- **Session reads** (memory-lite, chat-editor, desktop-pet, drop-files, control-deck, temp-chat):
+  `sessionPersistence.inspect()` and `listSnapshots()` are gone; stored sessions are read through `list()`
+  snapshots and `open(id, 'read')` → `read()` → `close()`, live sessions through `snapshotEvents()` /
+  `eventAt()` (the `Session.events` getter was removed). One shared `lib/session-read.js` per plugin.
+- **Replace surface ops** (memory-lite, chat-editor): the core renamed `{ op: 'replace', start, end }`
+  to `{ startSeq, endSeq }`; writers emit the new keys, readers accept both.
+- **Plugin source members leave the log**: every 0.1.5 migration stage (v0→v1, v1→v2, v2→v3) rejects
+  plugin-authored `user/message` sources that carry members beyond the documented ones (chat-editor's `editedSeq` / `editKind` / …,
+  memory-lite's `memoryIds` / `memoryInvalidations` / `memoryRecallCallId`), which made those sessions
+  unopenable; the v1→v2 and v2→v3 stages renumber event seqs (v2→v3 also inserts a `system/message`).
+  chat-editor and memory-lite now write only
+  `{ kind, plugin }` into the log and keep their members in `~/.dsh/session-source-extras.json`, keyed by
+  session and MESSAGE id (the identity a migration preserves); the shared reader merges them back.
+  `launcher/repair-session-sources.mjs` moves the members of pre-sidecar logs (`session.jsonl`, `session.v1`,
+  `session.v2`) into the same file (backup kept beside each log, the core's zstd framing preserved, the log
+  replaced by one rename, the sidecar written atomically); a v0 message without an id is keyed by the id the
+  core's v0→v1 stage mints for it, an `editedSeq` gains its `editedMessageId`, an unparsable sidecar is set
+  aside under a unique name, and the script refuses to run beside a listening dsh (`--force` overrides). The
+  sidecar itself is rewritten under an exclusive lock from a fresh read (the repair script holds the same lock
+  for its run), so two dsh processes sharing one home never lose each other's records.
+- **Forks and display overrides survive the sidecar**: a chat-editor fork is created the way the core's own
+  fork is (a seeded child whose copied prefix is inherited), seeded from the core's own bytes (no sidecar
+  member is written into the child log), and records the parent link, so the child inherits the parent's
+  recorded members through its lineage without copying them; a display override remembers the message id
+  and is re-anchored (id first, then seq + original text, then a unique text of the same role, else it stays
+  on its seq) after the core renumbers a log — all text comparisons use the store's own normalisation.
+- **temp-chat**: the footer button crashed (`useSessions` is a selector hook now); the persona
+  config key `text` became `prefix`, in the shipped preset and, once, in the user's copy under
+  `~/.dsh/.agent-presets/temp-chat/` (dated backup).
+- **provider-sync**: pi-ai now refuses a route whose model list names an id its catalog does not
+  describe unless the route declares its `api`; the OpenRouter sync writes `api: openai-completions` once
+  when the resolved route has none.
+- **local-reasoning / cost-meter / price-hint**: the DeepSeek catalog gained `deepseek-flash`
+  (DeepSeek-V4.1-Flash, the new default model); local-reasoning reads the adapter's default list from
+  the settings schema (its serialized reference graph) instead of a literal, keeps `systemPromptUpdate`
+  when it rewrites the list (never re-adding one the user's list dropped) and calls the list "still the
+  catalog" only when name, description, image fields and that flag all match the schema default; cost-meter
+  prices `deepseek-flash` and bills the legacy `deepseek-v4-flash` / `-vision-exp` names at the Flash price
+  (official pricing page, 2026-09-15) — an existing ledger's entry for those two ids follows the new default
+  only when it still equals the pre-upgrade default as stored (off-peak tier included, no member beyond the
+  tiers). local-reasoning says once when the schema exposes no default list (the catalog then stays pinned).
+- **cost-meter backfill**: a session directory now holds `session.v3.jsonl.zstd` beside the preserved legacy
+  log; the backfill reads one log per session, the newest generation.
+- **media-lab / chat-editor / cost-meter (browser halves)**: declare `slots` in their client inject list; the
+  0.1.5 client runner mounts a half by its declared injects, and media-lab's settings section had gone missing.
+- **web-search-plus**: `web_fetch` is not mounted twice when a profile keeps the core's own
+  `tool-web` fetch on. The 0.1.5 shipped presets (`standard`, `cordis`, `ptc`) mount the core's own
+  `web_fetch` per session, which shadows the plugin's host-plane registration there, so the plugin now also
+  hooks `tools/execute` for `web_fetch`: whichever registration a session resolves, the call runs through the
+  same guarded reader (public addresses only, blacklist, byte and character caps, the output cap carried
+  inside the value because the core re-renders from it) while the switch is on; a call without a url string
+  is left to the tool's own schema check; status reports `fetch.hooked` (true only while the reader can
+  serve). A caller's cancel is reported as a cancel, not a timeout. **import-note / vision-bridge-zh**: the removed `dsh-client-runtime` package
+  is no longer named in the client inject list. **memory-lite**: the recall route reads its body before
+  reconciling; a tool host without `deferContext` is tolerated; a memory-update notice whose invalidation
+  ids cannot be recorded is withheld instead of being sent and repeated on every step (one warning per session).
+
+### Launcher
+- The core gates the web index and `/api/*` behind a per-process launch token and prints the
+  authenticated URL on its `dsh web:` line; the launcher reads that line back from the dsh log,
+  hands the token URL to the browser (dashboard, "open dsh", start reply) and treats the line, not the
+  open port, as readiness — a load failure is reported as a failed start, an exited process by its exit
+  code. The token is forgotten when the process exits; after a launcher restart it is recovered from the
+  log only for a process the launcher started (pid written beside the start marker, the URL taken only from
+  the lines after it, listening pids cached for 10 s). That recovery covers built-mode starts: in source
+  mode the recorded pid is the `cmd` / corepack wrapper's, and the launcher falls back to the token-less
+  URL after its own restart; the pid cache is dropped on stop and exit. The boot-log parsing lives in
+  `launcher/boot-probe.mjs`. `vendor-core.mjs` also refuses a robocopy run that reported mismatched entries.
+
+### Docs
+- README (zh / en): roster versions, community count 8 (+ 1 MCP server), figure 25 (the dropped plugin's
+  settings page) removed and later figures renumbered, vendored-core badge 0.1.5-rc.2, the core's 12 shipped
+  skills, and how `web_fetch` behaves on the core's shipped presets.
+
 ## v1.10.0 — 2026-09-11
 
 - **Docs**: README (zh / en) rewritten around 33 screenshots — every launcher page, every panel inside dsh, and the full plugin roster with provenance (original / fork / adopted).

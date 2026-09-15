@@ -52,6 +52,32 @@ const CONFIG_FILE = join(DSH_HOME, 'local-reasoning.json')
 const NS = 'llm-pi-ai'
 /** The official DeepSeek adapter: its `models` list (id, name, contextWindow, maxTokens, image limits) lives in this namespace; levels are fixed by the adapter. */
 const DS_NS = 'llm-deepseek'
+// The adapter's own catalog is read from the settings schema default at call time (0.1.5-rc.1 added
+// `deepseek-flash`, the new default model); this literal list is only the fallback when no schema is described.
+/**
+ * The adapter's default model list out of a settings descriptor. `SettingsDescriptor.schema` is schemastery's
+ * `toJSON()` reference graph — `{ uid, refs }`, the object schema at `refs[uid]`, every `dict` member either inline
+ * or a ref id — so the list sits at `refs[refs[uid].dict.models].meta.default`; a descriptor that carries the live
+ * schema object (a test double) is read through the plain path.
+ */
+export function deepseekSchemaDefaults(schema) {
+  if (!schema || typeof schema !== 'object') return undefined
+  const refs = schema.refs && typeof schema.refs === 'object' ? schema.refs : undefined
+  const deref = node => (node !== null && typeof node === 'object' ? node : refs && node !== undefined ? refs[node] : undefined)
+  const root = refs && schema.uid !== undefined ? refs[schema.uid] : schema
+  const list = deref(root?.dict?.models)?.meta?.default
+  return Array.isArray(list) && list.length > 0 && list.every(m => m && typeof m.id === 'string') ? list : undefined
+}
+// Without the schema's default list the catalog cannot be recognised: a reset then leaves the list pinned (safe,
+// but silent unless said once).
+let fallbackWarned = false
+const fallbackCatalog = () => { if (!fallbackWarned) { fallbackWarned = true; console.warn('[local-reasoning] the llm-deepseek settings schema exposes no default model list; an edited list cannot be recognised as the adapter catalog and stays pinned after a reset') } return DS_FALLBACK_DEFAULTS }
+const DS_FALLBACK_DEFAULTS = [
+  { id: 'deepseek-flash', name: 'DeepSeek-V41-Flash' },
+  { id: 'deepseek-v4-flash', name: 'DeepSeek-V4-Flash' },
+  { id: 'deepseek-v4-pro', name: 'DeepSeek-V4-Pro' },
+  { id: 'deepseek-v4-flash-vision-exp', name: 'DeepSeek-V4-Flash-Vision-Exp' },
+]
 const THINKING_MODES = ['auto', 'on', 'off', 'follow-picker']
 const ROUTE_APIS = ['openai-completions', 'openai-responses']
 const MAX_BODY = 64 * 1024
@@ -132,10 +158,15 @@ export function apply(ctx) {
     const out = { id: resolvedEntry.id }
     if (typeof resolvedEntry.name === 'string') out.name = resolvedEntry.name
     if (typeof resolvedEntry.description === 'string') out.description = resolvedEntry.description
+    // 0.1.5: `deepseek-flash` declares in-history system-prompt updates; a rewritten list must keep the declaration
+    // the route resolves (the user's own list, else the catalog); one the user's list dropped is never re-added
+    const spu = resolvedEntry.systemPromptUpdate ?? userEntry?.systemPromptUpdate
+    if (typeof spu === 'string') out.systemPromptUpdate = spu
     const mods = Array.isArray(resolvedEntry.inputModalities) ? resolvedEntry.inputModalities : []
     if (mods.includes('image')) {
       out.inputModalities = [...mods]
-      for (const k of ['imagePixelBudget', 'imageMaxBytes', 'imageDetail']) if (resolvedEntry[k] !== undefined) out[k] = resolvedEntry[k]
+      // (0.1.5 rejects the old `imageDetail` member, so it is never copied)
+      for (const k of ['imagePixelBudget', 'imageMaxBytes']) if (resolvedEntry[k] !== undefined) out[k] = resolvedEntry[k]
     }
     if (userEntry && Number.isFinite(userEntry.contextWindow)) out.contextWindow = userEntry.contextWindow
     if (userEntry && Number.isFinite(userEntry.maxTokens)) out.maxTokens = userEntry.maxTokens
@@ -392,6 +423,7 @@ export function apply(ctx) {
       const resolved = dsResolvedModels()
       if (!resolved.some(m => m.id === modelId)) throw new Error(`model "${modelId}" is not declared on route "deepseek-official"`)
       const userList = Array.isArray(section.models) ? section.models : []
+      const dsDefaults = deepseekSchemaDefaults(ctx.settings.describe?.()?.find(x => x.ns === DS_NS)?.schema) ?? fallbackCatalog()
       const list = resolved.map(m => dsMinimal(m, userList.find(u => u?.id === m.id)))
       const entry = list.find(m => m.id === modelId)
       for (const key of ['contextWindow', 'maxTokens']) {
@@ -400,9 +432,11 @@ export function apply(ctx) {
         if (changes[key] === null || n === null) delete entry[key]; else entry[key] = n
       }
       const anyNumber = list.some(m => m.contextWindow !== undefined || m.maxTokens !== undefined)
-      const DS_DEFAULT_IDS = ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-v4-flash-vision-exp'] // llm-deepseek DEFAULT_MODELS
-      const DS_DEFAULT_NAMES = { 'deepseek-v4-flash': 'DeepSeek-V4-Flash', 'deepseek-v4-pro': 'DeepSeek-V4-Pro', 'deepseek-v4-flash-vision-exp': 'DeepSeek-V4-Flash-Vision-Exp' }
-      const isDefaultCatalog = list.length === DS_DEFAULT_IDS.length && DS_DEFAULT_IDS.every(id => list.some(m => m.id === id && (m.name === undefined || m.name === DS_DEFAULT_NAMES[id]) && m.description === undefined))
+      // the list is still the adapter's own catalog when every entry says exactly what the default entry says on
+      // every field this plugin carries (name, description, image fields, prompt-update flag); any other edit keeps the list pinned
+      const CATALOG_FIELDS = ['name', 'description', 'inputModalities', 'imagePixelBudget', 'imageMaxBytes', 'systemPromptUpdate']
+      const projection = e => JSON.stringify(Object.fromEntries(CATALOG_FIELDS.filter(k => e?.[k] !== undefined).map(k => [k, e[k]])))
+      const isDefaultCatalog = list.length === dsDefaults.length && dsDefaults.every(d => list.some(m => m.id === d.id && projection(m) === projection(d)))
       // no numbers left AND the list is the adapter's own catalog → unset (defaults return); a narrowed / extended list is kept
       const ops = anyNumber || !isDefaultCatalog ? [{ op: 'set', path: ['models'], value: list }] : [{ op: 'unset', path: ['models'] }]
       try { await ctx.settings.mutate(DS_NS, ops, revision); break } catch (error) { if (error?.code === 'SETTINGS_CONFLICT' && attempt < 2) continue; throw error }

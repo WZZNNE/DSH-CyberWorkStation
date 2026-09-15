@@ -15,7 +15,7 @@ export function editState(events) {
     let roots = new Set()
     if (op === 'append') nodes.push(e.seq)
     else if (op?.op === 'replace') {
-      const first = nodes.indexOf(op.start), last = nodes.indexOf(op.end)
+      const first = nodes.indexOf(op.startSeq ?? op.start), last = nodes.indexOf(op.endSeq ?? op.end)
       if (first < 0 || last < first) continue
       for (const seq of nodes.slice(first, last + 1)) for (const root of rootsByNode.get(seq) ?? []) roots.add(root)
       nodes.splice(first, last - first + 1, e.seq)

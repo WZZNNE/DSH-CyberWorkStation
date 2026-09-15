@@ -24,6 +24,7 @@ import { normalizeDshHome } from './home-paths.mjs'
 import { assertPluginRemovable, readProfilePatchStatus } from './profile-patches.mjs'
 import { listeningPids, isDshWebProcess, sameProcess } from './process-identity.mjs'
 import { mergeWebSearchPatch } from './websearch-patch.mjs'
+import { parseBootLog } from './boot-probe.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const SUITE = path.join(ROOT, '..')
@@ -46,6 +47,64 @@ const BUILT_CLI = path.join(REPO, 'apps/cli/lib/bin.js')
 const LOCAL_DIR = path.join(SUITE, '.local')
 const LOG_DIR = path.join(LOCAL_DIR, 'logs')
 const DSH_LOG = path.join(LOG_DIR, 'dsh.log')
+
+// Since core 0.1.2 the web index and /api/* are gated behind a per-process launch token; the core prints the
+// authenticated URL on its `dsh web:` stdout line (plugin routes under /dsh-* stay open, so the launcher's own
+// proxied calls keep using the bare DSH_URL). The launcher reads that line back from the dsh log: dshWebUrl is
+// what a browser must open. Cleared on every start and stop; recovered from the log tail when the launcher
+// itself restarted while dsh kept running.
+let dshWebUrl = null
+const DSH_LOG_TAIL_BYTES = 512 * 1024
+function readDshLogFrom(fromOffset) {
+  try {
+    const size = fs.statSync(DSH_LOG).size
+    const start = Math.max(fromOffset ?? 0, size - DSH_LOG_TAIL_BYTES)
+    if (size <= start) return ''
+    const fd = fs.openSync(DSH_LOG, 'r')
+    try {
+      const buf = Buffer.alloc(size - start)
+      fs.readSync(fd, buf, 0, buf.length, start)
+      return buf.toString('utf8')
+    } finally { fs.closeSync(fd) }
+  } catch { return '' }
+}
+/**
+ * What the dsh log says about a boot: the authenticated web URL once printed, the pid the launcher wrote beside its
+ * start marker, and a fatal load failure (the plugin tree, host preparation, or the CLI's own fatal line).
+ */
+function probeDshBoot(fromOffset) {
+  return parseBootLog(readDshLogFrom(fromOffset))
+}
+// netstat is not free: the recovery path asks for the listening pids at most every 10 s.
+let pidsProbe = { at: 0, pids: [] }
+async function listeningDshPids() {
+  if (Date.now() - pidsProbe.at < 10000) return pidsProbe.pids
+  let pids = []
+  try { pids = await dshPids() } catch { pids = [] }
+  pidsProbe = { at: Date.now(), pids }
+  return pids
+}
+// The log tail is re-read only when the file changed; the dashboard polls /api/status every 3 s.
+let tailProbe = { stamp: '', boot: { url: null, pid: null, failed: false } }
+function probeDshLogTail() {
+  let stamp = ''
+  try { const st = fs.statSync(DSH_LOG); stamp = st.size + ':' + st.mtimeMs } catch { return { url: null, pid: null, failed: false } }
+  if (stamp !== tailProbe.stamp) tailProbe = { stamp, boot: probeDshBoot() }
+  return tailProbe.boot
+}
+/**
+ * The URL a browser should open. The token of a process this launcher started is remembered; otherwise the log
+ * tail is trusted only when the pid written beside the last start marker is one of the processes listening now
+ * (a launcher restarted under a dsh it started earlier). A dsh started elsewhere gets the bare origin — its token
+ * is in its own output, never in this log.
+ */
+async function dshBrowserUrl(running) {
+  if (!running) return DSH_URL
+  if (dshWebUrl !== null) return dshWebUrl
+  const boot = probeDshLogTail()
+  if (boot.url === null || boot.pid === null) return DSH_URL
+  return (await listeningDshPids()).includes(boot.pid) ? boot.url : DSH_URL
+}
 fs.mkdirSync(LOG_DIR, { recursive: true })
 const todayLog = () => path.join(LOG_DIR, `launcher-${new Date().toISOString().slice(0, 10)}.log`)
 function log(level, msg, extra) {
@@ -201,6 +260,8 @@ async function startDsh(lang) {
   if (dshState?.pending) return { ok: false, message: pick(lang, '先前启动的进程仍在准备；请等待或先停止它', 'The previous process is still starting; wait or stop it before retrying') }
   const links = ensurePeerLinks({ repo: REPO, pluginsDir: PLUGINS_DIR })
   if (links.linked.length > 0 || links.failed.length > 0) log(links.failed.length > 0 ? 'ERROR' : 'INFO', 'plugin peer links', links)
+  dshWebUrl = null
+  const logOffset = (() => { try { return fs.statSync(DSH_LOG).size } catch { return 0 } })()
   const out = fs.openSync(DSH_LOG, 'a')
   const c = dshCommand(['web', '--no-open', '--port', String(DSH_PORT)])
   let state
@@ -209,31 +270,47 @@ async function startDsh(lang) {
     const child = spawn(c.cmd, c.args, { cwd: REPO, windowsHide: true, stdio: ['ignore', out, out], detached: true })
     state = { child, mode: c.mode, pending: true, error: null, identity: null }
     dshState = state
-    const clear = () => { state.pending = false; if (dshState === state) dshState = null }
+    const clear = () => { state.pending = false; pidsProbe = { at: 0, pids: [] }; if (dshState === state) { dshState = null; dshWebUrl = null } }
     child.on('error', error => { state.error = error; clear() })
     child.on('exit', clear)
     child.unref()
+    // the pid beside the marker lets a restarted launcher tell this process's token line from an older one
+    if (typeof child.pid === 'number') fs.writeSync(out, `[launcher] dsh pid ${child.pid}\n`)
   } finally { fs.closeSync(out) }
   log('INFO', 'dsh start requested', { spawnPid: state.child.pid, mode: c.mode })
   state.identity = (await processTable()).get(state.child.pid) ?? null
   const started = Date.now()
+  const failedStart = () => {
+    log('ERROR', 'dsh failed to load', { mode: c.mode })
+    return { ok: false, message: pick(lang, '启动失败：本体加载失败（插件树 / 宿主准备），请查看 dsh 输出日志', 'Failed to start: the core did not load (plugin tree / host preparation) — check the dsh output log') }
+  }
   for (let i = 0; i < 120; i++) {
     if (state.error) return { ok: false, message: pick(lang, '启动失败：', 'Failed to start: ') + state.error.message }
+    const boot = probeDshBoot(logOffset)
+    if (boot.failed) return failedStart()
+    // Ready only when the core printed its authenticated `dsh web:` line: it does so after every plugin mounted,
+    // and an open port alone is too early (a broken plugin can still take the process down right after).
+    if (boot.url !== null) {
+      state.pending = false
+      dshWebUrl = boot.url
+      const secs = ((Date.now() - started) / 1000).toFixed(1)
+      log('INFO', 'dsh is up', { seconds: secs, mode: c.mode, tokenUrl: true })
+      return { ok: true, url: boot.url, message: pick(lang, `dsh 已启动(${secs}s):${boot.url}`, `dsh is up (${secs}s): ${boot.url}`) }
+    }
     if (state.child.exitCode !== null || state.child.signalCode) break
     await new Promise(r => setTimeout(r, 500))
-    if (await checkPort(DSH_PORT)) {
-      state.pending = false
-      const secs = ((Date.now() - started) / 1000).toFixed(1)
-      log('INFO', 'dsh is up', { seconds: secs, mode: c.mode })
-      return { ok: true, message: pick(lang, `dsh 已启动(${secs}s):${DSH_URL}`, `dsh is up (${secs}s): ${DSH_URL}`) }
-    }
   }
-  log('ERROR', 'dsh did not become ready', { exitCode: state.child.exitCode, mode: c.mode, port: DSH_PORT })
-  return { ok: false, message: pick(lang, `60 秒内未监听 ${DSH_PORT},请查看 dsh 输出日志`, `dsh did not listen on ${DSH_PORT} within 60 s — check the dsh output log`) }
+  if (probeDshBoot(logOffset).failed) return failedStart()
+  const exited = state.child.exitCode !== null || state.child.signalCode
+  log('ERROR', 'dsh did not become ready', { exitCode: state.child.exitCode, signal: state.child.signalCode, mode: c.mode, port: DSH_PORT, seconds: ((Date.now() - started) / 1000).toFixed(1) })
+  return exited
+    ? { ok: false, message: pick(lang, `dsh 进程已退出（exit ${state.child.exitCode ?? state.child.signalCode}），请查看 dsh 输出日志`, `the dsh process exited (exit ${state.child.exitCode ?? state.child.signalCode}) — check the dsh output log`) }
+    : { ok: false, message: pick(lang, `60 秒内未打印就绪行（dsh web:），请查看 dsh 输出日志`, `dsh printed no ready line (dsh web:) within 60 s — check the dsh output log`) }
   })
 }
 async function stopDsh(lang) {
   return withDshAction(lang, async () => {
+  pidsProbe = { at: 0, pids: [] } // whatever listens after this is not the process the last marker named
   const pids = await dshPids()
   const table = await processTable()
   const state = dshState
@@ -822,12 +899,12 @@ async function api(req, res, url) {
       }
     } catch { /* no settings yet */ }
     return send(200, {
-      dshRunning: running, dshUrl: DSH_URL, defaultModel, repoVersion: version, node: process.version,
+      dshRunning: running, dshUrl: await dshBrowserUrl(running), defaultModel, repoVersion: version, node: process.version,
       launchMode: dshCommand([]).mode, updating: updateJobs.core.running || updateJobs.plugins.running,
     })
   }
   if (p === '/api/dsh/start' && req.method === 'POST') return send(200, await startDsh(lang))
-  if (p === '/api/dsh/stop' && req.method === 'POST') return send(200, await stopDsh(lang))
+  if (p === '/api/dsh/stop' && req.method === 'POST') { const r = await stopDsh(lang); if (r.ok) dshWebUrl = null; return send(200, r) }
 
   if (p === '/api/plugins/builtin') {
     // Built-in composition rows: every row id printed by `dsh --dump-config` (cached 10 min).

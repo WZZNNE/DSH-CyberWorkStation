@@ -4329,7 +4329,8 @@ window.__ModuleLoader__.load({
     }
 
 
-    const inject = ['remote']
+    // slots is declared too: the 0.1.5 client runner mounts a half only after its injects exist
+    const inject = ['remote', 'slots']
 
     async function apply(ctx) {
       const remote = ctx.remote

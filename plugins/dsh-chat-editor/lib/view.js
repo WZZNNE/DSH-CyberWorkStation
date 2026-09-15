@@ -30,8 +30,8 @@ export function foldNodes(events) {
     const op = e.surfaceOp
     if (op === 'append') { nodes.push(e.seq); continue }
     if (!op || typeof op !== 'object' || op.op !== 'replace') continue
-    const si = nodes.indexOf(op.start)
-    const ei = nodes.indexOf(op.end)
+    const si = nodes.indexOf(op.startSeq ?? op.start)
+    const ei = nodes.indexOf(op.endSeq ?? op.end)
     if (si < 0 || ei < 0 || si > ei) continue
     nodes.splice(si, ei - si + 1, e.seq)
   }
@@ -100,8 +100,8 @@ export function messageList(events, { limit = 500 } = {}) {
     if (!SURFACE_TYPES.has(e.type)) continue
     const op = e.surfaceOp
     if (op && typeof op === 'object' && op.op === 'replace') {
-      const si = op.start
-      const ei = op.end
+      const si = op.startSeq ?? op.start
+      const ei = op.endSeq ?? op.end
       for (const prev of events) {
         if (prev.seq < si || prev.seq > ei || !SURFACE_TYPES.has(prev.type)) continue
         replacedBy.set(prev.seq, e.seq)
@@ -117,7 +117,7 @@ export function messageList(events, { limit = 500 } = {}) {
     // A replacement is anchored where its shadowed range sat, so an edited message stays in place
     // in the transcript instead of jumping to the end of the log.
     const op = e.surfaceOp
-    const anchor = op && typeof op === 'object' && op.op === 'replace' ? op.start : e.seq
+    const anchor = op && typeof op === 'object' && op.op === 'replace' ? (op.startSeq ?? op.start) : e.seq
     out.push({
       seq: e.seq,
       anchor,

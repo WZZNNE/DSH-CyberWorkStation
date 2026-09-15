@@ -106,8 +106,9 @@ $('#btn-start').addEventListener('click', async () => {
   const w = $('#launch-wrap'); w.classList.remove('zap'); void w.offsetWidth; w.classList.add('zap')
   toast(T('t_starting'))
   const r = await api('/api/dsh/start', {})
-  toast(r.message); refreshDash()
-  if (r.ok) window.open(dshUrl, '_blank')
+  toast(r.message); await refreshDash()
+  // the start reply carries the authenticated URL (core 0.1.2+ launch token); the dashboard keeps it in dshUrl afterwards
+  if (r.ok) window.open(r.url || dshUrl, '_blank')
 })
 $('#btn-stop').addEventListener('click', async () => { const r = await api('/api/dsh/stop', {}); toast(r.message); refreshDash() })
 $('#btn-openui').addEventListener('click', () => window.open(dshUrl, '_blank'))

@@ -39,8 +39,11 @@ const version = JSON.parse(fs.readFileSync(path.join(extracted, 'package.json'),
 say(`archive version ${version}; mirroring into ${REPO}`)
 fs.mkdirSync(REPO, { recursive: true })
 // robocopy exit codes 0-7 are success variants (bit 1 = files copied, 2 = extras, 4 = mismatches); 8+ means failures.
-const rc = spawnSync('robocopy', [extracted, REPO, '/MIR', '/XD', 'node_modules', 'lib', 'dist', '.git', '.pnpm-store', '.cache', 'coverage', 'tmp', '.artifacts', '.dsh-build', '.storages', '.sessions', '/XF', '*.tsbuildinfo', '/NFL', '/NDL', '/NJH', '/R:2', '/W:1'], { windowsHide: true, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 900000 })
+// /NP and a 64 MB maxBuffer: a tag-to-tag mirror prints enough lines to overflow the 1 MB spawnSync default (ENOBUFS kills the copy half-way).
+const rc = spawnSync('robocopy', [extracted, REPO, '/MIR', '/XD', 'node_modules', 'lib', 'dist', '.git', '.pnpm-store', '.cache', 'coverage', 'tmp', '.artifacts', '.dsh-build', '.storages', '.sessions', '/XF', '*.tsbuildinfo', '/NFL', '/NDL', '/NJH', '/NP', '/R:2', '/W:1'], { windowsHide: true, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 900000, maxBuffer: 64 * 1024 * 1024 })
 const out = String(rc.stdout ?? '') + String(rc.stderr ?? '')
 console.log(out.split('\n').filter(l => /Dirs|Files|Bytes|Ended/.test(l)).join('\n'))
 if (rc.error || rc.status === null || rc.status >= 8) { console.error(`[vendor-core] robocopy failed (exit ${rc.status ?? rc.error?.message})`); process.exitCode = 1; await new Promise(r => setTimeout(r, 50)); process.exit(1) }
+// bit 4 = mismatched entries (a path that changed between file and directory): robocopy skips those silently.
+if ((rc.status & 4) !== 0) { console.error(`[vendor-core] robocopy reported mismatched entries (exit ${rc.status}); the mirror is incomplete — inspect the output and re-run`); process.exitCode = 1; await new Promise(r => setTimeout(r, 50)); process.exit(1) }
 say(`core is now ${version}; run pnpm install && build:lib && build:web next`)

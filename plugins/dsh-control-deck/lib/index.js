@@ -35,6 +35,7 @@ import { join, basename } from 'node:path'
 import { normalizeDeck, compileRules, brokenRules, expandMacros, neutralizeBraces, displayRules, requiredHistoryDepth } from './deck.js'
 import { createDeckRunner } from './deck-runner.js'
 import { visibleConversationHistory } from './history.js'
+import { liveEvents } from './session-read.js'
 
 export const name = 'control-deck'
 // webServer is NOT required: a headless profile has none, and the deck's prompts/tools still apply there.
@@ -250,7 +251,7 @@ export function apply(ctx) {
       // (earlier injections, snapshots) are skipped so an injection can never re-trigger itself.
       const current = messages.filter(isUserTyped).map(m => textOf(m.content)).join('\n')
       const needed = requiredHistoryDepth(deck)
-      const events = payload.agent?.session?.events ?? []
+      const events = liveEvents(payload.agent?.session)
       const history = visibleConversationHistory(events, needed, deck.settings.includeNames)
       // The whole scan runs in the worker: a key is matched against the constant entries and the
       // recursion buffer too, which is text no measurement of the message could have covered.

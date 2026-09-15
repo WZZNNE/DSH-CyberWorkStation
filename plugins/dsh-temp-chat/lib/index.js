@@ -12,6 +12,7 @@
  * of sessions the user selects, and the launcher lists them.
  */
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
+import { inboxHasPending } from './session-read.js'
 import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -40,6 +41,35 @@ function scratchName(now = new Date()) {
   return `tmp-${stamp}-${randomUUID().slice(0, 6)}`
 }
 
+/**
+ * dsh 0.1.3 renamed the persona config key `text` to `prefix` (+ optional `suffix`); a preset that still
+ * says `text` fails schema validation when the agent mounts. The user's copy is never overwritten, so
+ * the key is migrated in place once, keeping a dated backup next to it. Returns true when it rewrote.
+ */
+export function migratePersonaKey(file, now = new Date()) {
+  let text
+  try { text = readFileSync(file, 'utf8') } catch { return false }
+  const lines = text.split(/\r?\n/)
+  const row = lines.findIndex(l => /^\s*name:\s*['"]?@deepseek-ai\/dsh-persona['"]?\s*(#.*)?$/.test(l))
+  if (row < 0) return false
+  const indentOf = l => /^(\s*)/.exec(l)[1].length
+  const rowIndent = indentOf(lines[row])
+  for (let i = row + 1; i < lines.length; i++) {
+    if (lines[i].trim().length === 0) continue
+    // the row's own keys sit at the `name:` indentation; anything shallower is the next list item
+    if (indentOf(lines[i]) < rowIndent) break
+    const m = /^(\s+)text:(\s|$)/.exec(lines[i])
+    // only the config child (one level below `name:`) is the persona key; deeper lines are prose
+    if (!m || m[1].length !== rowIndent + 2) continue
+    const stamp = now.toISOString().slice(0, 10).replaceAll('-', '')
+    writeFileSync(file + '.bak-' + stamp, text)
+    lines[i] = m[1] + 'prefix:' + lines[i].slice(m[0].length - m[2].length)
+    writeFileSync(file, lines.join(text.includes('\r\n') ? '\r\n' : '\n'))
+    return true
+  }
+  return false
+}
+
 /** @param {import('@deepseek-ai/cordis').Context} ctx */
 export function apply(ctx) {
   const log = (level, msg) => { (level === 'warn' ? console.warn : console.log)(`[temp-chat] ${msg}`) }
@@ -55,6 +85,7 @@ export function apply(ctx) {
       writeFileSync(target, readFileSync(SHIPPED_PRESET, 'utf8'))
       log('info', `installed the ${PRESET_ID} preset into ${USER_PRESET_DIR}`)
     }
+    if (migratePersonaKey(target)) log('info', `migrated the ${PRESET_ID} persona key text -> prefix (dsh 0.1.3+); a dated backup sits beside it`)
     presetReady = existsSync(target)
   } catch (error) { log('warn', `could not install the ${PRESET_ID} preset: ${String(error?.message ?? error)}`) }
 
@@ -76,7 +107,7 @@ export function apply(ctx) {
       const agent = handle?.agent
       const id = agent?.session?.id
       const live = id !== undefined && ctx.sessions.list().some(session => session?.id === id)
-      if (live || agent?.status === 'running' || agent?.inbox?.hasPending) continue
+      if (live || agent?.status === 'running' || inboxHasPending(agent)) continue
       ownedHandles.splice(i, 1)
       i -= 1
       handle?.dispose?.().catch(() => {})
