@@ -21,7 +21,8 @@
  */
 import { lstatSync, mkdirSync, realpathSync, statSync, writeFileSync } from 'node:fs'
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from 'node:path'
-import { listStoredSessions } from './session-read.js'
+import { listStoredSessions } from '@dsh-suite/kit/session-read'
+import { rejectCrossSite, json } from '@dsh-suite/kit/fence'
 
 export const name = 'drop-files'
 export const inject = ['webServer', 'sessions']
@@ -121,7 +122,6 @@ export async function knownWorkspace({ sessions, persistence }, workspace, sessi
 
 /** @param {import('@deepseek-ai/cordis').Context} ctx */
 export function apply(ctx) {
-  const json = (res, code, data) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(data)) }
   const refuse = (res, status, code, message) => json(res, status, { ok: false, code, message })
   const readBody = req => new Promise((resolvePromise, reject) => {
     const chunks = []
@@ -137,20 +137,6 @@ export function apply(ctx) {
     req.on('error', reject)
   })
 
-  // The suite's fence (dsh-media-lab, dsh-web-search-plus, dsh-desktop-pet carry the same block).
-  const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
-  const hostOf = req => { const h = String(req.headers.host ?? '').trim().toLowerCase(); const m = /^\[([^\]]+)\](?::\d+)?$/.exec(h); return m ? `[${m[1]}]` : h.replace(/:\d+$/, '') }
-  const rejectCrossSite = req => {
-    if (!LOOPBACK_HOSTS.has(hostOf(req))) return true
-    const site = String(req.headers['sec-fetch-site'] ?? '')
-    if (site === 'cross-site' || site === 'same-site') return true   // another local port is not us
-    const origin = req.headers.origin
-    if (typeof origin === 'string' && origin.length > 0) {
-      try { if (new URL(origin).host.toLowerCase() !== String(req.headers.host ?? '').toLowerCase()) return true } catch { return true }
-    }
-    if (req.method === 'POST' && !/^application\/json/i.test(String(req.headers['content-type'] ?? ''))) return true
-    return false
-  }
 
   async function route(req, res) {
     const url = new URL(req.url ?? '/', 'http://localhost')

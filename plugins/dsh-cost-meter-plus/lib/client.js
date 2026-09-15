@@ -1562,7 +1562,7 @@ window.__ModuleLoader__.load({
       }
     }
 
-    const { createElement: el, Fragment, useState, useEffect, useMemo, useCallback, useRef } = React
+    const { createElement: el, Fragment, useState, useEffect, useRef } = React
 
 
     function WalletIcon({ size = 16, className }) {

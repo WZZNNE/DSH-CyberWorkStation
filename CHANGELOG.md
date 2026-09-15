@@ -2,6 +2,51 @@
 
 All notable changes to DSH CyberWorkStation. The vendored core (`core/`) tracks the upstream [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) release named in each entry.
 
+## v1.11.1 — 2026-09-15
+
+Repository engineering pass and plainer READMEs. Format and usability work on the suite itself; no plugin behaviour changed except where noted.
+
+- **One shared kit instead of copies**: `plugins/_shared` is the package `@dsh-suite/kit`
+  (`session-read`, `fence`), linked into `plugins/node_modules/@dsh-suite/kit` by
+  `launcher/peer-links.mjs` the way the core's packages are. The six byte-identical `session-read.js`
+  copies are gone, and fourteen of the fifteen inline loopback fences (the retired fork
+  `dsh-token-usage-plus` keeps its upstream copy): the writers import the same `rejectCrossSite` / `json`
+  (eight of them the shared `readBody`, three keep a body reader of their own), the GET-only routers
+  `isLoopbackRequest`. The strict fence is the default (foreign Host, cross-site or
+  same-site fetch, an Origin on another port, a non-JSON POST are refused); local-reasoning and memory-lite
+  keep accepting other loopback origins (`allowLoopbackOrigins`) because a launcher page reads them
+  directly. Two small drifts: the sidecar's 30 s passive-write backoff is now one per process instead of
+  one per plugin, and quick-workspace's over-limit message reads `body too large`. After pulling this
+  change run `npm run peer-links` (or start dsh once from the launcher, which runs it): the kit resolves
+  through a junction under `plugins/node_modules`, and a dsh started by hand from `core/` before that
+  cannot load the fourteen plugins.
+- **Launcher server split**: `launcher/server.mjs` (1592 → 1137 lines) keeps the routes; the dsh CLI invocation
+  and process inspection (`lib/dsh-cli.mjs`), skins (`lib/skins.mjs`), configuration backup / restore
+  (`lib/backup.mjs`) and the small helpers (`lib/util.mjs`) are modules with explicit inputs. Same
+  routes, same behaviour; smoke-tested live.
+- **Repair from the launcher**: Update page → *修复旧会话日志 / Repair old session logs* — *Preview* runs the
+  repair script without writing, *Repair* runs it for real; the script's own refusal while dsh listens is
+  shown as is. `POST /api/sessions/repair`. Documented in `launcher/README.md`.
+- **Line endings**: `.gitattributes` pins LF for every suite file, root files included (CRLF only for
+  `.cmd` / `.bat`); the working tree was normalised to match, and commits no longer print an autocrlf
+  warning per file.
+- **Generated README marked**: `README.zh.md` starts with a generated-file comment; its generator moved into
+  the repository (`docs/showcase-src/build.mjs`, `npm run readme:zh`).
+- **Root `package.json` + ESLint**: `npm run lint` (flat config: Node modules, browser halves, the
+  launcher's classic-script pages), `npm run peer-links`, `npm run readme:zh`, `npm run repair`; `npm test`
+  runs the maintainer suite, which lives outside the repository and fails loudly when it is absent.
+  The lint pass removed dead imports and write-only variables, a BOM literal inside a regex, and useless
+  escapes; the remaining warnings are unused arguments and helper components in the two forked plugins
+  plus two unused arguments in desktop-pet's browser half.
+- **READMEs** for dsh-control-deck, dsh-price-hint, dsh-skin-loader, dsh-skin-studio and the kit.
+- **Top-level READMEs rewritten in a plainer register** (zh and en): no per-figure template labels, no numbered
+  chapter prefixes, no slogan lists; facts, tables and screenshots unchanged. The zh renderer
+  (`docs/showcase-src/render-md.mjs`) emits the same plain layout.
+- Not split, on purpose: `dsh-cost-meter-plus/lib/client.js` (the core serves a client half as one bundle
+  read from `exports["./client"]`; sibling files are not served, so a split needs a build step) and
+  `dsh-memory-lite/lib/index.js` (its route section closes over some sixty bindings; a factory taking them
+  all would add indirection, not clarity).
+
 ## v1.11.0 — 2026-09-15
 
 Core bump **0.1.1-rc.2 → 0.1.5-rc.2** (upstream tag `dsh-v0.1.5-rc.2`) and the plugin fixes it needed.

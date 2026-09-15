@@ -9,6 +9,7 @@
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { isLoopbackRequest, refuse } from '@dsh-suite/kit/fence'
 
 export const name = 'price-hint'
 export const inject = ['webServer']
@@ -45,12 +46,8 @@ export function apply(ctx) {
     const providers = typeof settings?.get === 'function' ? settings.get('llm-pi-ai')?.providers : undefined
     return buildPriceMap(providers, prices)
   }
-  // A GET-only, no-CORS route still answers a DNS-rebinding page, which is same-origin to the
-  // browser: the Host header is what tells us the request really came to a loopback address.
-  const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
-  const hostOf = req => { const h = String(req.headers.host ?? '').trim().toLowerCase(); const m = /^\[([^\]]+)\](?::\d+)?$/.exec(h); return m ? `[${m[1]}]` : h.replace(/:\d+$/, '') }
   const route = (req, res) => {
-    if (!LOOPBACK_HOSTS.has(hostOf(req))) { req.resume?.(); res.writeHead(403); return res.end() }
+    if (!isLoopbackRequest(req)) return refuse(req, res)
     const url = new URL(req.url, 'http://127.0.0.1')
     if (req.method === 'GET' && url.pathname === '/dsh-price-hint/prices.json') {
       res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' })

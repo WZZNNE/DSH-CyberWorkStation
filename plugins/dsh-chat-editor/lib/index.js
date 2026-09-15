@@ -20,14 +20,15 @@
  * browser half is `lib/client.js`.
  */
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
-import { adoptSourceExtras, inboxHasPending, liveEventAt, liveEvents, readStoredSession, recordSourceExtras, statStoredSession } from './session-read.js'
-import { readFileSync, writeFileSync, mkdirSync, renameSync, existsSync, unlinkSync, watchFile, unwatchFile } from 'node:fs'
+import { adoptSourceExtras, inboxHasPending, liveEventAt, liveEvents, readStoredSession, recordSourceExtras, statStoredSession } from '@dsh-suite/kit/session-read'
+import { readFileSync, writeFileSync, mkdirSync, renameSync, unlinkSync, watchFile, unwatchFile } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import * as V from './view.js'
 import { normalizeDoc, setOverride, clearOverrides, overridesFor } from './overrides.js'
 import { editState, editableMessages, effectiveOverrides, resolveEditTarget, activeTurnRange } from './edit-state.js'
 import { reanchorOverrides } from './overrides.js'
+import { rejectCrossSite, json, readBody as kitReadBody } from '@dsh-suite/kit/fence'
 
 export const name = 'chat-editor'
 export const inject = ['sessions', 'agents']
@@ -35,9 +36,9 @@ export const inject = ['sessions', 'agents']
 const DSH_HOME = resolveDshHome()
 const EDITS_FILE = join(DSH_HOME, 'chat-edits.json')
 const MAX_BODY = 512 * 1024
+const readBody = (req, limit = MAX_BODY) => kitReadBody(req, limit)
 const MAX_TEXT = 20000
 const SESSION_ID = /^[^\s/\\]{1,200}$/
-const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
 
 /** @param {import('@deepseek-ai/cordis').Context} ctx */
 export function apply(ctx) {
@@ -53,7 +54,7 @@ export function apply(ctx) {
   let doc = { version: 1, sessions: {} }
   const loadDoc = () => {
     try {
-      const raw = JSON.parse(readFileSync(EDITS_FILE, 'utf8').replace(/^﻿/, ''))
+      const raw = JSON.parse(readFileSync(EDITS_FILE, 'utf8').replace(/^\uFEFF/, ''))
       if (!raw || typeof raw !== 'object' || Array.isArray(raw) || !raw.sessions || typeof raw.sessions !== 'object' || Array.isArray(raw.sessions)) throw new Error('invalid document shape')
       doc = normalizeDoc(raw)
     } catch (error) { log('warn', `display overrides not reloaded; retaining last good value (${error?.code ?? error?.name ?? 'read failure'})`) }
@@ -254,45 +255,6 @@ export function apply(ctx) {
   }
 
   // ── HTTP ──
-  const hostOf = req => { const h = String(req.headers.host ?? '').trim().toLowerCase(); const m = /^\[([^\]]+)\](?::\d+)?$/.exec(h); return m ? `[${m[1]}]` : h.replace(/:\d+$/, '') }
-  const rejectCrossSite = req => {
-    if (!LOOPBACK_HOSTS.has(hostOf(req))) return true
-    if (String(req.headers['sec-fetch-site'] ?? '') === 'cross-site') return true
-    const origin = req.headers.origin
-    if (String(req.headers['sec-fetch-site'] ?? '') === 'same-site') return true   // another local port is not us
-    if (typeof origin === 'string' && origin.length > 0) {
-      try { if (new URL(origin).host.toLowerCase() !== String(req.headers.host ?? '').toLowerCase()) return true } catch { return true }
-    }
-    if (req.method === 'POST' && !/^application\/json/i.test(String(req.headers['content-type'] ?? ''))) return true
-    return false
-  }
-  const readBody = req => new Promise((resolve, reject) => {
-    const chunks = []
-    let bytes = 0
-    let over = false
-    let settled = false
-    const failWith = (status, message) => { if (!settled) { settled = true; reject(Object.assign(new Error(message), { status })) } }
-    req.on('data', c => {
-      if (over) return
-      const buf = Buffer.isBuffer(c) ? c : Buffer.from(c)
-      bytes += buf.length
-      if (bytes > MAX_BODY) { over = true; chunks.length = 0; req.resume(); failWith(413, 'body too large'); return }
-      chunks.push(buf)
-    })
-    req.on('end', () => {
-      if (over || settled) return
-      settled = true
-      const text = Buffer.concat(chunks).toString('utf8')
-      try {
-        const value = text ? JSON.parse(text) : {}
-        if (value === null || typeof value !== 'object' || Array.isArray(value)) { reject(Object.assign(new Error('JSON body must be an object'), { status: 400 })); return }
-        resolve(value)
-      } catch { reject(Object.assign(new Error('invalid JSON body'), { status: 400 })) }
-    })
-    req.on('aborted', () => failWith(400, 'request aborted'))
-    req.on('error', () => failWith(400, 'request error'))
-  })
-  const json = (res, code, data) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(data)) }
   const sessionIdOf = value => { const id = String(value ?? ''); if (!SESSION_ID.test(id)) throw fail(400, 'invalid session id'); return id }
   const textOf = value => { const t = String(value ?? ''); if (t.trim().length === 0) throw fail(400, 'text must not be empty'); if (t.length > MAX_TEXT) throw fail(400, `text longer than ${MAX_TEXT} characters`); return t }
 

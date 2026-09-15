@@ -192,7 +192,7 @@ window.__ModuleLoader__.load({
       badge: { padding: '0 6px', borderRadius: '8px', border: '1px solid var(--dsw-alias-border-l1)', fontSize: '10.5px' },
     }
 
-    function MessageRow({ m, sessionId, editable, busy, run, reload }) {
+    function MessageRow({ m, sessionId, editable, busy, run }) {
       const [mode, setMode] = React.useState(null)
       const [draft, setDraft] = React.useState(m.text)
       React.useEffect(() => { setDraft(m.text) }, [m.text])

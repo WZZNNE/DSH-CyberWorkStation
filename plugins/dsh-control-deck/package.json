@@ -28,7 +28,8 @@
   "license": "MIT",
   "peerDependencies": {
     "@deepseek-ai/dsh-llm": "*",
-    "@deepseek-ai/dsh-home-paths": "*"
+    "@deepseek-ai/dsh-home-paths": "*",
+    "@dsh-suite/kit": "*"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-llm": {

@@ -15,7 +15,6 @@ import {
   DEFAULT_PROVIDER_PRICE_TABLE,
   costOf,
   normalizePrice,
-  priceEntryFor,
   providerPriceEntryFor,
 } from './pricing.js'
 import { CODING_PLAN_PROVIDER_IDS } from './coding-plans.js'

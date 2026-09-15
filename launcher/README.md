@@ -23,13 +23,29 @@ Modelled on the feature shape of Aki (秋葉aaaki)'s ComfyUI launcher (one-click
 
 ## How dsh is launched
 
-`server.mjs` boots the core from its built CLI (`core/apps/cli/lib/bin.js`) under plain Node — cold start ≈ 1.5 s. When the core has not been built yet it falls back to the source launch (`corepack pnpm dsh web`, tsx, ≈ 20 s). Before every start it runs `peer-links.mjs`, which links the core packages the suite plugins import (`@deepseek-ai/dsh-tools`, `dsh-settings`, …) into `plugins/node_modules/` so plain Node can resolve them. `dsh plugin …` operations (install / remove / market) also use the built CLI; because that command forwards to a bare `pnpm`, they fall back to `corepack pnpm dsh plugin …` when `pnpm` is not on PATH (corepack not enabled system-wide).
+`server.mjs` boots the core from its built CLI (`core/apps/cli/lib/bin.js`) under plain Node — cold start ≈ 1.5 s. When the core has not been built yet it falls back to the source launch (`corepack pnpm dsh web`, tsx, ≈ 20 s). Before every start it runs `peer-links.mjs`, which links the core packages the suite plugins import (`@deepseek-ai/dsh-tools`, `dsh-settings`, …) into `plugins/node_modules/` so plain Node can resolve them. `dsh plugin …` operations (install / remove / market) also use the built CLI; because that command forwards to a bare `pnpm`, they fall back to `corepack pnpm dsh plugin …` when `pnpm` is not on PATH (corepack not enabled system-wide). The same links serve the suite's own shared package (`plugins/node_modules/@dsh-suite/kit` → `plugins/_shared`).
 
 All launch helpers honor `DSH_HOME` (default `~/.dsh`), `DSH_LAUNCHER_PORT` (3090), and `DSH_WEB_PORT` (3080). Ports must be distinct integers in 1–65535. The EXE and CMD authenticate the selected launcher's status before opening its page. They do not open a page when the token is missing/invalid or a different service occupies the port.
 
 `DSH_HOME` uses the core's path rules: an empty or whitespace-only value selects the default, `~`, `~/` and `~\` expand to the user home, and a relative path starts at the directory from which setup, CMD, EXE or the Node entry point was invoked. Each launcher entry resolves it once before changing working directories and passes the absolute result to child processes. Suite plugins use the core resolver when started directly through dsh as well. The bootstrap resolver needs only Node, so setup also works before core is downloaded or built.
 
 Stop checks the complete listening port and the process's CLI path, profile and creation identity. It never terminates ancestor terminals. If a manually launched source command used a relative path and this launcher cannot establish its working directory, stop it in its original terminal. Repeated start/stop clicks are serialized; a process still preparing after the readiness timeout remains tracked so another click does not spawn a duplicate.
+
+## Repairing session logs the core refuses
+
+A session written on core 0.1.1 by the suite's chat-editor or memory-lite carries plugin members inside
+its `user/message` sources (`editedSeq`, `memoryIds`, …). The 0.1.5 core validates those sources at every
+migration stage and refuses to open such a session (`refuses this format v0 Session: user/message N source
+has unexpected member "editedSeq"` in the dsh log). `repair-session-sources.mjs` moves the members into
+`~/.dsh/session-source-extras.json` (where the plugins keep them since v1.11.0) and rewrites the log in the
+core's own framing; the original stays beside it as `session.jsonl.zstd.bak-<date>`.
+
+- From the launcher: Update page → **修复旧会话日志 / Repair old session logs** → *Preview* lists what would move
+  without changing a log or the sidecar; *Repair* runs it. dsh must be stopped first (the script refuses while the dsh port
+  answers, exit code 2; exit code 3 when the sidecar lock is held by another process), because live plugins
+  write the same sidecar.
+- From a shell: `node launcher/repair-session-sources.mjs --dry-run`, then without `--dry-run`. `DSH_HOME`
+  selects the home; `--force` skips the running-dsh check.
 
 ## Removing patch-layer plugins
 
@@ -50,7 +66,7 @@ Stop checks the complete listening port and the process's CLI path, profile and 
 - **The API needs this launcher's own token.** It is minted on first boot and reused across restarts (delete `~/.dsh/launcher.token` to rotate it), handed to the page through a one-time `?t=` query (sent only to this loopback server, scrubbed from the address bar immediately; `#t=` also accepted for hand-opened links — but Edge's `--app` handoff drops fragments, so the launcher itself uses the query), and kept in that owner-only file. Without it every `/api/` request is refused — the origin check alone only ever stopped a web page, and several routes install packages, spawn Explorer or write under `~/.dsh`. Scripts of your own can read the token file; anything else on the machine cannot drive the launcher just by knowing the port.
 
 - Binds 127.0.0.1 only; folder shortcuts use an allow-list; plugin install arguments are filtered for shell metacharacters; skin names are sanitised and CSS is capped at 500 KB.
-- Every suite router that accepts a write carries the same loopback + same-origin fence (a foreign `Host`, a cross-site or same-site fetch, a mismatched Origin, or a non-JSON POST is refused with 403). The read-only routes — `dsh-control-deck`, `dsh-price-hint`, `dsh-skin-loader` — serve derived data over GET and also refuse a foreign `Host`, which is what a DNS-rebinding page presents.
+- Every suite-authored router that accepts a write carries the same loopback + same-origin fence from `@dsh-suite/kit` (a foreign `Host`, a cross-site or same-site fetch, a mismatched Origin, or a non-JSON POST is refused with 403); `dsh-local-reasoning` and `dsh-memory-lite` additionally accept other loopback origins because a launcher page reads them directly. The read-only routes — `dsh-control-deck`, `dsh-price-hint`, `dsh-skin-loader` — serve derived data over GET and also refuse a foreign `Host`, which is what a DNS-rebinding page presents. The forked `dsh-vision-bridge-zh` keeps its upstream routes as they are.
 - Nine suite plugins put their panels inside dsh itself rather than here: `dsh-chat-editor` (edit / delete messages), `dsh-temp-chat` (project-less chats), `dsh-media-lab` (image / video / voice APIs), `dsh-desktop-pet` (the desktop companion), `dsh-provider-sync` (model-list sync card), `dsh-drop-files` (no panel: a drop handler), `dsh-credentials-center` (also a launcher page), `dsh-vision-bridge-zh` (a card under Plugins) and `dsh-import-note` (a card under Plugins). The launcher only registers them and checks they are mounted.
 - No session deletion (read-only list + folder shortcut; delete in Explorer yourself). Summary edits and compaction go through the dsh-memory-lite plugin inside the core (append-only compaction bracket under `agent.runMaintenance`), never by rewriting session files.
 - Backup restore accepts only whitelisted relative paths under ~/.dsh (no traversal, no absolute paths, depth-limited directories by extension) and keeps a copy of every overwritten file.

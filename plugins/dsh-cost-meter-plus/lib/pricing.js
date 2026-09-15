@@ -359,7 +359,7 @@ export function matchModelId(modelId, candidates) {
   for (const c of list) {
     const cs = stripIdDecor(c)
     if (cs.length === 0 || cs === stripped) continue
-    if (stripped.startsWith(cs) && /^[\-_./:]/.test(stripped.slice(cs.length))) {
+    if (stripped.startsWith(cs) && /^[-_./:]/.test(stripped.slice(cs.length))) {
       if (prefixHit === null || stripIdDecor(prefixHit).length < cs.length) prefixHit = c
     }
   }

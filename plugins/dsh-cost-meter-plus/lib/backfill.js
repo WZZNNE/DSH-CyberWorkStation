@@ -235,11 +235,9 @@ export async function backfillLegacyLedger(ledger, sessionsRoot) {
   for (const [date, day] of Object.entries(ledger.days ?? {})) {
     if ((day?.calls ?? 0) > 0 && Object.keys(day?.byProviderModel ?? {}).length === 0) needDates.add(date)
   }
-  let needSessionLevel = false
   for (const day of Object.values(ledger.days ?? {})) {
     for (const session of day?.sessions ?? []) {
       if ((session?.calls ?? 0) > 0 && Object.keys(session?.byProviderModel ?? {}).length === 0) {
-        needSessionLevel = true
         const dates = collectSessionDates(ledger, session.id)
         for (const date of dates) needDates.add(date)
       }

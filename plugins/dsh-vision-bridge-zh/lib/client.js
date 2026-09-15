@@ -300,7 +300,7 @@ window.__ModuleLoader__.load({
       const locale = props.locale
       const t = makeT(DICT, en)
       const [models, setModels] = react.useState([])
-      const [allModels, setAllModels] = react.useState([])
+      const [, setAllModels] = react.useState([])
       const [err, setErr] = react.useState(null)
       const [loaded, setLoaded] = react.useState(false)
       const [provider, setProvider] = react.useState('')

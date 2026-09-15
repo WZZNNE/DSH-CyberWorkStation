@@ -12,19 +12,21 @@
  */
 import { spawn, execFile } from 'node:child_process'
 import { createServer } from 'node:http'
-import { createConnection } from 'node:net'
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import os from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { ensurePeerLinks } from './peer-links.mjs'
 import { serverPorts } from './runtime-config.mjs'
 import { normalizeDshHome } from './home-paths.mjs'
 import { assertPluginRemovable, readProfilePatchStatus } from './profile-patches.mjs'
-import { listeningPids, isDshWebProcess, sameProcess } from './process-identity.mjs'
+import { isDshWebProcess, sameProcess } from './process-identity.mjs'
 import { mergeWebSearchPatch } from './websearch-patch.mjs'
 import { parseBootLog } from './boot-probe.mjs'
+import { json, readBody, exists, pick, checkPort, run, readJson, writeJson, dirSize } from './lib/util.mjs'
+import { createDshCli } from './lib/dsh-cli.mjs'
+import { createSkins } from './lib/skins.mjs'
+import { createBackup } from './lib/backup.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const SUITE = path.join(ROOT, '..')
@@ -114,134 +116,9 @@ function log(level, msg, extra) {
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
-const json = (res, code, data) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(data)) }
-// A malformed JSON body is a client error: surface it as HTTP 400 instead of silently acting on {}.
-// Body reader: collects Buffers and decodes UTF-8 once (a multibyte character split across socket reads
-// must never become U+FFFD), caps by BYTES (1 MB), drains oversized bodies so the 413 is still delivered,
-// and rejects when the client goes away mid-body.
-const BODY_LIMIT = 1048576
-const readBody = (req, limit = BODY_LIMIT) => new Promise((resolve, reject) => {
-  const chunks = []
-  let bytes = 0
-  let over = false
-  let settled = false
-  const fail = (status, message) => { if (!settled) { settled = true; reject(Object.assign(new Error(message), { status })) } }
-  req.on('data', c => {
-    if (over) return
-    const buf = Buffer.isBuffer(c) ? c : Buffer.from(c)
-    bytes += buf.length
-    if (bytes > limit) { over = true; chunks.length = 0; req.resume(); fail(413, `body too large (${Math.round(limit / 1048576)} MB max)`); return }
-    chunks.push(buf)
-  })
-  req.on('end', () => {
-    if (over || settled) return
-    settled = true
-    const text = Buffer.concat(chunks).toString('utf8')
-    try {
-      const value = text ? JSON.parse(text) : {}
-      if (value === null || typeof value !== 'object' || Array.isArray(value)) { reject(Object.assign(new Error('JSON body must be an object'), { status: 400 })); return }
-      resolve(value)
-    } catch { reject(Object.assign(new Error('invalid JSON body'), { status: 400 })) }
-  })
-  req.on('aborted', () => fail(400, 'request aborted'))
-  req.on('error', () => fail(400, 'request error'))
-})
-const exists = p => { try { fs.accessSync(p); return true } catch { return false } }
-/** Pick the zh/en variant of a user-visible message for the request language. */
-const pick = (lang, zh, en) => (lang === 'en' ? en : zh)
-
-function checkPort(port) {
-  return new Promise(resolve => {
-    const s = createConnection({ host: '127.0.0.1', port, timeout: 900 })
-    s.on('connect', () => { s.destroy(); resolve(true) })
-    s.on('error', () => resolve(false))
-    s.on('timeout', () => { s.destroy(); resolve(false) })
-  })
-}
-
-function run(cmd, args, opts = {}) {
-  return new Promise(resolve => {
-    execFile(cmd, args, { windowsHide: true, timeout: opts.timeout ?? 60000, cwd: opts.cwd, maxBuffer: 8 * 1024 * 1024, ...(opts.env ? { env: opts.env } : {}) }, (error, stdout, stderr) => {
-      resolve({ ok: error === null, code: error?.code ?? 0, stdout: String(stdout), stderr: String(stderr) })
-    })
-  })
-}
-
-/**
- * How to invoke the dsh CLI: the built entry under plain Node when the core
- * has been built (`pnpm build:lib`), else the source launch via corepack/pnpm.
- */
-function dshCommand(args) {
-  if (exists(BUILT_CLI)) return { cmd: process.execPath, args: [BUILT_CLI, ...args], mode: 'built' }
-  return { cmd: 'cmd.exe', args: ['/c', 'corepack', 'pnpm', 'dsh', ...args], mode: 'source' }
-}
-/**
- * `dsh plugin …` forwards to a bare `pnpm` on PATH (apps/cli/src/plugin.ts).
- * When corepack has not been enabled system-wide that lookup fails under the
- * built CLI, while `corepack pnpm dsh plugin …` still works because pnpm puts
- * itself on PATH for the script it runs — so plugin operations fall back to the
- * source launch whenever bare pnpm is missing. Checked once per process.
- */
-let pnpmOnPath = null
-async function resolveDshCommand(args) {
-  let c = dshCommand(args)
-  if (args[0] === 'plugin' && c.mode === 'built') {
-    if (pnpmOnPath === null) pnpmOnPath = (await run('cmd.exe', ['/c', 'where', 'pnpm'])).ok
-    if (!pnpmOnPath) c = { cmd: 'cmd.exe', args: ['/c', 'corepack', 'pnpm', 'dsh', ...args], mode: 'source' }
-  }
-  return c
-}
-async function runDsh(args, opts = {}) {
-  const c = await resolveDshCommand(args)
-  return run(c.cmd, c.args, { cwd: REPO, ...opts })
-}
-
-/** PID listening on the dsh web port (Windows netstat). */
-async function dshPids() {
-  const r = await run('netstat', ['-ano'])
-  if (!r.ok) throw new Error('Cannot inspect listening processes (netstat failed)')
-  return listeningPids(r.stdout, DSH_PORT)
-}
-
-/** One CIM query → pid → { ppid, name } for every process (walking parent chains is then local). */
-async function processTable() {
-  const r = await run('powershell', ['-NoProfile', '-Command', 'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine,CreationDate | ConvertTo-Json -Compress'])
-  const table = new Map()
-  try {
-    const rows = JSON.parse(r.stdout)
-    for (const p of Array.isArray(rows) ? rows : [rows]) {
-      table.set(Number(p.ProcessId), { ppid: Number(p.ParentProcessId), name: String(p.Name ?? '').toLowerCase().replace(/\.exe$/, ''), commandLine: String(p.CommandLine ?? ''), created: p.CreationDate ? String(p.CreationDate) : '' })
-    }
-  } catch { /* an unreadable table just disables console reaping */ }
-  return table
-}
-
-/**
- * Recursive directory size in bytes with a 60 s cache. The walk is asynchronous
- * (fs.promises, one await per directory) so a 1.4 GB core tree does not freeze
- * the dashboard poll while it is being measured.
- */
-const sizeCache = new Map()
-async function dirSize(p) {
-  const hit = sizeCache.get(p)
-  if (hit !== undefined && Date.now() - hit.at < 60000) return hit.size
-  let total = 0
-  const walk = async d => {
-    let entries = []
-    try { entries = await fs.promises.readdir(d, { withFileTypes: true }) } catch { return }
-    for (const e of entries) {
-      const fp = path.join(d, e.name)
-      try {
-        if (e.isSymbolicLink()) continue
-        if (e.isDirectory()) await walk(fp)
-        else total += (await fs.promises.stat(fp)).size
-      } catch { /* busy or permission-denied entries are skipped */ }
-    }
-  }
-  if (exists(p)) await walk(p)
-  sizeCache.set(p, { at: Date.now(), size: total })
-  return total
-}
+// json / readBody / exists / pick / checkPort / run / readJson / writeJson / dirSize live in ./lib/util.mjs;
+// the dsh CLI invocation and process inspection in ./lib/dsh-cli.mjs.
+const { dshCommand, resolveDshCommand, runDsh, dshPids, processTable } = createDshCli({ repo: REPO, builtCli: BUILT_CLI, dshPort: DSH_PORT })
 
 // ── dsh process management ──────────────────────────────────────────────────
 let dshState = null
@@ -259,7 +136,7 @@ async function startDsh(lang) {
   if (await checkPort(DSH_PORT)) return { ok: false, message: pick(lang, `dsh 已在运行(端口 ${DSH_PORT})`, `dsh is already running (port ${DSH_PORT})`) }
   if (dshState?.pending) return { ok: false, message: pick(lang, '先前启动的进程仍在准备；请等待或先停止它', 'The previous process is still starting; wait or stop it before retrying') }
   const links = ensurePeerLinks({ repo: REPO, pluginsDir: PLUGINS_DIR })
-  if (links.linked.length > 0 || links.failed.length > 0) log(links.failed.length > 0 ? 'ERROR' : 'INFO', 'plugin peer links', links)
+  if (links.linked.length > 0 || links.failed.length > 0 || links.missing.length > 0) log(links.failed.length > 0 || links.missing.length > 0 ? 'ERROR' : 'INFO', 'plugin peer links', links)
   dshWebUrl = null
   const logOffset = (() => { try { return fs.statSync(DSH_LOG).size } catch { return 0 } })()
   const out = fs.openSync(DSH_LOG, 'a')
@@ -399,360 +276,19 @@ function startUpdate(kind, lang, opts = {}) {
   return { ok: true, message: pick(lang, '更新已开始,查看日志页', 'Update started — see the Logs page') }
 }
 
-// ── Skins ───────────────────────────────────────────────────────────────────
-const SKIN_DIRS = { launcher: path.join(ROOT, 'skins/launcher'), frontend: path.join(ROOT, 'skins/frontend') }
-for (const d of Object.values(SKIN_DIRS)) fs.mkdirSync(d, { recursive: true })
-const activeFile = target => path.join(SKIN_DIRS[target], 'active.txt')
-const listSkins = target => fs.readdirSync(SKIN_DIRS[target]).filter(f => f.endsWith('.css')).map(f => f.replace(/\.css$/, ''))
-const activeSkin = target => { try { return fs.readFileSync(activeFile(target), 'utf8').trim() } catch { return '' } }
-function applySkin(target, name, lang) {
-  if (target === 'frontend' && (name === 'none' || name === '')) {
-    fs.writeFileSync(activeFile(target), 'none')
-    try { fs.writeFileSync(FRONTEND_SKIN_TARGET, '') } catch { /* $DSH_HOME may not exist yet */ }
-    log('INFO', 'frontend skin cleared')
-    return { ok: true, message: pick(lang, '已恢复 dsh 原生外观(刷新页面生效)', 'Restored the stock dsh look (refresh the page)') }
-  }
-  // Skin names are file stems inside the skin directory; never let one name a path.
-  if (/[\\/]|\.\./.test(name)) return { ok: false, message: pick(lang, '皮肤名非法', 'Invalid skin name') }
-  const file = path.join(SKIN_DIRS[target], name + '.css')
-  if (!exists(file)) return { ok: false, message: pick(lang, '皮肤不存在:' + name, 'Skin not found: ' + name) }
-  fs.writeFileSync(activeFile(target), name)
-  // The dsh-skin-loader plugin serves $DSH_HOME/frontend-skin.css to the web UI.
-  if (target === 'frontend') fs.copyFileSync(file, FRONTEND_SKIN_TARGET)
-  log('INFO', 'skin applied', { target, name })
-  return {
-    ok: true,
-    message: target === 'frontend'
-      ? pick(lang, `已切换前端皮肤:${name}(刷新 dsh 页面生效)`, `Frontend skin switched: ${name} (refresh the dsh page)`)
-      : pick(lang, `已切换启动器皮肤:${name}`, `Launcher skin switched: ${name}`),
-  }
-}
-// Built-in skins cannot be deleted; deleting the active skin falls back to the default.
-const BUILTIN_SKINS = { launcher: ['default', 'cyberpunk-2077', 'night-city-holo'], frontend: ['cyberpunk-2077', 'night-city-holo'] }
-/**
- * The id an installed community skin is written under. A bundled skin is a repo file the UI refuses
- * to delete, so a package that names itself after one would replace it and leave no way back.
- */
-function communitySkinId(raw) {
-  const id = String(raw).replace(/[^\w-]/g, '').slice(0, 40) || 'skin'
-  const builtin = [...BUILTIN_SKINS.launcher, ...BUILTIN_SKINS.frontend]
-  return builtin.includes(id) ? id + '-community' : id
-}
-/**
- * The frontend skin the web UI loads is a copy ($DSH_HOME/frontend-skin.css)
- * taken when the skin was applied. After a suite update changes a bundled skin
- * file the copy would stay stale, so on boot the active skin is re-copied
- * whenever its source differs.
- */
-function syncActiveFrontendSkin() {
-  const name = activeSkin('frontend')
-  if (name === '' || name === 'none') return
-  const file = path.join(SKIN_DIRS.frontend, name + '.css')
-  if (!exists(file)) return
-  try {
-    const src = fs.readFileSync(file, 'utf8')
-    let cur = null
-    try { cur = fs.readFileSync(FRONTEND_SKIN_TARGET, 'utf8') } catch { /* no copy yet */ }
-    if (cur !== src) { fs.copyFileSync(file, FRONTEND_SKIN_TARGET); log('INFO', 'frontend skin copy refreshed', { name }) }
-  } catch (error) { log('ERROR', 'frontend skin sync failed', { name, error: String(error) }) }
-}
-syncActiveFrontendSkin()
-function deleteSkin(target, name, lang) {
-  const safe = String(name ?? '').replace(/[^\w一-龥-]/g, '')
-  if (BUILTIN_SKINS[target].includes(safe)) return { ok: false, message: pick(lang, '内置皮肤不可删除:' + safe, 'Built-in skins cannot be deleted: ' + safe) }
-  const file = path.join(SKIN_DIRS[target], safe + '.css')
-  if (!exists(file)) return { ok: false, message: pick(lang, '皮肤不存在:' + safe, 'Skin not found: ' + safe) }
-  fs.rmSync(file)
-  if (activeSkin(target) === safe) applySkin(target, target === 'launcher' ? 'default' : 'none', lang)
-  log('INFO', 'skin deleted', { target, name: safe })
-  return { ok: true, message: pick(lang, '已删除皮肤:' + safe, 'Skin deleted: ' + safe) }
-}
-
-/**
- * Community skin package in the legacy client-plugin form → plain CSS. The
- * package's client.js is executed by `skin-extract.mjs` in a separate Node
- * process — with the permission model enabled where the runtime supports it
- * (no fs writes, no child processes, no workers) and an 8 s kill timeout — so
- * untrusted package code never runs inside the launcher process. The worker
- * captures every `style.textContent` write and returns the longest one.
- */
-let permissionModel = null
-/**
- * Does this runtime have the permission model? Asked once, of the runtime itself — never inferred
- * from the extraction's own stderr, which the package being extracted controls.
- */
-async function canSandbox() {
-  if (permissionModel === null) {
-    const probe = await run(process.execPath, ['--permission', '-e', '0'], { timeout: 8000, env: { PATH: process.env.PATH ?? '' } })
-    permissionModel = probe.ok
-    if (!probe.ok) log('WARN', 'this Node has no permission model: community skins written as a legacy client.js will not be extracted', { node: process.version })
-  }
-  return permissionModel
-}
-
-/**
- * Extract a legacy skin's CSS by running its `client.js` in a child process.
- *
- * The child's `vm` context is a convenience, not a boundary — untrusted code reaches the outer realm
- * through any constructor it is handed. The boundary is the child process itself: the permission
- * model (no filesystem writes, no child processes, no workers, reads limited to the two files it
- * needs), an environment holding only PATH, and an 8 s kill. It does not cover the network:
- * the launcher API is kept away from that child by the token above, not by the sandbox. There is no unsandboxed fallback: a
- * runtime that cannot enforce that does not run the package's code at all — the earlier fallback
- * fired on a stderr pattern the package could print for itself.
- */
-async function extractSkinCss(clientJsPath) {
-  if (!(await canSandbox())) return ''
-  const script = path.join(ROOT, 'skin-extract.mjs')
-  // `--allow-fs-read` takes a comma-separated list, and the skin's own directory name comes from the
-  // tarball: a comma in either path would split the grant into something other than what was meant.
-  if ([script, clientJsPath].some(p => p.includes(','))) {
-    log('WARN', 'skin extraction skipped: a path contains a comma', { script, clientJsPath })
-    return ''
-  }
-  const r = await run(process.execPath, ['--permission', `--allow-fs-read=${script}`, `--allow-fs-read=${clientJsPath}`, script, clientJsPath], {
-    timeout: 8000,
-    env: { PATH: process.env.PATH ?? '' },
-  })
-  try { return String(JSON.parse(r.stdout).css ?? '') } catch { return '' }
-}
-
-/** Skin manifest v2 (skin.json `contributes`): plain CSS assets plus background media inlined as data URIs into one file. */
-function buildCssFromManifestV2(dir, info) {
-  const read = f => { try { return fs.readFileSync(path.join(dir, f), 'utf8') } catch { return '' } }
-  const c = info.contributes ?? {}
-  let css = read(c.stylesheet ?? 'skin.css')
-  if (c.patches) css += '\n' + read(c.patches)
-  if (css.trim().length === 0) return ''
-  const inline = src => {
-    try {
-      const ext = path.extname(src).slice(1).toLowerCase()
-      const mime = ext === 'svg' ? 'image/svg+xml' : 'image/' + (ext === 'jpg' ? 'jpeg' : ext)
-      return 'url(data:' + mime + ';base64,' + fs.readFileSync(path.join(dir, src)).toString('base64') + ')'
-    } catch { return '' }
-  }
-  const layer = m => {
-    if (m?.type !== 'image' || !m.src) return ''
-    const img = inline(m.src)
-    return img === '' ? '' : (m.scrim ? m.scrim + ', ' : '') + img
-  }
-  const bm = c.backgroundMedia
-  if (bm) {
-    // Mirrors the original skin-center runtime (lib/client.js setBodyBackground / BODY_BG_PROPS):
-    // the image goes straight onto document.body's background-image/size/position/
-    // attachment/repeat — painted above the body colour token, beneath the translucent
-    // panels; the negative-z decoration layer only carries video / Wallpaper Engine media.
-    // Light/dark variants follow the body[data-ds-dark-theme] attribute, not prefers-color-scheme.
-    const light = layer(bm.light ?? bm.dark)
-    const dark = layer(bm.dark ?? bm.light)
-    const bodyBg = v => `background-image:${v};background-size:cover;background-position:center;background-attachment:fixed;background-repeat:no-repeat`
-    if (light) css += `\nbody:not([data-ds-dark-theme]){${bodyBg(light)}}`
-    if (dark) css += `\nbody[data-ds-dark-theme]{${bodyBg(dark)}}`
-  }
-  return css
-}
-
-/**
- * npm skin package → local CSS skin file(s). Supports manifest-v2 asset dirs,
- * the legacy client.js plugin form, aggregator packages with a skins/ folder,
- * plain CSS packages, and shell packages that only depend on skin packages
- * (up to two levels of dependency recursion).
- */
-async function installSkinFromNpm(pkg, lang, depth = 0) {
-  const meta = await (await fetch('https://registry.npmjs.org/' + pkg.replace('/', '%2F') + '/latest', { signal: AbortSignal.timeout(20000) })).json()
-  const tarball = meta?.dist?.tarball
-  if (!tarball) return { ok: false, message: pick(lang, 'npm 上找不到该包', 'Package not found on npm') }
-  const tmp = path.join(os.tmpdir(), 'dsh-skin-' + Date.now())
-  fs.mkdirSync(tmp, { recursive: true })
-  const tgz = path.join(tmp, 'pkg.tgz')
-  fs.writeFileSync(tgz, Buffer.from(await (await fetch(tarball, { signal: AbortSignal.timeout(60000) })).arrayBuffer()))
-  const r = await run('tar', ['-xzf', tgz, '-C', tmp], { timeout: 60000 })
-  if (!r.ok) return { ok: false, message: pick(lang, '解包失败:', 'Extraction failed: ') + r.stderr.slice(0, 120) }
-  const rootDir = path.join(tmp, 'package')
-  const installed = []
-  // 1) single skin or aggregator: directories holding skin.json (+ lib/client.js)
-  const candidates = [rootDir]
-  const skinsDir = path.join(rootDir, 'skins')
-  if (exists(skinsDir)) for (const d of fs.readdirSync(skinsDir)) candidates.push(path.join(skinsDir, d))
-  for (const dir of candidates) {
-    const sj = path.join(dir, 'skin.json')
-    if (!exists(sj)) continue
-    let info = {}
-    try { info = JSON.parse(fs.readFileSync(sj, 'utf8')) } catch { /* metadata is optional for extraction */ }
-    // manifest-v2 asset directories first; fall back to out-of-process extraction of the legacy client.js form
-    let css = info.contributes ? buildCssFromManifestV2(dir, info) : ''
-    if (css.length < 200) {
-      const cj = path.join(dir, 'lib/client.js')
-      if (exists(cj)) {
-        css = await extractSkinCss(cj)
-        if (info.bodyAttr) css = css.split('body[' + info.bodyAttr + ']').join('body').split('[' + info.bodyAttr + ']').join('body')
-      }
-    }
-    if (css.length < 200) continue
-    const id = communitySkinId(String(info.id ?? path.basename(dir)))
-    const head = `/* ${info.name ?? id}${info.nameEn ? ' / ' + info.nameEn : ''} — source: npm ${pkg} (author: ${info.author ?? 'unknown'}) · converted to a CSS skin by DSH Launcher */\n`
-    fs.writeFileSync(path.join(SKIN_DIRS.frontend, id + '.css'), head + css)
-    installed.push(id)
-  }
-  // 2) plain CSS packages: .css files at the package root
-  if (installed.length === 0) {
-    for (const f of fs.readdirSync(rootDir)) {
-      if (!f.endsWith('.css')) continue
-      const id = communitySkinId(f.replace(/\.css$/, ''))
-      fs.copyFileSync(path.join(rootDir, f), path.join(SKIN_DIRS.frontend, id + '.css'))
-      installed.push(id)
-    }
-  }
-  // 3) shell packages (e.g. the retired @linxin666/dsh-skins): recurse into skin-like dependencies (depth < 2 → at most two levels)
-  if (installed.length === 0 && depth < 2) {
-    let deps = {}
-    try { deps = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8')).dependencies ?? {} } catch { /* no package.json */ }
-    for (const dep of Object.keys(deps)) {
-      if (!/skin|theme/i.test(dep)) continue
-      const r2 = await installSkinFromNpm(dep, lang, depth + 1)
-      if (r2.ok && Array.isArray(r2.installed)) installed.push(...r2.installed)
-    }
-  }
-  try { fs.rmSync(tmp, { recursive: true, force: true }) } catch { /* a leftover temp dir is harmless */ }
-  log('INFO', 'skin market install', { pkg, installed, depth })
-  if (installed.length === 0) return { ok: false, message: pick(lang, '包内未发现可转换的皮肤(需 skin.json 资产目录或 .css)', 'No convertible skin found in the package (needs a skin.json asset dir or .css files)'), installed }
-  return {
-    ok: true,
-    installed,
-    message: pick(lang, '已转换为本地 CSS 皮肤:' + installed.join('、') + '(在皮肤管理页切换/删除)', 'Converted to local CSS skins: ' + installed.join(', ') + ' (switch / delete on the Skins page)'),
-  }
-}
-
-function importSkin(target, name, css, lang) {
-  // A hand-imported skin may not take a bundled skin's name either: the UI would then refuse to
-  // delete what the user just imported, and the repo's own file would be gone.
-  const raw = String(name ?? '').replace(/[^\w一-龥-]/g, '').slice(0, 40)
-  const safe = (BUILTIN_SKINS[target] ?? []).includes(raw) ? raw + '-community' : raw
-  if (safe.length === 0 || typeof css !== 'string' || css.length === 0 || css.length > 500000) return { ok: false, message: pick(lang, '名称或 CSS 内容非法', 'Invalid skin name or CSS') }
-  fs.writeFileSync(path.join(SKIN_DIRS[target], safe + '.css'), css)
-  log('INFO', 'skin imported', { target, name: safe, bytes: css.length })
-  return { ok: true, message: pick(lang, `已导入皮肤:${safe}`, `Skin imported: ${safe}`) }
-}
+// ── Skins (./lib/skins.mjs) ───────────────────────────────────────────────────
+const skins = createSkins({ root: ROOT, frontendSkinTarget: FRONTEND_SKIN_TARGET, log })
+const { SKIN_DIRS, listSkins, activeSkin, applySkin, deleteSkin, installSkinFromNpm, importSkin } = skins
+skins.syncActiveFrontendSkin()
 
 // ── Control Deck presets / web search / safety rules / local models ─────────
 const DECK_FILE = path.join(DSH_HOME, 'control-deck.json')
 const PRESET_DIR = path.join(DSH_HOME, 'control-deck-presets')
 const WEBSEARCH_FILE = path.join(DSH_HOME, 'web-search.json')
 const SAFEGUARD_FILE = path.join(DSH_HOME, 'safe-guard.json')
-const readJson = (file, fallback) => { try { return JSON.parse(fs.readFileSync(file, 'utf8')) } catch { return fallback } }
-/** Atomic: a torn config file reads back as "nothing configured" on the next hot reload. */
-const writeJson = (file, value) => {
-  fs.mkdirSync(path.dirname(file), { recursive: true })
-  // The tmp name carries this process id and a random suffix: the launcher and dsh write some of
-  // these files, and a shared name would let one process rename the other's half-written file
-  // into place. A failed rename takes its tmp file with it.
-  const tmp = `${file}.tmp-${process.pid}-${Math.random().toString(36).slice(2, 8)}`
-  try {
-    fs.writeFileSync(tmp, JSON.stringify(value, null, 2))
-    fs.renameSync(tmp, file)
-  } catch (error) {
-    try { fs.unlinkSync(tmp) } catch { /* already gone */ }
-    throw error
-  }
-}
-/**
- * Files under DSH_HOME the suite considers "configuration" (exact names, and a few directories by extension, depth-limited).
- * Credentials (.credentials.yaml), session logs, storages and node_modules are deliberately outside the list.
- */
-const BACKUP_FILES = ['settings.yaml', 'control-deck.json', 'web-search.json', 'safe-guard.json', 'local-reasoning.json', 'memory-lite.json', 'memory/memory.json', 'frontend-skin.css', 'profiles/web/cordis.patch.yml', 'profiles/headless/cordis.patch.yml']
-const BACKUP_DIRS = [{ dir: 'control-deck-presets', ext: ['.json'], depth: 1 }, { dir: 'skills', ext: ['.md'], depth: 2 }, { dir: 'hooks', ext: ['.json'], depth: 1 }]
-const BACKUP_FILE_CAP = 2 * 1048576
-const BACKUP_TOTAL_CAP = 8 * 1048576
-const BACKUP_MAX_FILES = 500
-/** Whether a bundle key names a file the backup whitelist covers (forward slashes, no traversal, no absolute paths). */
-function backupKeyAllowed(rel) {
-  if (typeof rel !== 'string' || rel.length === 0 || rel.length > 300) return false
-  if (rel.includes('\\') || rel.startsWith('/') || /^[A-Za-z]:/.test(rel)) return false
-  // no empty / dot segments, no NTFS alternate data streams (`name:stream`), no reserved device names (CON, NUL, COM1 …)
-  if (rel.split('/').some(seg => seg === '' || seg === '.' || seg === '..' || seg.includes(':') || seg !== seg.trim() || /[. ]$/.test(seg) || /^(con|prn|aux|nul|conin\$|conout\$|com[0-9¹²³]|lpt[0-9¹²³])$/i.test(seg.split('.')[0].trimEnd()))) return false
-  if (BACKUP_FILES.includes(rel)) return true
-  for (const d of BACKUP_DIRS) {
-    if (!rel.startsWith(d.dir + '/')) continue
-    const rest = rel.slice(d.dir.length + 1)
-    if (rest.split('/').length > d.depth) return false
-    return d.ext.some(ext => rel.toLowerCase().endsWith(ext))
-  }
-  return false
-}
-function collectBackup(previewOnly) {
-  const files = {}
-  const entries = []
-  let total = 0
-  const add = rel => {
-    const abs = path.join(DSH_HOME, rel)
-    let st
-    try { st = fs.statSync(abs) } catch { return }
-    if (!st.isFile()) return
-    if (entries.filter(e => !e.skipped).length >= BACKUP_MAX_FILES) { entries.push({ rel, size: st.size, skipped: 'too many files' }); return }
-    if (st.size > BACKUP_FILE_CAP || total + st.size > BACKUP_TOTAL_CAP) { entries.push({ rel, size: st.size, skipped: 'too large' }); return }
-    let content = null
-    if (!previewOnly) { try { content = fs.readFileSync(abs, 'utf8') } catch (error) { entries.push({ rel, size: st.size, skipped: 'unreadable: ' + String(error?.code ?? error) }); return } }
-    total += st.size
-    entries.push({ rel, size: st.size })
-    if (content !== null) files[rel] = content
-  }
-  for (const rel of BACKUP_FILES) add(rel)
-  for (const d of BACKUP_DIRS) {
-    const walk = (dirRel, depth) => {
-      let names = []
-      try { names = fs.readdirSync(path.join(DSH_HOME, dirRel), { withFileTypes: true }) } catch { return }
-      for (const ent of names) {
-        const rel = dirRel + '/' + ent.name
-        if (ent.isDirectory()) { if (depth < d.depth) walk(rel, depth + 1); continue }
-        if (ent.isFile() && backupKeyAllowed(rel)) add(rel)
-      }
-    }
-    walk(d.dir, 1)
-  }
-  return { version: 1, createdAt: new Date().toISOString(), entries, total, ...(previewOnly ? {} : { files }) }
-}
-function restoreBackup(body, lang) {
-  const files = body && typeof body.files === 'object' && !Array.isArray(body.files) ? body.files : null
-  if (!files) return { ok: false, message: pick(lang, '备份文件格式不对:缺少 files 对象', 'Not a backup bundle: files object missing') }
-  const keys = Object.keys(files)
-  if (keys.length === 0) return { ok: false, message: pick(lang, '备份里没有文件', 'The bundle holds no files') }
-  if (keys.length > BACKUP_MAX_FILES) return { ok: false, message: pick(lang, `备份里文件过多(${keys.length} > ${BACKUP_MAX_FILES})`, `Too many files in the bundle (${keys.length} > ${BACKUP_MAX_FILES})`) }
-  const home = path.resolve(DSH_HOME)
-  const written = []
-  const skipped = []
-  let saved = 0
-  const stamp = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '-')
-  const saveDir = path.join(DSH_HOME, 'backups', 'before-restore-' + stamp)
-  for (const rel of keys) {
-    const content = files[rel]
-    if (!backupKeyAllowed(rel) || typeof content !== 'string' || Buffer.byteLength(content, 'utf8') > BACKUP_FILE_CAP) { skipped.push(rel); continue }
-    const abs = path.resolve(home, rel)
-    const inside = path.relative(home, abs)
-    if (inside === '' || inside.startsWith('..') || path.isAbsolute(inside)) { skipped.push(rel); continue }
-    try {
-      if (fs.existsSync(abs)) { const keep = path.join(saveDir, rel); fs.mkdirSync(path.dirname(keep), { recursive: true }); fs.copyFileSync(abs, keep); saved++ }
-      fs.mkdirSync(path.dirname(abs), { recursive: true })
-      const tmp = abs + '.tmp-' + process.pid + '-' + Math.random().toString(36).slice(2, 8)
-      try {
-        fs.writeFileSync(tmp, content)
-        fs.renameSync(tmp, abs)
-      } catch (error) {
-        try { fs.unlinkSync(tmp) } catch { /* already gone */ }
-        throw error
-      }
-      written.push(rel)
-    } catch (error) { skipped.push(rel + ' (' + String(error?.message ?? error).slice(0, 80) + ')') }
-  }
-  if (written.length === 0) return { ok: false, written, skipped, message: pick(lang, `没有恢复任何文件(跳过 ${skipped.length} 个:不在白名单或写入失败)`, `Nothing was restored (${skipped.length} skipped: not whitelisted or failed to write)`) }
-  const restartNeeded = written.some(rel => rel.startsWith('profiles/') || rel.startsWith('hooks/'))
-  const skippedNote = skipped.length ? pick(lang, ',跳过 ' + skipped.length + ' 个', ', skipped ' + skipped.length) : ''
-  const savedNote = saved > 0 ? pick(lang, ';原文件已备份到 ' + saveDir, '; previous copies saved to ' + saveDir) : ''
-  const restartNote = restartNeeded ? pick(lang, ';profile 补丁 / hooks 需要重启 dsh 才生效', '; profile patches / hooks take effect after a dsh restart') : ''
-  return {
-    ok: true, written, skipped, savedTo: saved > 0 ? saveDir : '',
-    message: pick(lang, '已恢复 ' + written.length + ' 个文件' + skippedNote + savedNote + '。settings.yaml / 甲板 / 联网搜索 / 安全规则 / 记忆由 dsh 热载' + restartNote + '。', 'Restored ' + written.length + ' file(s)' + skippedNote + savedNote + '. settings.yaml / deck / web search / safety / memory hot-reload in dsh' + restartNote + '.'),
-  }
-}
+// backup whitelist, bundle and restore: ./lib/backup.mjs
+const { collectBackup, restoreBackup } = createBackup({ dshHome: DSH_HOME })
+
 const safePresetName = s => { const n = String(s ?? '').replace(/[^\w一-龥 .-]/g, '').trim().replace(/\.+$/, '').slice(0, 40); return /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i.test(n) ? '' : n }
 const listPresets = () => { try { return fs.readdirSync(PRESET_DIR).filter(f => f.endsWith('.json')).map(f => f.replace(/\.json$/, '')) } catch { return [] } }
 /** Lazily import the Control Deck's pure modules (SillyTavern conversions, config normaliser) from the suite plugins. */
@@ -1051,6 +587,15 @@ async function api(req, res, url) {
     return send(200, { local, ...(await upstreamLatest()) })
   }
   if (p === '/api/selfcheck') return send(200, await selfCheck())
+  // Session logs the 0.1.5 core refuses (plugin source members from 0.1.1): the repair script, with dsh stopped.
+  // The script itself refuses while something listens on the dsh port, so a running dsh answers with exit code 2.
+  if (p === '/api/sessions/repair' && req.method === 'POST') {
+    const body = await readBody(req)
+    const dryRun = body.dryRun !== false
+    const r = await run(process.execPath, [path.join(ROOT, 'repair-session-sources.mjs'), ...(dryRun ? ['--dry-run'] : [])], { cwd: SUITE, timeout: 600000, env: { ...process.env, DSH_HOME, DSH_WEB_PORT: String(DSH_PORT) } })
+    log('INFO', 'session repair', { dryRun, ok: r.ok, code: r.code })
+    return send(200, { ok: r.ok, exitCode: r.code, dryRun, output: (r.stdout + (r.stderr ? '\n' + r.stderr : '')).trim().slice(-20000) })
+  }
 
   if (p === '/api/tokens') {
     // Claude-Code-style usage analytics: range=all|30|7 → overview, 26-week heatmap, per-model and daily tables.

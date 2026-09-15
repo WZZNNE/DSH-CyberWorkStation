@@ -1,3 +1,33 @@
+# Suite files are LF in the repo and in the working tree (the vendored core/ carries its own .gitattributes).
 # Batch files must be CRLF on disk regardless of the user autocrlf setting; cmd.exe misparses some LF-only constructs.
+launcher/** text=auto eol=lf
+plugins/** text=auto eol=lf
+skills/** text=auto eol=lf
+dsh-skills/** text=auto eol=lf
+docs/** text=auto eol=lf
+*.md text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+# after the directory globs: the last matching line wins, and these must stay CRLF everywhere
 *.cmd text eol=crlf
 *.bat text eol=crlf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+LICENSE text eol=lf
+*.webp binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.exe binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.mp3 binary
+*.wav binary

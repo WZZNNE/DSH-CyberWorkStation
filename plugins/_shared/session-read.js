@@ -4,9 +4,9 @@
  * `{ header, revision, eventCount?, sizeBytes? }` snapshots and a full log is read through
  * `open(id, 'read')` → `read(0)` → `close()`; the 0.1.1 `inspect(id)` / `listSnapshots()` calls
  * are gone. The helpers below speak the new surface first and fall back to the old one, so an
- * older core or a test double keeps working. Copied verbatim into every suite plugin that reads
- * sessions (memory-lite, chat-editor, desktop-pet, drop-files, temp-chat, control-deck) — suite
- * plugins do not import each other.
+ * older core or a test double keeps working. Part of `@dsh-suite/kit`: imported as
+ * `@dsh-suite/kit/session-read` by every suite plugin that reads sessions (memory-lite, chat-editor,
+ * desktop-pet, drop-files, temp-chat, control-deck) through the junction `launcher/peer-links.mjs` creates.
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

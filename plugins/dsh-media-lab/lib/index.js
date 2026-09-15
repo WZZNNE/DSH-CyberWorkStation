@@ -21,6 +21,7 @@ import { defineTool } from '@deepseek-ai/dsh-tools'
 import { IMAGE_RESOLUTION_TIERS, KINDS, adapterFor, extFor, runTask } from './adapters.js'
 import { DEFAULT_CONFIG, KEY_ENVS, describeProviders, keyEnvFor, normalizeConfig, validateConfig } from './config.js'
 import { scoutModels } from './model-scout.js'
+import { rejectCrossSite, json, readBody as kitReadBody } from '@dsh-suite/kit/fence'
 
 export const name = 'media-lab'
 export const inject = ['tools', 'systemPrompt', 'webServer']
@@ -29,6 +30,7 @@ const DSH_HOME = resolveDshHome()
 const CONFIG_FILE = join(DSH_HOME, 'media-lab.json')
 const MEDIA_DIR = join(DSH_HOME, 'media')
 const MAX_BODY = 256 * 1024
+const readBody = (req, limit = MAX_BODY) => kitReadBody(req, limit)
 // /generate alone: room for reference images, which ride in the body as data: URLs. One reference
 // may not be the whole body — the tier a pet's canon drawing needs is ~1.5 MB at 1024².
 const GENERATE_MAX_BODY = 6 * 1024 * 1024
@@ -402,11 +404,9 @@ export function apply(ctx) {
     }
   }
 
-  const fileLine = value => `${value.file}${value.bytes ? ` (${(value.bytes / 1024).toFixed(0)} KB)` : ''}`
 
   // github.com/openai/openai-openapi: CreateSpeechRequest.input is maxLength 4096.
   const TTS_MAX_INPUT = 4096
-  const PROMPT_MAX = 4000
 
   const TOOLS = {
     image: () => defineTool({
@@ -510,52 +510,6 @@ export function apply(ctx) {
     }),
   }
 
-  // ── routes ───────────────────────────────────────────────────────────────
-  const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
-  const hostOf = req => { const h = String(req.headers.host ?? '').trim().toLowerCase(); const m = /^\[([^\]]+)\](?::\d+)?$/.exec(h); return m ? `[${m[1]}]` : h.replace(/:\d+$/, '') }
-  const rejectCrossSite = req => {
-    if (!LOOPBACK_HOSTS.has(hostOf(req))) return true
-    const site = String(req.headers['sec-fetch-site'] ?? '')
-    if (site === 'cross-site' || site === 'same-site') return true   // another local port is not us
-    const origin = req.headers.origin
-    if (typeof origin === 'string' && origin.length > 0) {
-      // compare the whole authority, like the core's own trust check: another port is another origin
-      try { if (new URL(origin).host.toLowerCase() !== String(req.headers.host ?? '').toLowerCase()) return true } catch { return true }
-    }
-    if (req.method === 'POST' && !/^application\/json/i.test(String(req.headers['content-type'] ?? ''))) return true
-    return false
-  }
-  // `limit` defaults to the small cap every JSON route needs; /generate raises it for reference images.
-  const readBody = (req, limit = MAX_BODY) => new Promise((resolve, reject) => {
-    const chunks = []
-    let bytes = 0
-    let over = false
-    let settled = false
-    const fail = (status, message) => { if (!settled) { settled = true; reject(Object.assign(new Error(message), { status })) } }
-    // A declared length over the limit is refused before a byte is buffered or drained.
-    const declared = Number(req.headers?.['content-length'])
-    if (Number.isFinite(declared) && declared > limit) { req.resume(); fail(413, 'body too large'); return }
-    req.on('data', c => {
-      if (over) return
-      const buf = Buffer.isBuffer(c) ? c : Buffer.from(c)
-      bytes += buf.length
-      if (bytes > limit) { over = true; chunks.length = 0; req.resume(); fail(413, 'body too large'); return }
-      chunks.push(buf)
-    })
-    req.on('end', () => {
-      if (over || settled) return
-      settled = true
-      const text = Buffer.concat(chunks).toString('utf8')
-      try {
-        const value = text ? JSON.parse(text) : {}
-        if (value === null || typeof value !== 'object' || Array.isArray(value)) { reject(Object.assign(new Error('JSON body must be an object'), { status: 400 })); return }
-        resolve(value)
-      } catch { reject(Object.assign(new Error('invalid JSON body'), { status: 400 })) }
-    })
-    req.on('aborted', () => fail(400, 'request aborted'))
-    req.on('error', () => fail(400, 'request error'))
-  })
-  const json = (res, code, data) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(data)) }
 
   const status = async () => {
     // Wait for the credential-ref helper like every other lookup: without this the first status
@@ -577,6 +531,7 @@ export function apply(ctx) {
     return { ok: true, config: shown, providers: describeProviders(), keys, keyWritable, mediaDir: MEDIA_DIR }
   }
 
+  // ── routes ───────────────────────────────────────────────────────────────
   const route = async (req, res) => {
     let url
     // Inside the try in spirit: an absolute-form target that will not parse is a 400, not a

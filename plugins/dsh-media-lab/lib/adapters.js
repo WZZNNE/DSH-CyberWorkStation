@@ -923,7 +923,7 @@ const custom = {
       expect: cfg.resultType === 'binary' ? 'binary' : 'json',
     }
   },
-  read(payload, task, cfg, key) {
+  read(payload, task, cfg, _key) {
     if (payload.status >= 400) return { error: errorText(payload.json, payload.status) }
     const type = cfg.resultType ?? 'base64'
     if (type === 'binary') {

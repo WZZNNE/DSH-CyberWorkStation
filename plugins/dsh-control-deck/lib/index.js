@@ -35,7 +35,8 @@ import { join, basename } from 'node:path'
 import { normalizeDeck, compileRules, brokenRules, expandMacros, neutralizeBraces, displayRules, requiredHistoryDepth } from './deck.js'
 import { createDeckRunner } from './deck-runner.js'
 import { visibleConversationHistory } from './history.js'
-import { liveEvents } from './session-read.js'
+import { liveEvents } from '@dsh-suite/kit/session-read'
+import { isLoopbackRequest, refuse, json } from '@dsh-suite/kit/fence'
 
 export const name = 'control-deck'
 // webServer is NOT required: a headless profile has none, and the deck's prompts/tools still apply there.
@@ -49,7 +50,6 @@ export function apply(ctx) {
   // Kept for `/status` and for the "is there anything to do" gates; the worker re-filters
   // `deck.regex` itself, because it is the one that applies them.
   let userRules = []
-  let loreRules = []
   /**
    * The deck's rules and lorebook keys are user-authored (a SillyTavern import brings in other
    * people's) and they run against whatever the user just typed, on the agent's hot path, where a
@@ -161,7 +161,6 @@ export function apply(ctx) {
     skipped.length = 0
     if (JSON.stringify(deck.lorebook.map(e => [e.uid, e.name])) !== loreShape) { loreState.clear(); loreShape = JSON.stringify(deck.lorebook.map(e => [e.uid, e.name])) }
     userRules = compileRules(deck.regex, 'user_input')
-    loreRules = compileRules(deck.regex, 'world_info')
     for (const d of promptDisposers) { try { d() } catch { /* already disposed */ } }
     promptDisposers = []
     sectionErrors = []
@@ -306,14 +305,8 @@ export function apply(ctx) {
   })
 
   // Browser half support + diagnostics for the launcher.
-  const json = (res, code, data) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(data)) }
-  // A GET-only, no-CORS route still answers a DNS-rebinding page, which is same-origin to the
-  // browser: the Host header is what tells us the request really came to a loopback address. This
-  // route reports the whole deck, so it is worth the four lines.
-  const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
-  const hostOf = req => { const h = String(req.headers.host ?? '').trim().toLowerCase(); const m = /^\[([^\]]+)\](?::\d+)?$/.exec(h); return m ? `[${m[1]}]` : h.replace(/:\d+$/, '') }
   const route = (req, res) => {
-    if (!LOOPBACK_HOSTS.has(hostOf(req))) { req.resume?.(); res.writeHead(403); return res.end() }
+    if (!isLoopbackRequest(req)) return refuse(req, res)
     const url = new URL(req.url, 'http://127.0.0.1')
     if (req.method === 'GET' && url.pathname === '/dsh-control-deck/display-regex.json') return json(res, 200, { rules: displayRules(deck.regex) })
     if (req.method === 'GET' && url.pathname === '/dsh-control-deck/status') {

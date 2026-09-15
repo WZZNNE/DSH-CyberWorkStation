@@ -217,6 +217,17 @@ $('#btn-update-tag').addEventListener('click', async () => {
   toast((await api('/api/update/core-tag', { tag })).message); pollUpdate()
 })
 $('#btn-selfcheck').addEventListener('click', refreshSelfCheck)
+// Session logs the core refuses: preview never touches a file; the repair runs only while dsh is stopped
+// (the script refuses otherwise, exit code 2).
+async function runSessionRepair(dryRun) {
+  const box = $('#repair-log')
+  box.textContent = T('t_calc')
+  const r = await api('/api/sessions/repair', { dryRun })
+  box.textContent = (r.output || r.message || '—').trim()
+  toast(r.exitCode === 2 ? T('repair_refused') : r.exitCode === 3 ? T('repair_locked') : r.ok ? (dryRun ? T('repair_previewed') : T('repair_done')) : T('repair_failed'))
+}
+$('#btn-repair-preview').addEventListener('click', () => runSessionRepair(true))
+$('#btn-repair-run').addEventListener('click', () => { if (!confirm(T('t_confirm_repair'))) return; runSessionRepair(false) })
 
 // ── Tokens (Claude-Code-style Overview / Models, All / 30d / 7d, heatmap) ────
 const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(n)

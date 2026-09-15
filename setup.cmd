@@ -80,7 +80,7 @@ popd
 
 echo [5/6] 链接插件所需的本体包(peer links)...
 set "DSH_REPO=%CORE%"
-node "%SUITE%launcher\peer-links.mjs"
+node "%SUITE%launcher\peer-links.mjs" || (echo peer links failed: the plugins cannot resolve the core packages or @dsh-suite/kit ^(see the JSON above^) && exit /b 1)
 
 rem The in-dsh skills (skin studio, control deck authoring, desktop pet) go into the user skill root.
 if not exist "%DSH_HOME%\skills\skin-studio" mkdir "%DSH_HOME%\skills\skin-studio"

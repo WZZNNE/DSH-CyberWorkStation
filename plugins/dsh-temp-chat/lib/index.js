@@ -12,11 +12,12 @@
  * of sessions the user selects, and the launcher lists them.
  */
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
-import { inboxHasPending } from './session-read.js'
+import { inboxHasPending } from '@dsh-suite/kit/session-read'
 import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
+import { rejectCrossSite, json, readBody as kitReadBody } from '@dsh-suite/kit/fence'
 
 export const name = 'temp-chat'
 export const inject = ['sessions', 'agents', 'workspaceRegistry']
@@ -28,7 +29,7 @@ const USER_PRESET_DIR = join(DSH_HOME, '.agent-presets', PRESET_ID)
 const HERE = dirname(fileURLToPath(import.meta.url))
 const SHIPPED_PRESET = join(HERE, '..', 'presets', PRESET_ID, 'agent.cordis.yml')
 const MAX_BODY = 64 * 1024
-const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
+const readBody = (req, limit = MAX_BODY) => kitReadBody(req, limit)
 const FOLDER = /^tmp-[0-9]{8}-[0-9]{6}-[0-9a-f]{6}$/
 // Above this many resident temp agents, the plugin starts releasing the ones whose session has left
 // the store (the user closed it) — a handle is never disposed while its session is still open.
@@ -221,48 +222,8 @@ export function apply(ctx) {
     return { ok: true, removed: true, path }
   }
 
-  // ── HTTP ──
-  const hostOf = req => { const h = String(req.headers.host ?? '').trim().toLowerCase(); const m = /^\[([^\]]+)\](?::\d+)?$/.exec(h); return m ? `[${m[1]}]` : h.replace(/:\d+$/, '') }
-  const rejectCrossSite = req => {
-    if (!LOOPBACK_HOSTS.has(hostOf(req))) return true
-    const site = String(req.headers['sec-fetch-site'] ?? '')
-    if (site === 'cross-site' || site === 'same-site') return true   // another local port is not us
-    const origin = req.headers.origin
-    if (typeof origin === 'string' && origin.length > 0) {
-      // the whole authority, like the core's own trust check: another port is another origin
-      try { if (new URL(origin).host.toLowerCase() !== String(req.headers.host ?? '').toLowerCase()) return true } catch { return true }
-    }
-    if (req.method === 'POST' && !/^application\/json/i.test(String(req.headers['content-type'] ?? ''))) return true
-    return false
-  }
-  const readBody = req => new Promise((resolve, reject) => {
-    const chunks = []
-    let bytes = 0
-    let over = false
-    let settled = false
-    const failWith = (status, message) => { if (!settled) { settled = true; reject(Object.assign(new Error(message), { status })) } }
-    req.on('data', c => {
-      if (over) return
-      const buf = Buffer.isBuffer(c) ? c : Buffer.from(c)
-      bytes += buf.length
-      if (bytes > MAX_BODY) { over = true; chunks.length = 0; req.resume(); failWith(413, 'body too large'); return }
-      chunks.push(buf)
-    })
-    req.on('end', () => {
-      if (over || settled) return
-      settled = true
-      const text = Buffer.concat(chunks).toString('utf8')
-      try {
-        const value = text ? JSON.parse(text) : {}
-        if (value === null || typeof value !== 'object' || Array.isArray(value)) { reject(Object.assign(new Error('JSON body must be an object'), { status: 400 })); return }
-        resolve(value)
-      } catch { reject(Object.assign(new Error('invalid JSON body'), { status: 400 })) }
-    })
-    req.on('aborted', () => failWith(400, 'request aborted'))
-    req.on('error', () => failWith(400, 'request error'))
-  })
-  const json = (res, code, data) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(data)) }
 
+  // ── HTTP ──
   const route = async (req, res) => {
     const url = new URL(req.url, 'http://127.0.0.1')
     const p = url.pathname

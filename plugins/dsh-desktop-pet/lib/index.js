@@ -19,7 +19,7 @@
  * this file executes only after checking the permission level. See `pet.js`.
  */
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
-import { listStoredSessions, liveEvents, readStoredSession } from './session-read.js'
+import { listStoredSessions, liveEvents, readStoredSession } from '@dsh-suite/kit/session-read'
 import { execFile, spawn } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, unlinkSync, watchFile, unwatchFile, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -28,6 +28,7 @@ import { randomBytes } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { chat } from './chat.js'
 import { buildDigest, orderSessions, profileMessages, titleOf } from './history.js'
+import { rejectCrossSite, json, readBody as kitReadBody } from '@dsh-suite/kit/fence'
 import {
   CONTROL_TAGS, FREQUENCIES, MAX_LORE, MAX_PETS, MAX_MESSAGES, activateLore, applyInputBudget, buildSystemPrompt, dueSchedules, normalizeConfig,
   frameName, normalizeLoreEntry, normalizePet, parseIntents, parsePoint, parseSchedule, pickInterval, proactiveSeed, readReply, splitVoiceTags, trimMessages,
@@ -51,6 +52,7 @@ const LOCAL = `http://127.0.0.1:${DSH_PORT}`
 // bytes: the body cap must be the larger of the two, or the friendly per-file refusal never fires.
 const MAX_ASSET_BYTES = 20 * 1024 * 1024
 const MAX_BODY = Math.ceil(MAX_ASSET_BYTES * 1.4)
+const readBody = (req, limit = MAX_BODY) => kitReadBody(req, limit)
 const CSC = 'C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe'
 const HERE = join(fileURLToPath(new URL('.', import.meta.url)))
 const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif'])
@@ -644,7 +646,7 @@ export function apply(ctx) {
     if (kind === 'type' || kind === 'key') {
       const raw = String(action.arg ?? action.text ?? '')
       if (raw.length === 0 || raw.length > 500) throw new Error('nothing to type (or too long)')
-      const keys = kind === 'key' ? toSendKeys(raw) : raw.replace(/([+^%~(){}\[\]])/g, '{$1}')
+      const keys = kind === 'key' ? toSendKeys(raw) : raw.replace(/([+^%~(){}[\]])/g, '{$1}')
       const script = `Add-Type -AssemblyName System.Windows.Forms;[System.Windows.Forms.SendKeys]::SendWait(${psText(keys)})`
       await runPowerShell(script)
       return `${kind}: ${raw.slice(0, 60)}`
@@ -983,7 +985,7 @@ export function apply(ctx) {
   }
 
   /** Execute one tag. Returns a note, or `{ note, followUp, images }` when the pet should react. */
-  async function runIntent(pet, intent, { visible, round = 0, isTainted = false }) {
+  async function runIntent(pet, intent, { visible, isTainted = false }) {
     if (intent.kind === 'screen') {
       // A [screen] tag that appears after the pet has read something is asked for explicitly,
       // even at "full access" — the same rule the control tags follow, for the same reason.
@@ -1389,8 +1391,6 @@ export function apply(ctx) {
   }
 
   // ── routes ────────────────────────────────────────────────────────────────
-  const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
-  const hostOf = req => { const h = String(req.headers.host ?? '').trim().toLowerCase(); const m = /^\[([^\]]+)\](?::\d+)?$/.exec(h); return m ? `[${m[1]}]` : h.replace(/:\d+$/, '') }
   /** `String(x)` throws on `{"toString":1}`, which is valid JSON: a body field is read through this. */
   const text = value => {
     if (typeof value === 'string') return value
@@ -1398,45 +1398,6 @@ export function apply(ctx) {
     return ''
   }
 
-  const rejectCrossSite = req => {
-    if (!LOOPBACK_HOSTS.has(hostOf(req))) return true
-    const site = String(req.headers['sec-fetch-site'] ?? '')
-    if (site === 'cross-site' || site === 'same-site') return true   // another local port is not us
-    const origin = req.headers.origin
-    if (typeof origin === 'string' && origin.length > 0) {
-      // the whole authority, like the core's own trust check: another port is another origin
-      try { if (new URL(origin).host.toLowerCase() !== String(req.headers.host ?? '').toLowerCase()) return true } catch { return true }
-    }
-    if (req.method === 'POST' && !/^application\/json/i.test(String(req.headers['content-type'] ?? ''))) return true
-    return false
-  }
-  const readBody = req => new Promise((resolve, reject) => {
-    const chunks = []
-    let bytes = 0
-    let over = false
-    let settled = false
-    const fail = (status, message) => { if (!settled) { settled = true; reject(Object.assign(new Error(message), { status })) } }
-    req.on('data', c => {
-      if (over) return
-      const buf = Buffer.isBuffer(c) ? c : Buffer.from(c)
-      bytes += buf.length
-      if (bytes > MAX_BODY) { over = true; chunks.length = 0; req.resume(); fail(413, 'body too large'); return }
-      chunks.push(buf)
-    })
-    req.on('end', () => {
-      if (over || settled) return
-      settled = true
-      const text = Buffer.concat(chunks).toString('utf8')
-      try {
-        const value = text ? JSON.parse(text) : {}
-        if (value === null || typeof value !== 'object' || Array.isArray(value)) { reject(Object.assign(new Error('JSON body must be an object'), { status: 400 })); return }
-        resolve(value)
-      } catch { reject(Object.assign(new Error('invalid JSON body'), { status: 400 })) }
-    })
-    req.on('aborted', () => fail(400, 'request aborted'))
-    req.on('error', () => fail(400, 'request error'))
-  })
-  const json = (res, code, data) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(data)) }
 
   /** The pets as a caller that is not the panel may see them: no distilled profile, no persona. */
   const redactPet = pet => ({
@@ -1962,7 +1923,7 @@ export function apply(ctx) {
         return json(res, 200, { ok: true, parts: made, complete, theme: petById(pet.id).theme })
       }
       if (p === '/dsh-desktop-pet/asset') {
-        const name = String(body.name ?? 'material').replace(/[^\w.\-]/g, '_').replace(/^\.+/, '').slice(0, 60)
+        const name = String(body.name ?? 'material').replace(/[^\w.-]/g, '_').replace(/^\.+/, '').slice(0, 60)
         if (name.length === 0 || name === '.' || name.includes('..')) return json(res, 400, { ok: false, message: 'that file name cannot be used' })
         const data = String(body.base64 ?? '')
         if (data.length === 0) return json(res, 400, { ok: false, message: 'no file content' })

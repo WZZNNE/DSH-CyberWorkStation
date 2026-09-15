@@ -20,8 +20,6 @@ import { spawnSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { readFileSync, writeFileSync, existsSync, unlinkSync, readdirSync } from 'node:fs'
-import { readFile } from 'node:fs/promises'
-import { fileURLToPath } from 'node:url'
 import { runChannels, probeOllama, channelKey } from './channels.js'
 import { createLru, descriptionCacheKey } from './cache.js'
 import { EvidenceStore } from './evidence.js'
@@ -958,12 +956,10 @@ export function apply(ctx, config) {
       const src = await resolveImageBytes(ref);
       if (!src) throw new Error('vision_long_ocr: cannot read image');
       if (exec && exec.signal && exec.signal.aborted) throw new Error('vision_long_ocr: cancelled');
-      const BUDGET_MS = 120000, CHUNK_CAP = 40
+      const CHUNK_CAP = 40
       // ponytail: no sharp dep — single-pass within budget. Upgrade: if sharp is
       // installed, slice the image into ≤CHUNK_CAP vertical bands of
       // `chunkHeight` px, OCR each with stop-on-first-backend-failure, stitch.
-      const deadline = Date.now() + BUDGET_MS
-      const remaining = deadline - Date.now()
       const { description } = await callVisionModelWithBytes(
         src.bytes, src.contentType,
         'This is a long screenshot. Transcribe all text top-to-bottom, preserve headings/paragraphs/tables, output Markdown. If content repeats across chunks, deduplicate.',
@@ -1028,7 +1024,6 @@ export function apply(ctx, config) {
       const ref = attachmentById.get(String(attachmentId)); if (!ref) throw new Error(`vision_ocr_local: unknown ${attachmentId}`)
       const src = await resolveImageBytes(ref); if (!src) throw new Error('vision_ocr_local: cannot read')
       const inFile = join(tmpdir(), `vbocr-${Date.now()}.png`)
-      const outFile = inFile.replace(/\.png$/, '')
       writeFileSync(inFile, src.bytes)
       const args = [inFile, 'stdout', '-l', (lang || 'eng+rus'), '--psm', String(psm || 3)]
       const r = spawnSync('tesseract', args, { timeout: config.timeoutMs, encoding: 'utf8' })
@@ -1150,7 +1145,7 @@ export function apply(ctx, config) {
       const ref = attachmentById.get(String(attachmentId)); if (!ref) throw new Error(`vision_materialize: unknown ${attachmentId}`);
       const src = await resolveImageBytes(ref); if (!src) throw new Error('vision_materialize: cannot read');
       const fs = ctx.get('fs'); if (!fs) throw new Error('vision_materialize: fs unavailable');
-      const safeName = String(filename || `vision-${attachmentId}.png`).replace(/[^\w.\-]+/g, '_').slice(0, 100);
+      const safeName = String(filename || `vision-${attachmentId}.png`).replace(/[^\w.-]+/g, '_').slice(0, 100);
       const target = await fs.create(safeName, {});
       await fs.writeBytes(target, src.bytes);
       return { path: String(target.path ?? target ?? '') };

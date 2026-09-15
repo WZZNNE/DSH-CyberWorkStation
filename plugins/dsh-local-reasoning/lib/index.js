@@ -43,6 +43,7 @@ import { readFileSync, writeFileSync, mkdirSync, watchFile, unwatchFile } from '
 import { join, dirname } from 'node:path'
 import { classifyModel, recommend, recommendContext, toggleSuffix, parseEffortSpec, assertServiceableEfforts, LEVELS } from './families.js'
 import { isLocalBaseUrl, originOf, probeOrigin } from './detect.js'
+import { rejectCrossSite, json, readBody as kitReadBody } from '@dsh-suite/kit/fence'
 
 export const name = 'local-reasoning'
 export const inject = ['settings', 'webServer', 'llm']
@@ -81,6 +82,7 @@ const DS_FALLBACK_DEFAULTS = [
 const THINKING_MODES = ['auto', 'on', 'off', 'follow-picker']
 const ROUTE_APIS = ['openai-completions', 'openai-responses']
 const MAX_BODY = 64 * 1024
+const readBody = (req, limit = MAX_BODY) => kitReadBody(req, limit)
 const AUTO_TEACH_DELAY_MS = 4000
 
 /** @param {import('@deepseek-ai/cordis').Context} ctx */
@@ -532,52 +534,11 @@ export function apply(ctx) {
   })
 
   // ── HTTP routes for the launcher ──
-  // Byte-exact body reader: Buffers are concatenated and decoded once (multibyte characters may straddle
-  // socket reads), the cap counts bytes, and an oversized body is drained so the 413 can be answered.
-  const readBody = req => new Promise((resolve, reject) => {
-    const chunks = []
-    let bytes = 0
-    let over = false
-    let settled = false
-    const fail = (status, message) => { if (!settled) { settled = true; reject(Object.assign(new Error(message), { status })) } }
-    req.on('data', c => {
-      if (over) return
-      const buf = Buffer.isBuffer(c) ? c : Buffer.from(c)
-      bytes += buf.length
-      if (bytes > MAX_BODY) { over = true; chunks.length = 0; req.resume(); fail(413, 'body too large'); return }
-      chunks.push(buf)
-    })
-    req.on('end', () => {
-      if (over || settled) return
-      settled = true
-      const text = Buffer.concat(chunks).toString('utf8')
-      try {
-        const value = text ? JSON.parse(text) : {}
-        if (value === null || typeof value !== 'object' || Array.isArray(value)) { reject(Object.assign(new Error('JSON body must be an object'), { status: 400 })); return }
-        resolve(value)
-      } catch { reject(Object.assign(new Error('invalid JSON body'), { status: 400 })) }
-    })
-    req.on('aborted', () => fail(400, 'request aborted'))
-    req.on('error', () => fail(400, 'request error'))
-  })
-  const json = (res, code, data) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(data)) }
-  // Writes are reachable from any local page through a simple POST: require JSON and refuse cross-site / foreign-origin calls.
-  const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
-  const hostOf = h => { const v = String(h.host ?? '').trim().toLowerCase(); const m = /^\[([^\]]+)\](?::\d+)?$/.exec(v); return m ? `[${m[1]}]` : v.replace(/:\d+$/, '') }
-  const rejectCrossSite = req => {
-    const h = req.headers ?? {}
-    // a foreign Host header means a DNS-rebinding page is reading the loopback server: refuse every method (the core's /api does the same)
-    if (!LOOPBACK_HOSTS.has(hostOf(h))) return true
-    if (String(h['sec-fetch-site'] ?? '') === 'cross-site') return true
-    const origin = h.origin
-    if (typeof origin === 'string' && origin.length > 0) { try { if (!['127.0.0.1', 'localhost', '::1', '[::1]'].includes(new URL(origin).hostname)) return true } catch { return true } }
-    return req.method === 'POST' && !/^application\/json/i.test(String(h['content-type'] ?? ''))
-  }
   const route = async (req, res) => {
     const url = new URL(req.url, 'http://127.0.0.1')
     const p = url.pathname
     try {
-      if (rejectCrossSite(req)) return json(res, 403, { ok: false, message: 'same-origin JSON requests only' })
+      if (rejectCrossSite(req, { allowLoopbackOrigins: true })) return json(res, 403, { ok: false, message: 'same-origin JSON requests only' })
       if (req.method === 'GET' && p === '/dsh-local-reasoning/status') return json(res, 200, await statusView())
       if (req.method === 'POST' && p === '/dsh-local-reasoning/probe') { await probeAll(); return json(res, 200, { ok: true, ...(await statusView()) }) }
       if (req.method === 'POST' && p === '/dsh-local-reasoning/apply') {

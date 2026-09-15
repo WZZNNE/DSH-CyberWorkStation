@@ -39,6 +39,7 @@
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { rejectCrossSite, json } from '@dsh-suite/kit/fence'
 
 export const name = 'provider-sync'
 export const inject = ['webServer']
@@ -282,7 +283,6 @@ export function apply(ctx) {
   setTimeout(tick, 8000).unref?.()
   ctx.effect(() => () => clearInterval(timer), 'provider-sync: schedule')
 
-  const json = (res, code, data) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(data)) }
   const readBody = req => new Promise((resolve, reject) => {
     const chunks = []
     let bytes = 0
@@ -290,20 +290,6 @@ export function apply(ctx) {
     req.on('end', () => { try { const text = Buffer.concat(chunks).toString('utf8'); resolve(text ? JSON.parse(text) : {}) } catch { reject(Object.assign(new Error('invalid JSON body'), { status: 400 })) } })
     req.on('error', reject)
   })
-  // The suite's fence (dsh-media-lab, dsh-web-search-plus, dsh-desktop-pet carry the same block).
-  const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
-  const hostOf = req => { const h = String(req.headers.host ?? '').trim().toLowerCase(); const m = /^\[([^\]]+)\](?::\d+)?$/.exec(h); return m ? `[${m[1]}]` : h.replace(/:\d+$/, '') }
-  const rejectCrossSite = req => {
-    if (!LOOPBACK_HOSTS.has(hostOf(req))) return true
-    const site = String(req.headers['sec-fetch-site'] ?? '')
-    if (site === 'cross-site' || site === 'same-site') return true
-    const origin = req.headers.origin
-    if (typeof origin === 'string' && origin.length > 0) {
-      try { if (new URL(origin).host.toLowerCase() !== String(req.headers.host ?? '').toLowerCase()) return true } catch { return true }
-    }
-    if (req.method === 'POST' && !/^application\/json/i.test(String(req.headers['content-type'] ?? ''))) return true
-    return false
-  }
   const status = () => ({ ok: true, intervalHours: config.intervalHours, anthropicNote: config.anthropicNote, lastSyncAt: config.lastSyncAt, lastAttemptAt: config.lastAttemptAt, failures: config.failures, running: running !== null, lastError, routes: config.routes, catalogUrl: CATALOG_URL })
 
   async function route(req, res) {

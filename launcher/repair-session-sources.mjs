@@ -31,6 +31,7 @@
  * log's message ids on the next run.
  *
  * Usage: node launcher/repair-session-sources.mjs [--dry-run] [--force]
+ * Exit codes: 0 done, 2 a dsh is listening on the web port, 3 the sidecar lock is held or was lost, 1 other errors.
  * Env:   DSH_HOME overrides the dsh home (default ~/.dsh).
  */
 import fs from 'node:fs'
@@ -179,7 +180,7 @@ export function loadSidecar(file, { dryRun = false, stamp = 'now' } = {}) {
   if (!dryRun) fs.renameSync(file, setAside)
   return { doc: { version: 1, sessions: {} }, setAside }
 }
-/** The same lock protocol as the plugins' session-read.js: `wx` file, a lock older than 5 s is a dead process's. */
+/** The same lock protocol as the kit's session-read.js (@dsh-suite/kit): `wx` file, a lock older than 5 s is a dead process's. */
 function acquireSidecarLock() {
   for (let attempt = 0; attempt < 200; attempt++) {
     try { fs.writeFileSync(LOCK, `${process.pid} ${Date.now()}\n`, { flag: 'wx' }); return true } catch (error) {
@@ -288,7 +289,7 @@ async function main() {
   if (!fs.existsSync(ROOT)) { console.log(`[repair] no session store at ${ROOT}`); return }
   if (!FORCE && await portListening(WEB_PORT)) { console.error(`[repair] a dsh is listening on 127.0.0.1:${WEB_PORT}; stop it first (its plugins write the same sidecar), or pass --force`); process.exitCode = 2; return }
   const stamp = new Date().toISOString().slice(0, 10).replaceAll('-', '')
-  if (!acquireSidecarLock()) { console.error(`[repair] the sidecar lock ${LOCK} is held by another process; try again later`); process.exitCode = 2; return }
+  if (!acquireSidecarLock()) { console.error(`[repair] the sidecar lock ${LOCK} is held by another process; try again later`); process.exitCode = 3; return }
   try { await repairAll(stamp) } finally { releaseSidecarLock() }
 }
 
@@ -344,7 +345,7 @@ async function repairAll(stamp) {
     if (rekeyed > 0 && !DRY) { try { saveSidecar(sidecar) } catch (error) { if (error?.code === 'ELOCKLOST') lockLost = error; else throw error } }
   }
   for (const n of notes) console.log(`[repair] ${n}`)
-  if (lockLost !== null) { console.error(`[repair] stopped: ${lockLost.message}`); process.exitCode = 2 }
+  if (lockLost !== null) { console.error(`[repair] stopped: ${lockLost.message}`); process.exitCode = 3 }
   console.log(`[repair] scanned ${scanned} session(s) (${laterGeneration} on a v1/v2 log); ${DRY ? 'would repair' : 'repaired'} ${repaired} (${replacedTotal} sidecar entr${replacedTotal === 1 ? 'y' : 'ies'} replaced, ${droppedTotal} member set(s) dropped); ${DRY ? 'would re-key' : 're-keyed'} ${rekeyed} seq-keyed sidecar session(s); sidecar ${SIDECAR}`)
 }
 

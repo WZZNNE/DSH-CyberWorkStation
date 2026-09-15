@@ -1,0 +1,15 @@
+{
+  "name": "@dsh-suite/kit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Code every DSH CyberWorkStation plugin shares: stored-session reads on the core's persistence handles (with the source-extras sidecar) and the loopback write fence for plugin HTTP routes. Linked into plugins/node_modules/@dsh-suite/kit by launcher/peer-links.mjs, next to the core's own packages.",
+  "type": "module",
+  "exports": {
+    "./session-read": "./session-read.js",
+    "./fence": "./fence.js",
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-home-paths": "*"
+  }
+}

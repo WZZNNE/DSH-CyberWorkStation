@@ -225,7 +225,6 @@ select option, select optgroup { background: var(--dsw-alias-bg-layer-2, #1c1f28
     const tell = () => { for (const fn of store.listeners) fn() }
     const setOpen = value => { store.open = value; localStorage.setItem('dsh-pet-open', value ? '1' : '0'); tell() }
     /** Which conversation the reader is showing, or null for closed. */
-    const setReader = value => { store.reader = value; tell() }
     /** Whether the conversation workspace is open over the page. */
     const setWorkspace = value => { store.workspace = value; tell() }
 

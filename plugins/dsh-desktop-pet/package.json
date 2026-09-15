@@ -32,7 +32,8 @@
   ],
   "peerDependencies": {
     "@deepseek-ai/dsh-credentials": "*",
-    "@deepseek-ai/dsh-home-paths": "*"
+    "@deepseek-ai/dsh-home-paths": "*",
+    "@dsh-suite/kit": "*"
   },
   "dsh": {
     "bundle": {

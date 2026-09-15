@@ -1,13 +1,15 @@
 /**
  * dsh-skin-loader host half: serve the active frontend skin CSS at
- * GET /dsh-skin-loader/active.css, read fresh from $DSH_HOME/frontend-skin.css
- * on every request (no cache) so the DSH Launcher can switch skins by writing
+ * GET /dsh-skin-loader/active.css from $DSH_HOME/frontend-skin.css, stat'd on every
+ * request (an unchanged file answers 304 from its ETag, a changed one is read afresh)
+ * so the DSH Launcher can switch skins by writing
  * that one file — a page refresh applies it. Route registration follows the
  * ctx.webServer.register prefix pattern (same as dsh-token-usage).
  */
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { isLoopbackRequest, refuse } from '@dsh-suite/kit/fence'
 
 export const name = 'skin-loader'
 export const inject = ['webServer']
@@ -19,12 +21,8 @@ const SKIN_FILE = join(resolveDshHome(), 'frontend-skin.css')
  * @param {import('@deepseek-ai/cordis').Context} ctx
  */
 export function apply(ctx) {
-  // A GET-only, no-CORS route still answers a DNS-rebinding page, which is same-origin to the
-  // browser: the Host header is what tells us the request really came to a loopback address.
-  const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
-  const hostOf = req => { const h = String(req.headers.host ?? '').trim().toLowerCase(); const m = /^\[([^\]]+)\](?::\d+)?$/.exec(h); return m ? `[${m[1]}]` : h.replace(/:\d+$/, '') }
   const route = (req, res) => {
-    if (!LOOPBACK_HOSTS.has(hostOf(req))) { req.resume?.(); res.writeHead(403); return res.end() }
+    if (!isLoopbackRequest(req)) return refuse(req, res)
     const url = new URL(req.url, 'http://127.0.0.1')
     if ((req.method === 'GET' || req.method === 'HEAD') && url.pathname === '/dsh-skin-loader/active.css') {
       let stamp = ''

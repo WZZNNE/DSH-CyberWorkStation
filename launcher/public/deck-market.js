@@ -325,7 +325,6 @@ async function refreshWebSearch(current = deckReadGuard()) {
   wsStatus = status && status.ok === true ? status : null
   if (!cfgResp || cfgResp.ok === false || !cfgResp.config || typeof cfgResp.config !== 'object') { wsLoaded = false; $('#ws-provider-state').textContent = '⚠ ' + (cfgResp?.message || T('ws_load_failed')); return }
   const c = cfgResp.config
-  wsConfig = c
   const providers = wsProviderList()
   $('#ws-provider').innerHTML = providers.map(p => '<option value="' + p.id + '"' + (p.id === c.provider ? ' selected' : '') + '>' + esc(p.label) + '</option>').join('')
   $$('input[name="ws-mode"]').forEach(r => { r.checked = r.value === (c.mode ?? 'off') })
@@ -351,7 +350,6 @@ async function refreshWebSearch(current = deckReadGuard()) {
   wsLoaded = true
 }
 $('#ws-provider')?.addEventListener('change', wsRenderProviderState)
-let wsConfig = null   // the last config read from the server, so a save keeps fields this tab has no UI for
 function collectWebSearch() {
   return {
     mode: $$('input[name="ws-mode"]').find(r => r.checked)?.value ?? 'off', provider: $('#ws-provider').value,

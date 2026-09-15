@@ -39,7 +39,8 @@
   "peerDependencies": {
     "@deepseek-ai/dsh-tools": "*",
     "@deepseek-ai/dsh-credentials": "*",
-    "@deepseek-ai/dsh-home-paths": "*"
+    "@deepseek-ai/dsh-home-paths": "*",
+    "@dsh-suite/kit": "*"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-credentials": {

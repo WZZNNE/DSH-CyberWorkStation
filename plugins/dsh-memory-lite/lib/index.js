@@ -23,7 +23,7 @@
  *              Cold sessions are resumed, edited, flushed and disposed again.
  */
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
-import { inboxHasPending, listStoredSessions, liveEvents, readStoredSession, recordSourceExtras, statStoredSession } from './session-read.js'
+import { inboxHasPending, listStoredSessions, liveEvents, readStoredSession, recordSourceExtras, statStoredSession } from '@dsh-suite/kit/session-read'
 import { readFileSync, writeFileSync, mkdirSync, watchFile, unwatchFile } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { randomUUID } from 'node:crypto'
@@ -33,6 +33,7 @@ import { rank, visibleIn, buildIndex } from './recall.js'
 import { EXTRACTION_INSTRUCTION, parseFacts, dedupeFacts } from './extract.js'
 import { embedTexts } from './embeddings.js'
 import * as C from './context.js'
+import { rejectCrossSite, json, readBody as kitReadBody } from '@dsh-suite/kit/fence'
 
 export const name = 'memory-lite'
 export const inject = ['sessions', 'agents', 'llm', 'tools', 'systemPrompt']
@@ -41,6 +42,7 @@ const DSH_HOME = resolveDshHome()
 const CONFIG_FILE = join(DSH_HOME, 'memory-lite.json')
 const MEMORY_DIR = join(DSH_HOME, 'memory')
 const MAX_BODY = 256 * 1024
+const readBody = (req, limit = MAX_BODY) => kitReadBody(req, limit)
 const MAX_IMPORT_BODY = 8 * 1024 * 1024
 const MAX_SUMMARY_CHARS = 60000
 const LIST_INSPECT_BUDGET = 25
@@ -696,45 +698,6 @@ export function apply(ctx) {
   }
 
   // ── HTTP routes (launcher) ──
-  const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
-  const hostOf = req => { const h = String(req.headers.host ?? '').trim().toLowerCase(); const m = /^\[([^\]]+)\](?::\d+)?$/.exec(h); return m ? `[${m[1]}]` : h.replace(/:\d+$/, '') }
-  const rejectCrossSite = req => {
-    // a foreign Host header means a DNS-rebinding page is reading the loopback server: refuse every method (the core's /api does the same)
-    if (!LOOPBACK_HOSTS.has(hostOf(req))) return true
-    const site = String(req.headers['sec-fetch-site'] ?? '')
-    if (site === 'cross-site') return true
-    const origin = req.headers.origin
-    if (typeof origin === 'string' && origin.length > 0) { try { const h = new URL(origin).hostname; if (!['127.0.0.1', 'localhost', '::1', '[::1]'].includes(h)) return true } catch { return true } }
-    if (req.method === 'POST' && !/^application\/json/i.test(String(req.headers['content-type'] ?? ''))) return true
-    return false
-  }
-  const readBody = (req, max = MAX_BODY) => new Promise((resolve, reject) => {
-    const chunks = []
-    let bytes = 0
-    let over = false
-    let settled = false
-    const failWith = (status, message) => { if (!settled) { settled = true; reject(Object.assign(new Error(message), { status })) } }
-    req.on('data', c => {
-      if (over) return
-      const buf = Buffer.isBuffer(c) ? c : Buffer.from(c)
-      bytes += buf.length
-      if (bytes > max) { over = true; chunks.length = 0; req.resume(); failWith(413, 'body too large'); return }
-      chunks.push(buf)
-    })
-    req.on('end', () => {
-      if (over || settled) return
-      settled = true
-      const text = Buffer.concat(chunks).toString('utf8')
-      try {
-        const value = text ? JSON.parse(text) : {}
-        if (value === null || typeof value !== 'object' || Array.isArray(value)) { reject(Object.assign(new Error('JSON body must be an object'), { status: 400 })); return }
-        resolve(value)
-      } catch { reject(Object.assign(new Error('invalid JSON body'), { status: 400 })) }
-    })
-    req.on('aborted', () => failWith(400, 'request aborted'))
-    req.on('error', () => failWith(400, 'request error'))
-  })
-  const json = (res, code, data) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(data)) }
   const status = async () => {
     await ready
     return {
@@ -748,7 +711,7 @@ export function apply(ctx) {
     const url = new URL(req.url, 'http://127.0.0.1')
     const p = url.pathname
     try {
-      if (rejectCrossSite(req)) return json(res, 403, { ok: false, message: 'same-origin JSON requests only' })
+      if (rejectCrossSite(req, { allowLoopbackOrigins: true })) return json(res, 403, { ok: false, message: 'same-origin JSON requests only' })
       if (req.method === 'GET' && p === '/dsh-memory-lite/status') return json(res, 200, await status())
       if (req.method === 'POST' && p === '/dsh-memory-lite/settings') {
         const body = await readBody(req)

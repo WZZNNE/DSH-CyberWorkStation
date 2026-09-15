@@ -13,63 +13,15 @@
  * GET  /dsh-quick-workspace/list
  */
 import { existsSync, mkdirSync, statSync } from 'node:fs'
+import { rejectCrossSite, json, readBody as kitReadBody } from '@dsh-suite/kit/fence'
 
 export const name = 'quick-workspace'
 export const inject = ['webServer', 'workspaceRegistry']
 
 /** @param {import('@deepseek-ai/cordis').Context} ctx */
 export function apply(ctx) {
-  // The same fence every other router in this suite carries: a loopback Host, no cross-site or
-  // same-site request, a matching Origin, and a JSON content type — without it any web page could
-  // POST here and this route creates directories.
-  const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
-  const hostOf = req => { const h = String(req.headers.host ?? '').trim().toLowerCase(); const m = /^\[([^\]]+)\](?::\d+)?$/.exec(h); return m ? `[${m[1]}]` : h.replace(/:\d+$/, '') }
-  const rejectCrossSite = req => {
-    if (!LOOPBACK_HOSTS.has(hostOf(req))) return true
-    const site = String(req.headers['sec-fetch-site'] ?? '')
-    if (site === 'cross-site' || site === 'same-site') return true
-    const origin = req.headers.origin
-    if (typeof origin === 'string' && origin.length > 0) {
-      try { if (new URL(origin).host.toLowerCase() !== String(req.headers.host ?? '').toLowerCase()) return true } catch { return true }
-    }
-    if (req.method === 'POST' && !/^application\/json/i.test(String(req.headers['content-type'] ?? ''))) return true
-    return false
-  }
   const MAX_BODY = 64 * 1024
-  // Bytes, not string concatenation: a multibyte character split across two chunks would be
-  // corrupted by `b += c`, and an unbounded body would be buffered whole.
-  const readBody = req => new Promise((resolve, reject) => {
-    const chunks = []
-    let bytes = 0
-    let over = false
-    let settled = false
-    const fail = (status, message) => { if (!settled) { settled = true; reject(Object.assign(new Error(message), { status })) } }
-    req.on('data', chunk => {
-      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
-      bytes += buf.length
-      if (bytes > MAX_BODY) {
-        // Drained, not destroyed: destroying the socket means the 413 never reaches the caller.
-        if (!over) { over = true; chunks.length = 0; fail(413, 'request body too large'); req.resume() }
-        return
-      }
-      chunks.push(buf)
-    })
-    req.on('end', () => {
-      if (settled) return
-      settled = true
-      try {
-        const value = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}')
-        if (value === null || typeof value !== 'object' || Array.isArray(value)) { reject(Object.assign(new Error('JSON body must be an object'), { status: 400 })); return }
-        resolve(value)
-      } catch { reject(Object.assign(new Error('invalid JSON body'), { status: 400 })) }
-    })
-    req.on('aborted', () => fail(400, 'request aborted'))
-    req.on('error', () => fail(400, 'request error'))
-  })
-  const json = (res, code, data) => {
-    res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' })
-    res.end(JSON.stringify(data))
-  }
+  const readBody = (req, limit = MAX_BODY) => kitReadBody(req, limit)
 
   const route = async (req, res) => {
     if (rejectCrossSite(req)) { req.resume?.(); return json(res, 403, { ok: false, message: 'same-origin requests only' }) }
