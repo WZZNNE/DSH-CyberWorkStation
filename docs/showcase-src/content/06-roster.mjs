@@ -5,7 +5,7 @@ export default {
   kicker: '',
   title: '全部插件清单：原创 / 二改 / 照搬',
   intro: `
-原创：自己从零写的（用法可能参照了别的软件，但没有用它的代码，会注明）。二改：在别人的开源项目上改出来的，保留上游许可，注明改了什么。照搬：原样使用的第三方项目，没有改动。版本号为本机实测。
+原创指为本套件写的：用法可能参照了别的软件，但没有用它的代码，表里会注明参照了谁。二改指在别人的开源项目上改出来的，保留上游许可，并列出改了什么。照搬指原样使用的第三方项目。版本号是写作时实际安装的版本。
 `,
   blocks: [
     { type: 'roster', groups: [
@@ -35,14 +35,14 @@ export default {
       ]},
       { key: 'fork', label: '套件插件 · 二改', badge: '二改', desc: '3 个，均基于 MIT 项目，保留上游许可。', items: [
         { name: 'dsh-cost-meter-plus', ver: '1.5.19-plus.4', origin: 'fork', upstream: 'Han-1413141/dsh-cost-meter 1.5.19 · MIT', role: '上游：会话 / 当日 / 历史费用、官方价格同步、90+ 模型价格目录、7 家 Coding Plan 额度、预算提醒、中英双语。这里加的：多厂商余额、OpenRouter 价格自动同步、缓存命中条、会话行 token 拆分、本地路由免费、设置页把余额和费用放在最上面。', where: 'dsh 设置「用量与费用」、侧栏' },
-        { name: 'dsh-token-usage-plus', ver: '2.1.0-plus.1', origin: 'fork', upstream: 'Tastelessor/dsh-usage-stats 2.1.0 · MIT', role: '上游：用量统计卡 + 热力图 + 官方峰谷价换算。这里加的：去掉峰谷价显示、从费用账本补 OpenRouter 价格。默认不挂载（费用页已覆盖），仍在仓库。', where: '（默认不挂载）' },
-        { name: 'dsh-vision-bridge-zh', ver: '0.4.5-zh.2', origin: 'fork', upstream: '@goodandready/dsh-vision-bridge 0.4.5 · MIT', role: '上游：让纯文本模型「看图」（自动改写 + 26 个视觉工具：描述、OCR、定位、裁剪、长截图、PDF、视频等）。这里加的：中文界面，修正多图比较、目录限制、竞速判定等几处问题。', where: 'dsh 设置 → 插件「图片理解」' },
+        { name: 'dsh-token-usage-plus', ver: '2.1.0-plus.1', origin: 'fork', upstream: 'Tastelessor/dsh-usage-stats 2.1.0 · MIT', role: '上游：用量统计卡 + 热力图 + 官方峰谷价换算。这里加的：去掉峰谷价显示、从费用账本补 OpenRouter 价格。默认不挂载，费用页已经覆盖它的功能；留给想单独看用量页的人。', where: '（默认不挂载）' },
+        { name: 'dsh-vision-bridge-zh', ver: '0.4.5-zh.2', origin: 'fork', upstream: '@goodandready/dsh-vision-bridge 0.4.5 · MIT', role: '上游：让纯文本模型「看图」（自动改写 + 26 个视觉工具：描述、OCR、定位、裁剪、长截图、PDF、视频等）。这里加的：中文界面，多图比较和目录处理更可靠。', where: 'dsh 设置 → 插件「图片理解」' },
       ]},
-      { key: 'adopted', label: '社区插件 · 照搬', badge: '照搬', desc: '8 个 + 1 个 MCP 服务器，在启动器插件市场里装，原样使用。另有两个候选被否决：`dsh-auto-approval`（与当前本体不兼容）、`dsh-filesnap`（卸载后录过的会话打不开）。', items: [
+      { key: 'adopted', label: '社区插件 · 照搬', badge: '照搬', desc: '8 个 + 1 个 MCP 服务器，在启动器插件市场里装，原样使用。另有两个 npm 上能看到的插件不建议与当前本体搭配：`dsh-auto-approval`（与当前本体不兼容）、`dsh-filesnap`（卸载后录过的会话打不开）。', items: [
         { name: 'dsh-context', ver: '0.52.2', origin: 'adopted', upstream: 'bowenliang123 · Apache-2.0', role: '上下文仪表盘（构成、趋势、事件、浏览器、文件活动）与 `/context` 命令。需要 0.40 以上。', where: '会话「上下文」分页' },
         { name: 'dsh-better-sidebar', ver: '0.19.1', origin: 'adopted', upstream: 'omdsh-dev · MIT', role: 'VS Code 式右侧工作台：文件 / 编辑器 / 终端 / Git / 浏览器 / 后台任务。', where: 'dsh 设置「侧边卡片」、右侧面板' },
         { name: '@linxin666/dsh-remote-web-ui', ver: '0.3.22', origin: 'adopted', upstream: 'zhu1090093659/dsh-web · Apache-2.0', role: '手机 / 电脑扫码配对远程使用同一份 Web GUI，一次性令牌、可吊销设备、可选 Cloudflare 隧道。', where: '侧栏手机图标' },
-        { name: 'dsh-automation', ver: '0.2.0-alpha.0', origin: 'adopted', upstream: 'Ephemeral-AI-Lab · MIT', role: '会话内定时 / 循环自提示。需要 Node ≥ 24（Node 22 请留在 0.1.4）。', where: '对话' },
+        { name: 'dsh-automation', ver: '0.2.0-alpha.0', origin: 'adopted', upstream: 'Ephemeral-AI-Lab · MIT', role: '会话内定时 / 循环自提示。需要 Node ≥ 24（Node 22 下请用它的 0.1.4）。', where: '对话' },
         { name: 'dsh-chat-import', ver: '0.11.5', origin: 'adopted', upstream: 'Nwflower · MIT', role: '导入 Claude Code / Codex / ChatGPT / Cursor / Gemini 等 19 种 agent 的会话；双向同步。', where: '侧栏「导入会话」、dsh 设置「会话导入」' },
         { name: 'dsh-voice-input-web', ver: '0.1.2', origin: 'adopted', upstream: 'CrazyGummies · MIT', role: '输入框麦克风，浏览器语音识别，不需要密钥。', where: '输入框' },
         { name: 'dsh-notification', ver: '0.1.1', origin: 'adopted', upstream: 'nishit130 · MIT', role: 'agent 完成 / 出错 / 等待审批时的桌面与 webhook 通知。', where: '（后台）' },

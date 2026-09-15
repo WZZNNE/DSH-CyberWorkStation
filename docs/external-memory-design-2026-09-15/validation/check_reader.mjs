@@ -1,0 +1,55 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { createRequire } from 'node:module';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const require=createRequire('C:/Users/Admin/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/');
+const {chromium}=require('playwright');
+const qa=path.join(root,'validation/.qa');fs.mkdirSync(qa,{recursive:true});
+const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
+const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1});
+const errors=[];const requests=[];
+page.on('pageerror',error=>errors.push(error.message));
+page.on('request',r=>{if(/^https?:/.test(r.url()))requests.push(r.url())});
+const assert=(condition,message)=>{if(!condition)throw Error(message)};
+try{
+ await page.goto(pathToFileURL(path.join(root,'index.html')).href);
+ await page.locator('.doc[data-id="overview"]').waitFor({state:'visible'});
+ assert(await page.locator('.doc:visible').count()===1,'one visible chapter');
+ const ids=await page.locator('[data-go]').evaluateAll(nodes=>nodes.map(n=>n.dataset.go));
+ for(const id of ids){
+   await page.locator(`[data-go="${id}"]`).click();
+   assert(await page.locator(`.doc[data-id="${id}"]`).isVisible(),'chapter '+id);
+   assert(await page.locator('.doc:visible').count()===1,'chapter exclusivity');
+ }
+ await page.locator('[data-go="overview"]').click();
+ await page.screenshot({path:path.join(qa,'desktop-overview.png')});
+ await page.locator('#search').fill('撤销');
+ const matches=await page.locator('#results .result').count();
+ assert(matches>0,'search results');
+ await page.locator('#results .result').first().click();
+ assert(await page.locator('.doc:visible').count()===1,'search navigation');
+ await page.locator('#search').fill('');
+ assert(!(await page.locator('#results').isVisible()),'clear search');
+ await page.locator('[data-go="architecture"]').click();
+ await page.locator('.doc[data-id="architecture"] .diagram').first().scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.join(qa,'architecture.png')});
+ await page.locator('[data-go="protocol"]').click();
+ await page.locator('.doc[data-id="protocol"] .diagram').first().scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.join(qa,'revocation.png')});
+ await page.locator('[data-go="projects"]').click();
+ await page.screenshot({path:path.join(qa,'projects.png')});
+ const desktopOverflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
+ assert(!desktopOverflow,'desktop page overflow');
+ await page.setViewportSize({width:390,height:844});
+ await page.locator('[data-go="overview"]').click();
+ await page.screenshot({path:path.join(qa,'mobile-overview.png')});
+ const mobileOverflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
+ assert(!mobileOverflow,'mobile page overflow');
+ const headingCount=await page.locator('.doc h1,.doc h2,.doc h3,.doc h4').count();
+ assert(errors.length===0,'browser errors: '+errors.join(';'));
+ assert(requests.length===0,'reader requires external network');
+ const report={kind:'offline_reader_check',chapters_checked:ids.length,search_results:matches,headings:headingCount,browser_errors:errors,external_network_requests:requests,desktop_overflow:desktopOverflow,mobile_overflow:mobileOverflow,passed:true};
+ fs.writeFileSync(path.join(root,'validation/reader-results.json'),JSON.stringify(report,null,2)+'\n');
+ console.log(JSON.stringify(report));
+}finally{await browser.close()}

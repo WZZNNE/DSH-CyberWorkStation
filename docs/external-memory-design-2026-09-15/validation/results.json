@@ -1,0 +1,29 @@
+{
+  "kind": "bounded_reference_model_validation",
+  "tests_run": 37,
+  "failures": 0,
+  "errors": 0,
+  "passed": true,
+  "python": "3.12.14",
+  "sqlite": "3.53.1",
+  "validated_scope": [
+    "single-scope structured mutations",
+    "retroactive correction and bitemporal lookup",
+    "selected two-connection interleavings",
+    "SQLite process-exit recovery",
+    "fixture receipt and lease checks"
+  ],
+  "not_validated": [
+    "LLM intent accuracy",
+    "embedding recall",
+    "HTTP/MCP",
+    "scope inheritance and exception resolution",
+    "complete context compilation and receipt authenticity",
+    "future replacement",
+    "real action dispatch",
+    "full erasure/backups",
+    "power-loss durability",
+    "production concurrency/performance",
+    "academic novelty"
+  ]
+}

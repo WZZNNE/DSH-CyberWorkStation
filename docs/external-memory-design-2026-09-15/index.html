@@ -1,0 +1,3090 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>项目记忆服务 调研与设计说明书</title>
+<style>
+:root{--ink:#172b32;--muted:#617079;--accent:#246e65;--border:#dce5e4;--paper:#fff;--wash:#f6f8f7}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Segoe UI,Microsoft YaHei,PingFang SC,sans-serif;color:var(--ink);background:var(--paper);font-size:15px;line-height:1.8}a{color:var(--accent);text-underline-offset:3px}button,input{font:inherit}header{padding:32px 44px 24px;border-bottom:1px solid var(--border);background:var(--wash)}.eyebrow{letter-spacing:2px;color:var(--accent);font-size:12px;font-weight:650}.masthead{font-size:29px;font-weight:650;margin:6px 0}.lead{color:var(--muted);margin:0;max-width:850px}.metrics{display:flex;gap:30px;margin-top:17px;font-size:13px;color:var(--muted)}.metrics strong{font-size:21px;color:var(--ink);margin-right:6px}.layout{display:grid;grid-template-columns:230px minmax(0,1fr);max-width:1540px;margin:auto}aside{position:sticky;top:0;height:100vh;overflow:auto;border-right:1px solid var(--border);padding:26px 18px 40px}.search{width:100%;border:1px solid #bacac7;border-radius:6px;padding:9px 11px;font-size:13px;background:#fff}.search:focus{outline:2px solid #a4cec5}.nav{display:grid;gap:3px;margin-top:18px}.nav button{border:0;background:transparent;text-align:left;padding:9px 12px;border-radius:5px;color:#43545d;cursor:pointer;font-size:14px}.nav button:hover{background:var(--wash)}.nav button[aria-current=page]{background:#e8f2ee;color:#145c52;font-weight:650}.side-note{font-size:12px;line-height:1.7;color:var(--muted);margin:22px 10px}.side-note a{display:block;margin-top:8px}main{min-width:0;padding:34px 54px 90px;max-width:1140px}.doc[hidden]{display:none}.doc h1{font-size:28px;line-height:1.4;margin:0 0 23px;letter-spacing:.2px}.doc h2{font-size:22px;line-height:1.45;margin:36px 0 15px;padding-top:4px}.doc h3{font-size:18px;margin:26px 0 10px}.doc h4{font-size:16px;margin:24px 0 8px}.doc p{margin:12px 0}.doc li{margin:6px 0}.doc ul,.doc ol{padding-left:23px}.doc strong{font-weight:650}code{font-family:Consolas,Cascadia Code,monospace;font-size:.9em;background:#f1f4f3;padding:1px 4px;border-radius:3px;overflow-wrap:anywhere}pre{background:#f5f7f7;border:1px solid var(--border);border-radius:7px;padding:18px;overflow:auto;font-size:13px;line-height:1.65}pre code{padding:0;background:transparent;overflow-wrap:normal}table{border-collapse:collapse;width:100%;font-size:13px;line-height:1.65}th,td{border:1px solid var(--border);padding:11px 12px;vertical-align:top;text-align:left}th{background:#eef3f1;font-weight:650}tr:nth-child(even) td{background:#fbfcfb}.table-wrap{overflow:auto;margin:18px 0 25px}td a{overflow-wrap:anywhere}blockquote{margin:18px 0;padding-left:18px;border-left:3px solid #bdcfc9;color:#455960}.diagram{margin:25px 0;padding:14px 8px;border:1px solid var(--border);border-radius:8px;background:#fff}.diagram svg{display:block;width:100%;height:auto}.diagram-source{font-size:13px;color:var(--muted);margin:15px 0}.diagram-source summary{cursor:pointer}.search-results{margin:0 0 28px;border-bottom:1px solid var(--border);padding-bottom:18px}.result{display:block;text-align:left;width:100%;background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px;margin:8px 0;cursor:pointer}.result strong{display:block;color:var(--accent);font-size:14px}.result small{display:block;color:var(--muted);font-size:12px;line-height:1.6}.toolbar{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;margin-bottom:23px}.toolbar button{border:1px solid var(--border);border-radius:5px;background:#fff;padding:4px 10px;font-size:12px;cursor:pointer}.search-state{font-size:13px;color:var(--muted)}footer{padding:20px 44px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+@media(max-width:880px){header{padding:22px}.layout{grid-template-columns:1fr}aside{height:auto;position:relative;border-right:0;border-bottom:1px solid var(--border);padding:16px 20px}.nav{display:flex;flex-wrap:wrap;margin-top:10px;gap:2px}.nav button{padding:6px 9px;font-size:12px}.side-note{display:none}main{padding:25px 22px 60px}.metrics{gap:18px;flex-wrap:wrap}.doc h1{font-size:24px}.doc h2{font-size:20px}.table-wrap{font-size:12px}table{min-width:580px}.masthead{font-size:25px}}
+@media print{header,aside,footer,.toolbar,.search-results,.diagram-source{display:none!important}.layout{display:block}main{max-width:none;padding:0}.doc,.doc[hidden]{display:block!important;break-before:page}.doc:first-child{break-before:auto}h1,h2,h3,h4{break-after:avoid}tr,figure{break-inside:avoid}thead{display:table-header-group}a{color:inherit;text-decoration:none}body{font-size:10pt;line-height:1.5}pre{white-space:pre-wrap}table{font-size:8pt}.table-wrap{overflow:visible}}
+</style></head><body><header><div class="eyebrow">RESEARCH & SYSTEM DESIGN · 2026 09 15</div><div class="masthead">项目记忆服务</div><p class="lead">本地多 agent 工作站的外部记忆设计。涵盖已有研究、架构、操作说明、接入路径与验证边界。</p><div class="metrics"><span><strong>42</strong>项目记录</span><span><strong>45</strong>论文与预印本</span><span><strong>37</strong>参考检查通过</span></div></header>
+<div class="layout"><aside><label for="search" class="eyebrow">全文搜索</label><input id="search" class="search" placeholder="例如 撤销、ReMe、时间戳" autocomplete="off"><nav class="nav" aria-label="文档章节"><button data-go="overview" aria-current="page">总览</button><button data-go="architecture" >产品与架构</button><button data-go="protocol" >数据与协议</button><button data-go="manual" >使用与运维</button><button data-go="evaluation" >创新与评测</button><button data-go="roadmap" >实施路线</button><button data-go="projects" >开源项目</button><button data-go="papers" >论文与预印本</button><button data-go="integration" >DSH 接入</button><button data-go="method" >方法与来源</button><button data-go="validation" >参考验证</button></nav><div class="side-note">资料级核对与参考验证均有明确范围。设计目标不等于已实现能力。<a href="README.md">查看 Markdown 总览</a><a href="spec/openapi.json">查看接口草案</a><a href="spec/schema.sql">查看数据库骨架</a></div></aside><main><div class="toolbar"><span id="current-title">总览</span><button id="print">打印全部文档</button></div><div id="results" class="search-results" hidden></div><section class="doc" data-id="overview" data-title="总览" ><h1 id="overview-h0">外部项目记忆服务调研与设计总览</h1>
+<p>调研截止 2026 年 9 月 15 日。面向本地多 agent 工作站，后续扩展云端。</p>
+<h2 id="overview-h1">推荐方案</h2>
+<p>采用独立的项目记忆服务：SQL 管理有效记录、时间、版本和来源；全文与向量用于背景召回；适用约束确定性加载；宿主适配器绑定真实身份；统一写入接口处理人工编辑、撤销、索引更新和任务恢复。</p>
+<p>先验证 ReMe、EverOS、LongMemory、MemOS 与现有 DSH memory-lite 的适用能力。满足要求时优先适配；缺少关键生命周期契约时再实现对应模块。不同对象可以有不同来源系统，但同一对象只能有一个权威写入点。</p>
+<h2 id="overview-h2">这次实际完成了什么</h2>
+<ul>
+<li>42 条相关项目记录，包含核心记忆、框架、存储、基准、历史项目与同名辨析；不能理解为 42 个都已安装验证的产品。</li>
+<li>45 项论文与预印本记录，含一项综述；其中 16 项核对关键正文，29 项核对摘要与元数据。</li>
+<li>产品架构、数据协议、使用与运维说明、创新评测方案、实施路线与决策记录，以及当前 DSH 的源码接入审查。</li>
+<li>11 个路径的 OpenAPI 草案、24 个数据结构、SQLite 核心骨架和输入样例。</li>
+<li>37 项有限参考模型检查通过，覆盖时间、版本、撤销、部分双连接交错和进程退出恢复。完整范围见验证报告。</li>
+</ul>
+<h2 id="overview-h3">三个判断</h2>
+<p><strong>可行性：</strong> 核心依赖采用成熟存储和服务机制；参考模型验证了部分确定性规则。自然语言理解、完整集成、性能与模型收益仍需实施和实验。</p>
+<p><strong>易用性：</strong> 用户直接看“记住了什么、在哪里适用、什么时候生效、来自哪里”，通过普通编辑和撤销操作控制记忆。隐藏向量、ID 和版本等内部细节，保留高级审计入口。</p>
+<p><strong>创新性：</strong> 原构想的大部分机制已有直接先例，不能保证首次或论文新颖性。建议把新增贡献收窄为条件证据完整性、约束变更至动作接受的联合证据，以及本地中文多 agent 场景的可复现增量；每项都设对照和停止条件。</p>
+<h2 id="overview-h4">阅读顺序</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>你想了解什么</th>
+<th>文档</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>整体怎么工作、为什么这样设计</td>
+<td><a href="#architecture">产品与架构设计</a></td>
+</tr>
+<tr>
+<td>数据字段、接口、时间与并发语义</td>
+<td><a href="#protocol">数据与接口协议</a></td>
+</tr>
+<tr>
+<td>用户如何使用、出故障如何恢复</td>
+<td><a href="#manual">使用与运维说明</a></td>
+</tr>
+<tr>
+<td>哪些不是新发明、怎样验证真实增量</td>
+<td><a href="#evaluation">创新定位与评测方案</a></td>
+</tr>
+<tr>
+<td>先做什么、复用什么、怎样迁移</td>
+<td><a href="#roadmap">实施路线与决策记录</a></td>
+</tr>
+<tr>
+<td>有哪些相关开源项目</td>
+<td><a href="#projects">项目全景与选型</a></td>
+</tr>
+<tr>
+<td>有哪些相关论文和预印本</td>
+<td><a href="#papers">论文全景</a></td>
+</tr>
+<tr>
+<td>当前工作站已经有了哪些能力</td>
+<td><a href="#integration">DSH 接入审查</a></td>
+</tr>
+<tr>
+<td>调研有多深、标准从哪里来</td>
+<td><a href="#method">方法与技术来源</a></td>
+</tr>
+<tr>
+<td>实际测试了什么、如何重跑</td>
+<td><a href="#validation">参考验证说明</a></td>
+</tr>
+</tbody></table></div>
+<h2 id="overview-h5">直接使用的文件</h2>
+<ul>
+<li><a href="index.html">离线阅读总册</a>：无需联网加载页面，可按章节阅读并搜索全文；外部来源链接仍需网络访问。</li>
+<li><a href="spec/openapi.json">OpenAPI 草案</a>、<a href="spec/schema.sql">SQL 核心骨架</a>、<a href="spec/examples.json">输入样例</a>。</li>
+<li><a href="research/projects.json">项目机器索引</a>、<a href="research/papers.json">论文机器索引</a>、<a href="validation/results.json">参考验证结果</a>。</li>
+</ul>
+<h2 id="overview-h6">最重要的边界</h2>
+<p>本次交付为设计包与有限参考验证，没有安装完整记忆服务、迁移真实记忆、修改工作站已有应用代码、运行所有候选项目或复现论文成绩。它也不是穷尽式全球检索或原创性保证。</p>
+<p>已经撤销的内容要从索引、缓存、派生摘要和运行中上下文处理失效；无法通过删除数据库撤回已经发生的外部动作。机器强制规则只在真实接入并验证的动作入口生效，风格等自然语言要求仍需模型与结果检查。</p>
+</section>
+<section class="doc" data-id="architecture" data-title="产品与架构" hidden><h1 id="architecture-h0">外部项目记忆服务产品与架构设计</h1>
+<p>版本 0.1　调研截止 2026 年 9 月 15 日</p>
+<h2 id="architecture-h1">1 设计结论</h2>
+<p>建议建设一个本地优先、可独立运行的项目记忆服务。SQL 保存带来源、有效时间与版本的记录；全文和向量索引负责召回；当前适用的约束通过确定性查询加载；统一服务负责人工编辑、并发写入、撤销传播与访问授权。DSH 是第一个适配目标，HTTP API 与 MCP 是兼容其他 agent 的入口。</p>
+<p>实施前先对照现有组件，尤其 ReMe 已提供 DSH 插件，EverOS 与 LongMemory 也已覆盖大量原设想。下文是目标架构和自建缺口模块的参考契约，不意味着需要重写所有存储与检索能力。若现有后端满足不变量，优先适配；若只提供背景记忆，则可由它管理背景，本服务独立管理用户约束，按对象明确各自权威来源，禁止同一对象多头写入。</p>
+<p>本包交付的是可实施的设计、接口草案、数据库骨架和有限范围的参考验证，不是已经安装运行的完整产品。自然语言理解、任意约束的遵守率、性能收益及研究新颖性需要后续实验。所有性能数字均是待测目标或容量估算，不能作为现有系统成绩。</p>
+<p>当前设想应保留的部分：外部持久化、结构化记忆、语义检索、用户可编辑、按任务组织上下文。需要改变的部分：不依赖隐式思维链；不让最新时间戳自动决定覆盖；不把标签当授权；不把共享数据库当作跨 agent 一致性保证。</p>
+<h2 id="architecture-h2">2 用户需求与验收映射</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>用户需求</th>
+<th>设计机制</th>
+<th>验证方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>识别口头意图</td>
+<td>提取操作、对象、范围、条件、来源，保留歧义</td>
+<td>否定、假设、引用、代词与间接表达测试集</td>
+</tr>
+<tr>
+<td>区分现在与过时</td>
+<td>生效时间和记录时间分离，显式替代关系</td>
+<td>未来生效、回溯纠错、历史查询</td>
+</tr>
+<tr>
+<td>修改和删除约束</td>
+<td>分开撤销、替换、纠错与彻底删除</td>
+<td>防复活、依赖失效、删除作业测试</td>
+</tr>
+<tr>
+<td>跨任务和容器</td>
+<td>独立服务、持久化收据、作用域 ID</td>
+<td>进程中断、容器重建、重复投递</td>
+</tr>
+<tr>
+<td>多 agent 协作</td>
+<td>版本比较、策略版本、上下文收据、执行前校验</td>
+<td>并发竞争、旧缓存、过期任务租约</td>
+</tr>
+<tr>
+<td>内容随时可见可改</td>
+<td>记忆界面、来源展开、差异预览、版本化编辑</td>
+<td>首次成功时间、纠错用时和用户测试</td>
+</tr>
+<tr>
+<td>减少上下文消耗</td>
+<td>必需约束与相关背景两条路径，按预算组装</td>
+<td>同等任务质量下的端到端成本</td>
+</tr>
+<tr>
+<td>全局长期记忆稳定</td>
+<td>持久保存并按需常驻，不随热度衰减失效</td>
+<td>新任务重启与长时间不访问</td>
+</tr>
+</tbody></table></div>
+<h2 id="architecture-h3">3 第一版边界</h2>
+<p>默认场景为一个用户、一个本地服务、多个项目和最多十余个并发 agent；这些是设计假设，不是已测容量。服务由宿主机运行，数据库位于持久目录，容器通过认证连接访问。不同机器的客户端不直接打开共享 SQLite 文件。</p>
+<p>第一版包括：事件接收、记忆变更、项目约束、时间语义、全文检索、可插拔向量检索、人工编辑、撤销、上下文收据、任务检查点、MCP 适配、状态与恢复页面。</p>
+<p>延后：跨地域多主写入、通用自动知识图谱、强化学习训练写入策略、任意自然语言规则的完全形式化、无条件恢复全部外部操作、所有历史全文常驻。原型先做清楚的单写入点，再根据负载迁移数据库。</p>
+<h2 id="architecture-h4">4 组件和职责</h2>
+<figure class="diagram"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="项目记忆服务架构图" viewBox="0 0 980 675" style="font-family:Segoe UI,Microsoft YaHei,sans-serif;fill:#172b32"><defs><marker id="arrow-architecture-29" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#45616b"/></marker></defs>
+<rect x="310" y="20" width="360" height="64" rx="9" fill="#f1f7f6" stroke="#5d8e88"/><text x="490" y="48" text-anchor="middle" font-size="18" font-weight="600">用户消息 人工编辑 工具结果</text><text x="490" y="71" text-anchor="middle" font-size="13" fill="#53616a">保留可验证来源</text>
+<path d="M490,84 L490,116" fill="none" stroke="#45616b" stroke-width="1.8" marker-end="url(#arrow-architecture-29)"/><rect x="310" y="120" width="360" height="64" rx="9" fill="#f1f7f6" stroke="#5d8e88"/><text x="490" y="148" text-anchor="middle" font-size="18" font-weight="600">可信宿主适配器</text><text x="490" y="171" text-anchor="middle" font-size="13" fill="#53616a">绑定身份 项目和任务</text>
+<path d="M490,184 L490,221" fill="none" stroke="#45616b" stroke-width="1.8" marker-end="url(#arrow-architecture-29)"/><rect x="310" y="225" width="360" height="72" rx="9" fill="#f1f7f6" stroke="#5d8e88"/><text x="490" y="253" text-anchor="middle" font-size="18" font-weight="600">SQL 原始事件与有效记忆</text><text x="490" y="276" text-anchor="middle" font-size="13" fill="#53616a">先保存事件 再提交经提取和校验的记忆</text>
+<path d="M310,261 L170,261 L170,345" fill="none" stroke="#45616b" stroke-width="1.8" marker-end="url(#arrow-architecture-29)"/><path d="M670,261 L810,261 L810,345" fill="none" stroke="#45616b" stroke-width="1.8" marker-end="url(#arrow-architecture-29)"/>
+<rect x="40" y="350" width="260" height="72" rx="9" fill="#f1f7f6" stroke="#5d8e88"/><text x="170" y="378" text-anchor="middle" font-size="18" font-weight="600">适用约束</text><text x="170" y="401" text-anchor="middle" font-size="13" fill="#53616a">确定性查询 条件与例外</text><rect x="680" y="350" width="260" height="72" rx="9" fill="#f1f7f6" stroke="#5d8e88"/><text x="810" y="378" text-anchor="middle" font-size="18" font-weight="600">相关背景</text><text x="810" y="401" text-anchor="middle" font-size="13" fill="#53616a">全文 向量 增量与证据</text>
+<path d="M170,422 L170,496 L301,496" fill="none" stroke="#45616b" stroke-width="1.8" marker-end="url(#arrow-architecture-29)"/><path d="M810,422 L810,496 L679,496" fill="none" stroke="#45616b" stroke-width="1.8" marker-end="url(#arrow-architecture-29)"/>
+<rect x="310" y="460" width="360" height="72" rx="9" fill="#f1f7f6" stroke="#5d8e88"/><text x="490" y="488" text-anchor="middle" font-size="18" font-weight="600">本次任务上下文</text><text x="490" y="511" text-anchor="middle" font-size="13" fill="#53616a">当前目标 必需规则 背景与版本收据</text>
+<path d="M490,532 L490,574" fill="none" stroke="#45616b" stroke-width="1.8" marker-end="url(#arrow-architecture-29)"/><rect x="310" y="580" width="360" height="64" rx="9" fill="#f1f7f6" stroke="#5d8e88"/><text x="490" y="608" text-anchor="middle" font-size="18" font-weight="600">主 agent 子 agent 与动作入口</text><text x="490" y="631" text-anchor="middle" font-size="13" fill="#53616a">执行前复核版本 时间 授权和租约</text>
+</svg></figure><details class="diagram-source"><summary>查看 Mermaid 图示源文</summary><pre><code>flowchart TD
+  A[用户消息 人工编辑 工具结果] --&gt; B[可信宿主适配器]
+  B --&gt; C[事件接收与持久化收据]
+  C --&gt; D[候选记忆提取]
+  D --&gt; E[身份 范围 来源 版本校验]
+  E --&gt; F[SQL 事件 记忆版本 关系 待办队列]
+  F --&gt; G[当前约束解析器]
+  F --&gt; H[索引工作器]
+  H --&gt; I[全文与向量索引]
+  I --&gt; J[背景检索和证据补全]
+  G --&gt; K[上下文组装与收据]
+  J --&gt; K
+  K --&gt; L[主 agent 和子 agent]
+  L --&gt; M[动作网关 最新约束校验]
+  F --&gt; M
+  F --&gt; N[记忆编辑与状态界面]
+  N --&gt; E
+</code></pre></details>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>组件</th>
+<th>负责</th>
+<th>不应承担的职责</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>宿主适配器</td>
+<td>绑定真实用户、项目、任务、agent 身份；记录消息与工具事件</td>
+<td>接受模型自报身份作为授权依据</td>
+</tr>
+<tr>
+<td>接收器</td>
+<td>去重、持久化、返回已提交位置</td>
+<td>宣称未收到的内容已保存</td>
+</tr>
+<tr>
+<td>提取器</td>
+<td>从可见证据生成变更提案</td>
+<td>直接覆盖任意现有规则</td>
+</tr>
+<tr>
+<td>校验与提交器</td>
+<td>版本冲突、作用域、条件、来源资格、事务</td>
+<td>用相似度裁决访问权限</td>
+</tr>
+<tr>
+<td>当前约束解析器</td>
+<td>加载当前适用约束和有效例外</td>
+<td>依靠向量 top-k 找禁止事项</td>
+</tr>
+<tr>
+<td>检索器</td>
+<td>元数据、关键词、向量、关联证据召回</td>
+<td>决定某条规则已被撤销</td>
+</tr>
+<tr>
+<td>上下文组装器</td>
+<td>分配预算、保持条件与出处、输出版本收据</td>
+<td>将假设重新包装为用户命令</td>
+</tr>
+<tr>
+<td>动作网关</td>
+<td>对已接入工具动作执行机器可判定规则</td>
+<td>保证绕过网关的动作仍受控制</td>
+</tr>
+<tr>
+<td>后台工作器</td>
+<td>更新索引、重试通知、删除传播、归档</td>
+<td>单独成为另一份事实源</td>
+</tr>
+</tbody></table></div>
+<h2 id="architecture-h5">5 记忆内容和存储模型</h2>
+<h3 id="architecture-h6">5.1 三种内容层</h3>
+<p><strong>原始证据。</strong> 用户消息、人工编辑、工具观察、明确决策和工作检查点。保存最小必要上下文与来源引用。模型隐藏推理不在采集范围内。工具声称成功与环境实际状态要区分，重要结果保留可核验引用。</p>
+<p><strong>结构化记忆。</strong> 一条可独立理解的陈述：主体、谓词、内容、否定、范围、条件、例外、来源与时间。类型使用受控枚举：constraint、goal、preference、fact、decision、procedure、work_state、hypothesis。类型和操作分开；“删除”是操作，不是永久内容类别。</p>
+<p><strong>派生视图。</strong> 短摘要、标签、全文索引、向量、Markdown/JSON 导出、界面搜索视图。这些内容可重建，不能单独决定当前有效版本。</p>
+<h3 id="architecture-h7">5.2 主要实体</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>实体</th>
+<th>核心字段</th>
+<th>设计说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>scope</td>
+<td>scope_id、tenant_id、parent_id、kind</td>
+<td>global/project/branch/task；稳定 ID 不绑定沙盒路径</td>
+</tr>
+<tr>
+<td>source_event</td>
+<td>event_id、source_type、source_ref、payload_ref、recorded_seq</td>
+<td>来源身份由接入层确认；原文可独立删除</td>
+</tr>
+<tr>
+<td>memory_record</td>
+<td>memory_id、scope_id、head_revision、erased_at</td>
+<td>稳定记忆 ID；向量通过 ID 和版本关联</td>
+</tr>
+<tr>
+<td>memory_revision</td>
+<td>revision、assertion_status、valid_from、valid_to、system_from_seq、system_to_seq</td>
+<td>保留当时记录的版本；有效区间左闭右开</td>
+</tr>
+<tr>
+<td>正文载荷</td>
+<td>subject、predicate、content、conditions、evidence</td>
+<td>核心骨架放在版本行的可清除字段；独立于无正文审计事件，规模扩大后可拆表</td>
+</tr>
+<tr>
+<td>memory_relation</td>
+<td>source_id、target_id、type、source_revision、target_revision</td>
+<td>replaces/exception_to/derived_from/depends_on；关系也必须可追溯</td>
+</tr>
+<tr>
+<td>mutation_receipt</td>
+<td>actor_id、idempotency_key、request_hash、result</td>
+<td>相同请求可重试；同 key 不同内容报冲突</td>
+</tr>
+<tr>
+<td>outbox</td>
+<td>event_id、operation、payload_ref、attempts、next_attempt</td>
+<td>与记忆写入同事务；幂等消费</td>
+</tr>
+<tr>
+<td>scope_epoch</td>
+<td>policy_epoch、data_epoch、acl_epoch</td>
+<td>分开约束变化、普通数据变化和授权变化</td>
+</tr>
+<tr>
+<td>context_receipt</td>
+<td>snapshot_seq、scope_epochs、memory_versions、expires_at</td>
+<td>说明本次任务用了什么；不默认复制全文</td>
+</tr>
+<tr>
+<td>task_checkpoint</td>
+<td>lease_owner、fence、expires_at、state_ref</td>
+<td>计划、工具结果、待办与文件引用</td>
+</tr>
+<tr>
+<td>erasure_job</td>
+<td>target_ids、online_hidden_at、purge_state、backup_deadline</td>
+<td>区分立即停止读取、在线清除和备份处理</td>
+</tr>
+</tbody></table></div>
+<p><code>spec/schema.sql</code> 是可执行的核心骨架。完整产品还需将身份提供方、凭据存储、细粒度策略和外部对象存储适配接入服务层。SQL 外键和 CHECK 只能保证部分结构，不能替代应用语义校验。</p>
+<h3 id="architecture-h8">5.3 时间模型</h3>
+<p>记录两个独立维度：有效时间表示内容在现实或项目中何时适用；系统时间表示服务在何时知道这条记录。内部有效时间统一使用 UTC 毫秒，另外保留原始时区和解析依据；系统顺序使用服务端单调提交序号，不能用客户端时钟排序并发写入。</p>
+<p>示例：9 月 15 日说“10 月 1 日开始允许付费 API”。新记录立即入库，但 10 月 1 日前不能作为当前许可。已有约束的结束时间调整为 10 月 1 日，新规则的开始时间同样为该日。未来替换不能立刻把旧规则全局标为不可用。</p>
+<p>回溯纠错保存新系统版本；历史查询可以分别回答“当时系统知道什么”和“现在认为当时有效什么”。历史查询仍按当前身份授权及删除标记过滤，不允许通过时间旅行取回已彻底删除的内容。</p>
+<h2 id="architecture-h9">6 写入和意图识别</h2>
+<h3 id="architecture-h10">6.1 写入路径</h3>
+<ol>
+<li>宿主将原始事件写入接收器，附稳定事件 ID；服务提交后返回持久化收据。</li>
+<li>提取器只阅读新事件、必要指代上下文和小范围候选旧记忆。</li>
+<li>输出结构化提案。使用 JSON Schema 校验字段、长度、枚举与引用，不能将格式正确视为语义正确。</li>
+<li>程序完成身份、作用域、来源资格、时间区间和目标版本检查。</li>
+<li>只在同一对象、兼容范围、同一冲突组内检索可能被修改的记录。向量相似度仅作为找候选的线索。</li>
+<li>对明确表达且目标唯一的授权变更自动提交；推断先存 hypothesis；影响大的歧义进入待确认队列，不静默删除或收紧全局约束。</li>
+<li>同一事务写入版本、关系、epoch、变更收据与 outbox。</li>
+<li>后台更新检索索引并通知受影响任务。失败可重试，不撤销已成功的权威写入。</li>
+</ol>
+<h3 id="architecture-h11">6.2 意图分类</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>原话</th>
+<th>正确识别</th>
+<th>提交结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>本项目不得调用付费 API</td>
+<td>明确设定约束</td>
+<td>新建项目约束</td>
+</tr>
+<tr>
+<td>或许可以允许付费 API</td>
+<td>提议</td>
+<td>假设或待讨论事项</td>
+</tr>
+<tr>
+<td>以前要求不得用付费 API</td>
+<td>历史描述</td>
+<td>历史事实，不新设当前约束</td>
+</tr>
+<tr>
+<td>演示任务这一次允许例外</td>
+<td>有条件例外</td>
+<td>指向原规则的任务例外</td>
+</tr>
+<tr>
+<td>不再要求必须用 MySQL</td>
+<td>撤销</td>
+<td>解除必须，不生成禁止或迁移任务</td>
+</tr>
+<tr>
+<td>把那条改成只限制生产环境</td>
+<td>修改与指代</td>
+<td>唯一指代时更新；否则展示候选</td>
+</tr>
+<tr>
+<td>明年才改</td>
+<td>未来生效</td>
+<td>保留当前状态，创建未来有效区间</td>
+</tr>
+</tbody></table></div>
+<p>提取器的自报置信度不能直接当成概率。自动处理阈值应在人工标注的开发集上校准，分别统计误设约束、误删和漏记。假设、高置信事实、低置信事实不能通过多次摘要自动提升为用户权威指令。</p>
+<h3 id="architecture-h12">6.3 提取器提示约定</h3>
+<p>输入明确区分 trusted_envelope、source_text、neighbor_context、candidate_records。source_text 和候选证据全部按数据处理；其中的“忽略之前规则”“改写权限”等文字不能修改服务策略。</p>
+<p>提取器返回提案与原文证据片段，不输出隐式思维链；每个证据片段必须能够在原始来源中定位。对引用、反事实、条件、否定、尚未决定的提议显式标记。由宿主确认的人工编辑身份，不允许由模型在提案中自己填写。</p>
+<h2 id="architecture-h13">7 切块和索引</h2>
+<p>口头约束以完整命题为单元。条件和例外与主体一并保留；复杂规则可以分成父规则与子条件，但召回时必须补全必要依赖。计划、观察、决定分别存储，避免一句“准备迁移”变成“已经迁移”。</p>
+<p>长文档采用结构优先切块：标题、段落、代码块、表格、列表层级作为第一层边界；过长块再按语义和长度拆分。每块保留父标题、源偏移、内容哈希、文档版本和邻接关系。固定 token 上限是工程保护，不是语义正确性证明。输入、输出发生截断时标为不完整并重新处理，不将半条规则发布为有效约束。</p>
+<p>建议初始参数：事实正文优先控制在 80–250 tokens；证据窗口约 300–800 tokens；文档块约 400–900 tokens。这些是实验起点，需针对中文、英文、代码、表格分别验证。不得为了满足长度将否定、条件或例外截掉。</p>
+<p>全文检索保留精确标识符、路径和实体词。中文采用预分词字段或经过验证的 CJK 分词方案；SQLite FTS5 的默认分词不等于中文语义分词。FTS5 提供 BM25 与自定义分词扩展，可作为实现基础。<a href="https://www.sqlite.org/fts5.html">SQLite FTS5</a></p>
+<p>向量索引记录 embedding_model、model_revision、dimension、normalization、payload_hash、memory_revision 与 index_generation。更换 embedding 模型应在独立代际重建和切换，不能混用不兼容空间。尚未建好向量的新记录通过增量扫描/全文检索补入，避免写入成功但立即搜索不到。</p>
+<h2 id="architecture-h14">8 检索和上下文组装</h2>
+<h3 id="architecture-h15">8.1 必需约束路径</h3>
+<p>服务依据可信身份、当前项目/分支/任务、动作类型和有效时间，直接查询约束、明确例外和未决冲突。窄范围规则不会自动覆盖广范围规则；覆盖或例外必须有明确关系及相应修改权限。</p>
+<p>可机器执行的约束进入动作网关；自然语言约束作为完整内容注入当前请求。必须区分三种保障等级：</p>
+<ol>
+<li><strong>机器强制</strong>：如允许写入的目录、允许调用的工具、预算边界，能由可信网关判定。</li>
+<li><strong>上下文遵守</strong>：如视觉风格、叙事语气，依赖模型理解与结果检查，不能给出绝对保证。</li>
+<li><strong>尚未解析</strong>：条件或指代不清，影响相关动作时提示处理。</li>
+</ol>
+<p>必需约束超出预算时，优先缩小任务范围、拆分动作或构建无损的规则清单；不允许静默把禁止项交给向量 top-k 丢弃。</p>
+<h3 id="architecture-h16">8.2 背景检索路径</h3>
+<p>解析当前任务为若干信息需求，例如“接口定义”“以前的失败”“用户偏好”。在授权范围内并行执行精确 ID、全文和向量召回，使用排名融合而非未经校准的异构分数直接相加。建议以 RRF 作为简单起点，参数纳入消融实验。</p>
+<p>随后回查 SQL 的当前版本、有效区间、来源和删除状态；补全条件、例外和父块证据。重要条件缺失的候选不得独立进入最终上下文。对需要语义裁决的少量候选调用重排模型；标签和时间戳由程序先过滤，避免让辅助模型反复通读整个库。</p>
+<p>过滤与 ANN 相互作用可能造成候选不足；不能先从全库取少量结果再全部过滤后宣布无记忆。应在允许范围内检索，必要时扩大候选或对小集合进行精确搜索。pgvector 官方明确说明了近似索引过滤后结果不足以及迭代扫描的处理方式。<a href="https://github.com/pgvector/pgvector">pgvector</a></p>
+<h3 id="architecture-h17">8.3 上下文预算</h3>
+<p>为当前请求保留最近对话、当前目标、未解决事项和任务状态。其余预算由“适用约束、必要证据、相关背景”分配。不要把上下文压缩等同于只保留最后一句对话。每次组装返回所用 ID、版本、来源、选入原因与未覆盖的信息需求；缺少证据时允许返回不足，而不补造记忆。</p>
+<p>初始背景召回候选数可设全文 20、向量 20、增量 10，融合后语义重排不超过 12，最终按预算选择。这些是配置默认候选，不是性能保证。用户可以选择更快、均衡、更完整三档；后台仍展示实际成本。</p>
+<h2 id="architecture-h18">9 约束修改 撤销和删除</h2>
+<p><strong>替换</strong>新增记录并明确关联被替代记录，在同一事务调整有效区间。<strong>撤销</strong>结束原要求的适用期，不产生相反命令。<strong>纠错</strong>记录系统认知变化，保留必要的时间语义。<strong>归档</strong>降低普通记忆的默认检索优先级；有效约束不能因归档失去约束力。普通文字整理 AMEND 只允许不改变断言语义和时间的修订；新的现实要求使用 REPLACE，纠正过去记录使用 CORRECT。参考模型只实现显式 CORRECT，不实现完整未来 REPLACE。</p>
+<p>旧来源重放必须经过事件去重、来源处理位置及目标版本检查。撤销关系和人工修订版本阻止旧提取结果悄悄覆盖当前状态；用户真正重新启用旧规则时必须形成新的明确事件。</p>
+<p>彻底删除先在权威库写入不可读取标记并提升相关 epoch，所有普通及历史读取立即屏蔽。之后执行正文、证据载荷、派生摘要、FTS、向量、缓存和受控导出副本的清理。审计记录仅保留无正文的操作元数据。无法控制的用户下载文件或外部 provider 副本需在作业范围中明确列出。</p>
+<p>SQLite 删除行不自动等于磁盘残留全部不可恢复。实施时应处理数据库/WAL/FTS 的清理策略、备份期限和恢复过滤；需要更强删除能力的部署可采用独立加密载荷与密钥生命周期，仍需证明副本和密钥备份范围。界面分开显示“停止使用”“在线副本清理”“备份到期”，不得提前宣布所有副本已永久清除。</p>
+<h2 id="architecture-h19">10 多 agent 和跨容器协议</h2>
+<h3 id="architecture-h20">10.1 身份与作用域</h3>
+<p>身份来自宿主适配器或连接凭据。模型提供的 project_id 只是请求目标，必须与授权交集核对。global 表示当前租户/用户的全局，绝不表示所有用户共享。不同 agent 的标签偏好用于相关性路由，ACL 用于授权，两者独立。</p>
+<p>HTTP 服务按身份发放作用域限定的凭据。MCP 是工具访问协议，并不自动提供项目级记忆权限；HTTP 模式应按所选版本实现相应授权要求，本地 stdio 由宿主安全提供连接凭据。<a href="https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization">MCP 授权</a></p>
+<h3 id="architecture-h21">10.2 乐观并发与版本</h3>
+<p>所有定向修改提交 expected_revision；冲突返回 409，并提供允许读取的新版本及差异。幂等键按身份隔离，复用同一键但改变请求内容报冲突。单服务事务提交提供顺序；普通数据、约束和 ACL 使用不同 epoch，避免一条无关笔记使所有 agent 重启。</p>
+<h3 id="architecture-h22">10.3 上下文收据和动作校验</h3>
+<p>收据绑定身份、任务、所读作用域 epoch、记忆版本、快照序号和到期时间。到期时间还必须早于下一项相关规则开始/结束生效的时间；否则未来规则在时间到达后、没有新写入时仍可能被旧收据绕过。</p>
+<p>每个受控动作在服务端入口重新检查 epoch、授权、时间边界和任务租约。策略变更与动作接受在同一顺序域中协调。只在客户端先查一次再异步执行，不能消除检查后规则变化的竞争窗口。</p>
+<p><strong>可承诺的撤销边界</strong>：撤销提交以后，受控网关不再接受依赖旧策略的全新动作；已被接受或已经发往外部的动作按运行状态尽力取消或补偿，不宣称可以时间倒流。纯 MCP 只读接入的 agent 只能获得记忆更新，不能宣称已经覆盖所有外部副作用。</p>
+<h3 id="architecture-h23">10.4 子 agent 和任务租约</h3>
+<p>子 agent 在创建时继承经过收窄的身份、项目范围和当前约束引用，不复制可无限期使用的旧授权。任务分配使用带到期时间和单调 fence 的租约；旧执行者恢复后，其过期 fence 被存储和动作入口拒绝。无法拦截的本地文件操作仍需宿主集成才能达到该约束。</p>
+<p>普通背景可使用任务快照提高可复现性；当前授权和当前适用约束始终再次核对。跨任务恢复读取检查点、当前规则和待完成工具操作，不把旧计划直接当作已完成事实。</p>
+<h2 id="architecture-h24">11 持久化和故障恢复</h2>
+<p>SQLite 使用本地持久盘、事务、WAL 与明确的同步配置。高可靠配置采用 synchronous=FULL；持久性仍依赖操作系统和存储设备正确实现同步。WAL 有单写者特性，不适合作为跨机器共享文件接口。<a href="https://www.sqlite.org/wal.html">SQLite WAL</a>、<a href="https://sqlite.org/pragma.html">同步配置</a></p>
+<p>数据库提交和 outbox 投递采用至少一次处理与幂等消费。系统不宣称网络与外部工具端到端天然“恰好一次”。进程崩溃后从已提交位置恢复；未确认提交的请求使用原幂等键重试。</p>
+<p>原始事件确认与提取完成分开显示。关键口头约束应在当前任务继续相关动作之前完成解析与提交；不能仅显示“消息已保存”就让动作沿用旧规则。普通背景可异步处理。</p>
+<p>备份通过数据库支持的一致性方式产生，不直接复制忙碌数据库的某一个文件。恢复时先校验完整性、重放删除清单，再开放查询并重建派生索引。<a href="https://www.sqlite.org/backup.html">SQLite Backup API</a></p>
+<h2 id="architecture-h25">12 易用性设计</h2>
+<p>主要界面只显示用户能理解的字段：记住了什么、在哪里适用、什么时候生效、来源、当前状态。ID、epoch、向量模型等进入高级详情。</p>
+<p>导航包括：当前项目记忆、约束与例外、待确认、最近变更、任务正在使用的记忆、删除进度、服务状态。默认不要求用户写标签或 SQL；项目和来源自动填充，用户可以纠正。</p>
+<p>每条记忆提供编辑、停止使用、设为长期、查看来源和查看影响。彻底删除使用独立操作，并明确列出范围。普通可逆编辑直接保存，提供撤销；只有指代不明或有实质冲突时才要求用户选择目标。</p>
+<p>结果解释应短而具体，例如“此任务采用你的项目约束，来源于 9 月 15 日的消息；演示例外只适用于另一个任务”。不要向普通用户展示向量分数作为正确性证明。</p>
+<h2 id="architecture-h26">13 技术选型与扩展</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>层</th>
+<th>本地第一版</th>
+<th>扩展条件与替代</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>服务</td>
+<td>TypeScript，独立进程，HTTP 与 MCP 适配</td>
+<td>复用当前 DSH JavaScript/TypeScript 生态</td>
+</tr>
+<tr>
+<td>权威存储</td>
+<td>SQLite，集中写入入口</td>
+<td>多租户、多主机高并发写入或高可用需求时迁移 PostgreSQL</td>
+</tr>
+<tr>
+<td>精确与关键词</td>
+<td>SQL 条件与 FTS5，经过验证的 CJK 分词</td>
+<td>保留稳定检索接口，必要时独立全文引擎</td>
+</tr>
+<tr>
+<td>向量</td>
+<td>先复用现有本地 embedding；小集合精确检索；sqlite-vec 为候选</td>
+<td>需要服务化规模时评估 pgvector 或 Qdrant，另测过滤召回</td>
+</tr>
+<tr>
+<td>关联关系</td>
+<td>SQL 关系表</td>
+<td>多跳收益经过消融证明后再引入专用图服务</td>
+</tr>
+<tr>
+<td>模型</td>
+<td>可替换提取/重排/embedding provider</td>
+<td>本地默认；云端须按数据传输偏好启用</td>
+</tr>
+<tr>
+<td>后台任务</td>
+<td>SQL outbox 与单工作器</td>
+<td>队列压力和重试积压达到门槛后拆分</td>
+</tr>
+<tr>
+<td>UI</td>
+<td>先扩展 DSH 记忆页，另提供轻量独立页面</td>
+<td>无需首次安装就部署整套云端平台</td>
+</tr>
+</tbody></table></div>
+<p>向量组件应作为可替换索引，避免业务生命周期绑定单一库。sqlite-vec 的具体稳定性、包平台与过滤能力需锁定版本后验证；不能仅根据项目名称假定是成熟 ANN 服务。<a href="https://alexgarcia.xyz/sqlite-vec/">官方项目文档</a></p>
+<p>首版不同时引入 Graphiti、Mem0、Cognee 和 LangGraph 作为四套权威记忆层。它们适合提供基线、算法参考或独立适配，叠加会增加生命周期冲突。具体采用范围见项目调研与路线图。</p>
+<h2 id="architecture-h27">14 估算和服务目标</h2>
+<p>以下为设计起点：十万条有效记录、平均正文和元数据 2 KB 时约 200 MB，不含索引、历史和证据。若每条使用 1024 维 float32 向量，原始向量约 409.6 MB；双代际重建约翻倍，ANN 开销需实测。原始聊天与工具输出往往比结构化记录更大，必须配置保留策略。</p>
+<p>建议测量目标：不含模型调用的当前约束查询 P95 小于 100 ms；普通本地检索 P95 小于 300 ms；界面变更通知正常情况下小于 1 秒；持久化确认写入在宿主进程崩溃后的逻辑丢失数为零。均须在声明 CPU、存储、数据规模和并发数的环境中验证，不能直接作为承诺。</p>
+<p>对于机器可判定约束，验收要求协议测试中零旧版本动作被误接受；对于自然语言约束，分别测识别与最终遵守率。总体成本按写入、提取、更新、embedding、重排、主模型输入输出、重试与索引重建累计。</p>
+<h2 id="architecture-h28">15 仍需验证的风险</h2>
+<p>中文隐含意图、代词范围与条件抽取仍可能出错；人工确认太多会破坏易用性；人工确认太少会扩大误写。动作网关覆盖度决定强制能力，纯文本上下文不能替代它。标签过细可能导致漏召回，关联补全过多又会吃掉预算。更复杂的图检索与辅助 agent 需要用真实任务验证收益后再启用。</p>
+<p>设计以明确不变量和可复现评测降低这些风险；没有从“外置存储”自动推出“完全正确、绝不遗忘或一定省 token”的推论。</p>
+</section>
+<section class="doc" data-id="protocol" data-title="数据与协议" hidden><h1 id="protocol-h0">外部项目记忆服务数据与接口协议</h1>
+<h2 id="protocol-h1">1 协议范围</h2>
+<p>本文为 0.1 版接口设计。<code>spec/openapi.json</code> 是机器可读的核心 HTTP 契约；<code>spec/schema.sql</code> 是 SQLite 核心存储骨架；<code>spec/examples.json</code> 包含输入样例。它们没有启动实际 HTTP/MCP 服务。身份提供方、模型提供方、索引工作器和真实工具网关需要按本文实现。</p>
+<p>HTTP 与 MCP 共用同一业务层，不能各自维护一套状态。所有会改变有效记忆的操作均经过来源、身份、范围、版本和幂等校验。默认拒绝未知字段；协议升级需增加 schema_version。JSON 格式可校验不代表事实正确。</p>
+<h2 id="protocol-h2">2 可信请求信息</h2>
+<p>连接层确定 actor_id、tenant_id、可访问 scope、凭据版本。请求体不能自行提升身份。宿主适配器可以将真实用户消息登记为 user_message；模型直接调用 memory.propose 只能登记为 agent_proposal。两者不能通过一个 source_type 字符串互相冒充。</p>
+<p><code>Idempotency-Key</code> 用于写入重试。服务将规范化请求的摘要与该身份、幂等键一起保存。相同内容返回同一结果；不同内容返回 <code>IDEMPOTENCY_CONFLICT</code>。认证与授权必须在返回缓存结果前执行。</p>
+<p>时间传输统一为 RFC 3339 UTC 字符串，SQL 中统一为 UTC 毫秒；系统提交顺序使用服务端 commit_seq。输入时区、相对时间解析上下文存于来源元数据。版本与时间不得由客户端自己宣称已获批准。</p>
+<h2 id="protocol-h3">3 记忆对象</h2>
+<p>一个读取响应的概念示例：</p>
+<pre><code class="language-json">{
+  &quot;memory_id&quot;: &quot;mem_api_budget&quot;,
+  &quot;revision&quot;: 3,
+  &quot;scope_id&quot;: &quot;project_alpha&quot;,
+  &quot;kind&quot;: &quot;constraint&quot;,
+  &quot;subject&quot;: &quot;external_api&quot;,
+  &quot;predicate&quot;: &quot;paid_usage&quot;,
+  &quot;content&quot;: &quot;本项目不得调用付费 API；经过明确授权的演示任务可例外。&quot;,
+  &quot;assertion_status&quot;: &quot;accepted&quot;,
+  &quot;valid_from&quot;: &quot;2026-09-15T00:00:00Z&quot;,
+  &quot;valid_to&quot;: null,
+  &quot;conditions&quot;: {&quot;environment&quot;: [&quot;production&quot;, &quot;development&quot;, &quot;demo&quot;]},
+  &quot;source&quot;: {&quot;event_id&quot;: &quot;evt_41&quot;, &quot;source_type&quot;: &quot;user_message&quot;},
+  &quot;evidence_refs&quot;: [{&quot;event_id&quot;: &quot;evt_41&quot;, &quot;quote&quot;: &quot;本项目不得调用付费 API；经过明确授权的演示任务可例外。&quot;}],
+  &quot;relations&quot;: [],
+  &quot;enforcement&quot;: &quot;context_only&quot;
+}
+</code></pre>
+<p>例中为虚构来源；真实写入必须核对引用是否确实来自相应原始消息。若另存证据偏移，应约定编码与边界。<code>enforcement</code> 只有完成机器规则映射、覆盖范围验证后才可标为 <code>tool_guarded</code>。</p>
+<p><code>assertion_status</code> 表示是否被接纳，不能混同是否当前生效；当前生效还取决于有效区间、作用域、条件、例外及是否删除。正文类型为 hypothesis 的推断不会自动转换为 constraint。</p>
+<h2 id="protocol-h4">4 操作语义</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>操作</th>
+<th>目标</th>
+<th>结果</th>
+<th>必要检查</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ASSERT</td>
+<td>新陈述</td>
+<td>新建稳定 ID 与首版</td>
+<td>来源资格、重复事实、冲突候选</td>
+</tr>
+<tr>
+<td>AMEND</td>
+<td>同一陈述的文字或元数据</td>
+<td>创建不改变断言语义及有效期的新版本</td>
+<td>expected_revision；语义改变须转 REPLACE 或显式 CORRECT</td>
+</tr>
+<tr>
+<td>REPLACE</td>
+<td>旧陈述与新陈述</td>
+<td>调整有效区间并记录 replaces</td>
+<td>对象、范围、时间、修改权限</td>
+</tr>
+<tr>
+<td>REVOKE</td>
+<td>当前要求</td>
+<td>结束适用区间</td>
+<td>明确目标，不能生成相反命令</td>
+</tr>
+<tr>
+<td>EXCEPT</td>
+<td>明确原规则</td>
+<td>建立有范围有时限的例外记录</td>
+<td>必须有授予例外的权限</td>
+</tr>
+<tr>
+<td>CORRECT</td>
+<td>错误历史认知</td>
+<td>新系统版本，可调整过去有效期</td>
+<td>保留纠错来源与历史语义</td>
+</tr>
+<tr>
+<td>ARCHIVE</td>
+<td>普通背景</td>
+<td>改变存储/召回层级</td>
+<td>不解除仍有效的硬约束</td>
+</tr>
+<tr>
+<td>ERASE</td>
+<td>内容及受控派生副本</td>
+<td>立即屏蔽并启动清除作业</td>
+<td>精确目标、删除权限、范围清单</td>
+</tr>
+</tbody></table></div>
+<p>REVOKE 目标在更早时间已失效时返回原幂等结果或状态冲突，不能把原结束时间推迟。取消尚未生效的记录形成空有效区间，不能生成负区间。REPLACE 未来生效时旧内容在未来边界前继续适用。CORRECT 是用户明确纠错后的回溯语义，不应用于未来要求切换。多个并列条件不一定互斥，不用相似度自动清空同一标签全部内容。</p>
+<h2 id="protocol-h5">5 核心 HTTP API</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>方法与路径</th>
+<th>用途</th>
+<th>返回</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>POST /v1/events</td>
+<td>宿主登记原始用户/工具事件</td>
+<td>event_id、committed_seq、extraction_state</td>
+</tr>
+<tr>
+<td>POST /v1/proposals</td>
+<td>agent 提交有证据的候选变更</td>
+<td>proposal_id、accepted/pending/rejected</td>
+</tr>
+<tr>
+<td>POST /v1/mutations</td>
+<td>授权提交结构化变更</td>
+<td>memory_id、revision、commit_seq、epoch</td>
+</tr>
+<tr>
+<td>POST /v1/context</td>
+<td>获取适用约束和相关背景</td>
+<td>内容包、证据、context_receipt、未覆盖需求</td>
+</tr>
+<tr>
+<td>GET /v1/memories/{id}</td>
+<td>当前记录或历史版本</td>
+<td>有权限的记录与来源</td>
+</tr>
+<tr>
+<td>POST /v1/action-checks</td>
+<td>动作网关核对收据与约束</td>
+<td>allowed、reason、当前 epoch</td>
+</tr>
+<tr>
+<td>POST /v1/erasures</td>
+<td>屏蔽内容并启动删除作业</td>
+<td>job_id、online_hidden_at、进度</td>
+</tr>
+<tr>
+<td>GET /v1/erasures/{id}</td>
+<td>查看清除范围与进度</td>
+<td>各副本状态、备份截止</td>
+</tr>
+<tr>
+<td>GET /v1/changes</td>
+<td>获取身份可见的增量变更</td>
+<td>游标、变更 ID、next_cursor</td>
+</tr>
+<tr>
+<td>PUT /v1/checkpoints/{task_id}</td>
+<td>保存工作检查点</td>
+<td>revision、commit_seq</td>
+</tr>
+<tr>
+<td>GET /v1/health</td>
+<td>服务基本健康</td>
+<td>非敏感状态</td>
+</tr>
+</tbody></table></div>
+<p>初版 OpenAPI 覆盖上述契约的核心形状；未定义的 UI 搜索、任务租约管理和身份管理端点按下一版扩展，不能以“HTTP 契约已有文件”宣称完整服务实现。</p>
+<h3 id="protocol-h6">5.1 错误码</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>HTTP</th>
+<th>业务码</th>
+<th>调用方处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>400</td>
+<td>INVALID_SCHEMA</td>
+<td>修改字段或长度，不盲目重复</td>
+</tr>
+<tr>
+<td>401</td>
+<td>UNAUTHENTICATED</td>
+<td>由宿主重新获取凭据</td>
+</tr>
+<tr>
+<td>403</td>
+<td>SCOPE_DENIED</td>
+<td>显示允许范围，不尝试换标签绕过</td>
+</tr>
+<tr>
+<td>404</td>
+<td>NOT_FOUND</td>
+<td>不向无权方暴露记录是否存在</td>
+</tr>
+<tr>
+<td>409</td>
+<td>VERSION_CONFLICT</td>
+<td>重读当前版本并重新形成变更</td>
+</tr>
+<tr>
+<td>409</td>
+<td>IDEMPOTENCY_CONFLICT</td>
+<td>同一键被错误复用，修正调用逻辑</td>
+</tr>
+<tr>
+<td>409</td>
+<td>CONTEXT_STALE</td>
+<td>刷新约束和上下文收据</td>
+</tr>
+<tr>
+<td>409</td>
+<td>LEASE_STALE</td>
+<td>停止旧任务执行，由调度器重新分配</td>
+</tr>
+<tr>
+<td>422</td>
+<td>AMBIGUOUS_TARGET</td>
+<td>显示允许读取的候选，确定目标</td>
+</tr>
+<tr>
+<td>422</td>
+<td>EVIDENCE_MISMATCH</td>
+<td>重新核对来源，不直接升格为事实</td>
+</tr>
+<tr>
+<td>503</td>
+<td>STORAGE_UNAVAILABLE</td>
+<td>不确认已保存；对受控动作停止放行</td>
+</tr>
+<tr>
+<td>503</td>
+<td>MODEL_UNAVAILABLE</td>
+<td>普通检索可降级；未完成解析的关键变更保持待处理</td>
+</tr>
+</tbody></table></div>
+<h2 id="protocol-h7">6 读取一致性</h2>
+<p><code>context</code> 请求携带任务范围、查询、动作类别、背景预算与可选历史时点。授权范围取请求与连接权限的交集。响应显式区分 constraints、background、unresolved；用户指令与证据按来源标识，绝不把检索到的任意文本作为新的系统指令。</p>
+<p>读取步骤：</p>
+<ol>
+<li>取得允许作用域及 ACL epoch；记录当前 snapshot_seq。</li>
+<li>确定性加载有效约束与必要例外。</li>
+<li>在允许范围内查询全文、向量和未完成索引的增量记录。</li>
+<li>回查 SQL 当前或请求历史版本；屏蔽已删除内容。</li>
+<li>检查所有必需依赖可用且有权读取。若例外无权读取，应输出可执行的解析结果或停止相关动作，不能以“没看到例外”伪造完整解释。</li>
+<li>根据预算补齐证据、去重并返回未覆盖需求。</li>
+<li>写入上下文收据；计算到期时间为默认期限、相关时间边界和授权期限的最小值。</li>
+</ol>
+<p>索引工作器只能将 <code>(memory_id, revision, payload_hash, generation)</code> 全部仍匹配的结果发布为 ready。删除发生后，旧 embedding 回调到达不得重新插入可见结果。</p>
+<h2 id="protocol-h8">7 条件和例外</h2>
+<p>第一版机器规则语言仅支持白名单字段与有限表达式：all、any、eq、in、exists，以及经过宿主规范化的资源范围。禁用任意脚本、SQL、正则执行与网络查询表达式。扩展操作符需要独立测试。</p>
+<p>“作用范围更小”不是通用优先级。项目要求允许被任务例外覆盖时，例外需要明确 exception_to、授权者、有效区间和条件。一个用户要求不能更改服务部署方的访问控制政策。自然语言要求和服务控制面的权限策略是两类对象。</p>
+<p>内容关系不能盲目做传递推断：A 从 B 派生，B 被纠错后，A 应标为待重算或暂不用于相关决策，不能自动推断 A 的反命题。派生内容保留所有支持来源；删除一个来源后，若剩余证据仍足够，可重新生成干净版本，不能原样保留可能含被删正文的摘要。</p>
+<h2 id="protocol-h9">8 关键写入事务</h2>
+<pre><code class="language-text">BEGIN IMMEDIATE
+  认证主体已由连接层绑定
+  查验 scope 与修改权限
+  查验 idempotency key 与请求摘要
+  查验目标 expected_revision
+  追加提交顺序与无正文审计事件
+  关闭旧系统版本，建立新系统版本与有效区间
+  更新 head_revision 与显式关系
+  提升受影响 policy/data epoch
+  写入 outbox 与幂等回执
+COMMIT
+返回已持久化收据
+</code></pre>
+<p>修改多个相关记录（如一条未来替换）必须在同一事务内完成。进程在 COMMIT 前退出全部回滚；COMMIT 后响应丢失，重试返回原回执。模型和外部网络调用不要放入长时间写事务。</p>
+<h2 id="protocol-h10">9 撤销与动作的顺序边界</h2>
+<figure class="diagram"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="撤销规则与旧动作拒绝时序图" viewBox="0 0 980 570" style="font-family:Segoe UI,Microsoft YaHei,sans-serif;fill:#172b32"><defs><marker id="arrow-protocol-14" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#45616b"/></marker></defs>
+<rect x="65" y="20" width="130" height="42" rx="8" fill="#f1f7f6" stroke="#5d8e88"/><text x="130" y="47" text-anchor="middle" font-size="16">用户</text><path d="M130,62 L130,550" stroke="#bdc9cd" stroke-dasharray="4 5"/><rect x="305" y="20" width="130" height="42" rx="8" fill="#f1f7f6" stroke="#5d8e88"/><text x="370" y="47" text-anchor="middle" font-size="16">记忆服务</text><path d="M370,62 L370,550" stroke="#bdc9cd" stroke-dasharray="4 5"/><rect x="555" y="20" width="130" height="42" rx="8" fill="#f1f7f6" stroke="#5d8e88"/><text x="620" y="47" text-anchor="middle" font-size="16">Agent</text><path d="M620,62 L620,550" stroke="#bdc9cd" stroke-dasharray="4 5"/><rect x="785" y="20" width="130" height="42" rx="8" fill="#f1f7f6" stroke="#5d8e88"/><text x="850" y="47" text-anchor="middle" font-size="16">动作网关</text><path d="M850,62 L850,550" stroke="#bdc9cd" stroke-dasharray="4 5"/>
+<path d="M130,120 L362,120" fill="none" stroke="#45616b" stroke-width="1.8" marker-end="url(#arrow-protocol-14)"/><text x="165" y="108" font-size="14">撤销规则</text>
+<rect x="318" y="156" width="104" height="45" fill="#e2eeeb"/><text x="370" y="175" text-anchor="middle" font-size="12">提交新版本</text><text x="370" y="191" text-anchor="middle" font-size="12">策略 epoch 增加</text>
+<path d="M370,245 L138,245" fill="none" stroke="#45616b" stroke-width="1.8" marker-end="url(#arrow-protocol-14)"/><text x="170" y="233" font-size="14">确认停止适用</text>
+<path d="M370,310 L612,310" fill="none" stroke="#45616b" stroke-width="1.8" marker-end="url(#arrow-protocol-14)"/><text x="420" y="298" font-size="14">通知上下文过时</text>
+<path d="M620,380 L842,380" fill="none" stroke="#45616b" stroke-width="1.8" marker-end="url(#arrow-protocol-14)"/><text x="650" y="368" font-size="14">携旧收据申请动作</text>
+<path d="M850,445 L378,445" fill="none" stroke="#45616b" stroke-width="1.8" marker-end="url(#arrow-protocol-14)"/><text x="480" y="433" font-size="14">同步检查当前规则与授权</text>
+<path d="M370,510 L842,510" fill="none" stroke="#45616b" stroke-width="1.8" marker-end="url(#arrow-protocol-14)"/><text x="475" y="498" font-size="14">拒绝旧收据 要求刷新</text>
+</svg></figure><details class="diagram-source"><summary>查看 Mermaid 图示源文</summary><pre><code>sequenceDiagram
+  participant U as 用户
+  participant S as 记忆服务
+  participant A as Agent
+  participant G as 动作网关
+  U-&gt;&gt;S: 撤销规则及目标版本
+  S-&gt;&gt;S: 提交新版本并提升策略 epoch
+  S--&gt;&gt;U: 已停止适用及提交序号
+  S--&gt;&gt;A: 上下文已过时通知
+  A-&gt;&gt;G: 携旧收据申请新动作
+  G-&gt;&gt;S: 同步检查当前授权 规则 时间与租约
+  S--&gt;&gt;G: CONTEXT_STALE
+  G--&gt;&gt;A: 刷新后重试
+</code></pre></details>
+<p><code>action-checks</code> 是动作网关内部构件。若外部客户端拿到 allowed 后自行延迟执行，服务无法保证期间没有撤销，因此不能把这类预检查作为原子许可。强保证路径由网关在动作接受/派发时再次协调检查，并记录 action_id、accepted_seq、dispatch_state。已发出的动作遵循其外部系统取消/补偿能力。</p>
+<p>未来规则切换还需时钟边界检查；仅比较 policy_epoch 不够，因为没有新写入时有效时间也会变化。</p>
+<h2 id="protocol-h11">10 MCP 映射</h2>
+<p>建议暴露 <code>memory.context</code>、<code>memory.get</code>、<code>memory.propose</code>、<code>memory.checkpoint</code>。普通 agent 默认不暴露原始管理员 ERASE/任意 SQL 接口。用户界面与可信宿主可以调用授权的 mutation/erasure 流程。</p>
+<p>工具输入 Schema 和 HTTP 数据形状复用。固定连接凭据限定最大作用域；每任务身份由原生适配器绑定或使用相应隔离连接。模型填写 actor_id、user_edit 等字段必须被忽略或拒绝。</p>
+<p>MCP 的协议与授权以选定版本为准，不宣称规范自动包含此文的撤销或事务语义。适配层仍需按客户端能力处理重连、事件游标和版本更新。<a href="https://modelcontextprotocol.io/specification/2025-11-25/basic">MCP 规范</a></p>
+<h2 id="protocol-h12">11 删除协议</h2>
+<p>删除作业的状态为 accepted、online_hidden、purging、backup_pending、completed 或 failed。online_hidden 在权威事务提交后生效，completed 只在作业声明范围全部处理并核验后使用。</p>
+<p>删除记录不保存被删正文；工作器通过稳定对象 ID 和版本处理派生对象。恢复旧备份前必须导入最新删除清单；删除清单应在备份策略中独立可恢复。导出到用户自管目录的文件列为不受控副本，不能自动宣称已经清理。</p>
+<p>agent 内存和第三方模型请求的已发送内容无法靠 SQL 删除撤回。对本服务控制的运行上下文发出失效事件，必要时由宿主重建任务上下文。UI 明确区分这些范围，禁止把“向量已删除”作为彻底删除成功。</p>
+<h2 id="protocol-h13">12 协议不变量</h2>
+<p>I1 未授权身份不得读取正文、来源、候选摘要或历史版本。I2 新写入记录只有提交后才能获得持久化确认。I3 同一幂等键不会产生两次不同修改。I4 并发旧版本不能静默覆盖。I5 索引结果必须回查权威版本。I6 未来替换不会提前解除当前约束。I7 删除标记覆盖历史查询与旧索引回调。I8 有效约束不因热度衰减消失。I9 旧上下文和过期租约不能通过受控动作入口。I10 对外副作用只能按真实接入覆盖范围承诺顺序与恢复。</p>
+<p>参考验证脚本验证其中一部分 SQL 与程序状态行为；完整产品验收还需真实客户端、模型、并发进程、网关和存储故障测试。详见评测文件和验证结果。</p>
+</section>
+<section class="doc" data-id="manual" data-title="使用与运维" hidden><h1 id="manual-h0">使用与运维说明</h1>
+<p>版本 0.1　设计日期：2026 年 9 月 15 日</p>
+<blockquote>
+<p><strong>这是拟议产品的使用说明。</strong> 下文的页面名称、按钮、提示和流程用于指导实现与验收，尚未作为完整服务安装运行。本包已有内容和验证范围以交付清单为准；现有 DSH 的实际能力见<a href="#integration">本地接入审查</a>。本文不提供尚未存在的安装命令。</p>
+</blockquote>
+<h2 id="manual-h1">1 这个服务帮助你做什么</h2>
+<p>服务保存项目中的明确要求、决定、偏好和可核验的工作状态，在新任务开始时提供当前适用的内容。你可以看到它记住了什么、来自哪里、何时生效，以及哪些任务正在使用。</p>
+<p>“请用中文回答”属于偏好，“本项目不调用付费 API”属于约束，“尝试过方案 A，测试失败”属于有来源的工作记录。系统应把它们分开，避免把讨论中的设想变成强制要求，或把计划当成完成结果。</p>
+<p>你通常只需说清内容和适用项目。标签、索引和存储版本由服务管理，高级详情提供给需要排查的人。</p>
+<h2 id="manual-h2">2 首次使用：关联项目和数据偏好</h2>
+<h3 id="manual-h3">2.1 关联当前项目</h3>
+<p>拟议首次使用页显示当前账户、服务位置和宿主识别出的项目。确认项目名称后，服务分配稳定的项目身份；日后目录移动或容器路径改变，应关联同一个项目，而不是再建一份记忆。</p>
+<p>示例：宿主路径为 <code>H:/Shop</code>，容器路径为 <code>/workspace/shop</code>。只要它们在可信项目配置中指向同一个项目，就能共享项目记忆。服务不会仅因文件夹都叫 shop 就自动合并。</p>
+<p>已有项目可通过“关联现有项目”选择；复制代码创建独立项目时，默认只复制明确选择的记忆，不自动继承全部历史。分支规则和一次性任务例外会单独显示适用范围。</p>
+<p>“我的全局记忆”表示当前用户在其获准项目中的通用偏好，不表示其他用户或所有 agent 都可以读。角色和组织授权仍然适用。</p>
+<h3 id="manual-h4">2.2 选择数据传输偏好</h3>
+<p>记忆存在哪里与模型在哪里处理是两件事。即使数据库在本机，云端提取器、向量模型、重排模型或主任务模型仍可能收到内容。拟议设置页分别列出以下路径：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>偏好</th>
+<th>使用效果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>全程本地</td>
+<td>原文、记忆和查询只交给已配置的本地服务与本地模型；缺少本地模型时保留手工编辑和关键词检索</td>
+</tr>
+<tr>
+<td>指定步骤可用云端</td>
+<td>逐项启用事实提取、向量生成、结果筛选或主任务模型；显示接收服务及发送内容类别</td>
+</tr>
+<tr>
+<td>使用远程记忆服务</td>
+<td>数据库与相关备份位于指定远程服务；模型处理设置仍单独配置</td>
+</tr>
+</tbody></table></div>
+<p>默认采用本地优先。已经配置云端主模型时，界面必须说明“送入任务上下文的记忆将随请求发送到该模型”。仅关闭云端 embedding 不等于所有内容都留在本地。</p>
+<p>偏好变更会约束后续发送，不能收回已经发送给其他服务的数据。无法满足当前传输偏好时，系统应停止相应处理并说明原因，不能自动换成另一个云端供应商。</p>
+<h3 id="manual-h5">2.3 完成第一次验证</h3>
+<p>用一条非敏感、容易辨认的要求开始，例如“本测试项目的文档采用中文”。确认页面出现该要求、来源和范围；新建一个同项目任务，检查“本任务正在使用”中是否出现它。随后撤销该要求，再创建任务，确认它不再作为当前约束出现。</p>
+<p>这一流程验证最基本的保存、跨任务读取和撤销；不能证明全部语义理解与外部动作限制都正确。</p>
+<h2 id="manual-h6">3 日常界面</h2>
+<p>拟议导航保持七个入口：</p>
+<ul>
+<li><strong>项目记忆</strong>：当前项目可用的事实、决定、偏好和工作记录。</li>
+<li><strong>要求与例外</strong>：必须遵守的要求、例外条件、生效时间和未解决冲突。</li>
+<li><strong>待确认</strong>：指代不明、来源不足或互相矛盾的提案。</li>
+<li><strong>最近变更</strong>：新增、修改、撤销以及变更人的时间线。</li>
+<li><strong>任务正在使用</strong>：任务的适用要求、相关背景、来源及刷新状态。</li>
+<li><strong>删除进度</strong>：停止使用、在线清理和备份处理分别到了哪一步。</li>
+<li><strong>服务状态</strong>：保存、提取、检索、索引、连接和备份是否正常。</li>
+</ul>
+<p>每条记录默认只显示“记住了什么、在哪里适用、何时生效、来源、状态”。展开来源后才显示原始消息或工具证据。向量分数不作为正确性提示；更有用的说明是“来自你 9 月 15 日的明确要求，只适用于生产环境”。</p>
+<h3 id="manual-h7">当前与历史怎么区分</h3>
+<p>默认查看当前适用内容。历史视图可以选择某个日期，并分开查看“系统当时记录的内容”和“现在认为当时有效的内容”。未来生效的要求列在“即将生效”，不会提前替换当前要求。</p>
+<p>撤销、被替代和纠错记录在历史中保留关系；彻底删除后的正文不能通过历史模式重新取回。没有权限阅读来源时，界面只显示允许披露的来源摘要或“来源不可查看”，不越权展开原文。</p>
+<h2 id="manual-h8">4 怎样口头新增和修改要求</h2>
+<h3 id="manual-h9">4.1 明确新增</h3>
+<p>你说：“这个项目的接口字段统一使用 snake_case。”</p>
+<p>拟议系统保存为项目约束，并简短回显：“已记住：本项目接口字段使用 snake_case。”不要求你填写类型或标签。若“这个项目”已经由任务身份确定，无需重复询问。</p>
+<p>你说：“也许应该改成 camelCase。”</p>
+<p>它应进入讨论或假设，不能直接替换已有要求。待你明确决定后，再形成新的变更。</p>
+<h3 id="manual-h10">4.2 条件和一次性例外</h3>
+<p>你说：“生产环境禁止付费 API；这次演示允许用一次。”</p>
+<p>页面应显示一条生产要求和一条指向它的任务例外。例外的任务范围、截止条件必须可见；下一个生产任务不能继承演示许可。若“一次”无法对应明确调用或任务边界，系统在相关动作前用具体候选澄清。</p>
+<p>条件属于要求的一部分。检索到“可以使用”时必须一并显示“仅此演示任务”，不能把前后句拆开导致许可扩大。</p>
+<h3 id="manual-h11">4.3 未来生效</h3>
+<p>你说：“10 月 1 日起允许付费 API。”</p>
+<p>界面用当前设置的时区展示完整生效日期，保留原始表达。生效前旧要求仍有效；到达时间边界后，新任务和新动作使用新要求。依赖旧要求的任务需刷新，不能因为没有新增消息就一直沿用旧许可。</p>
+<p>“月底”“明年”“发布以后”需要明确的时间或事件依据。依据不清且会改变当前动作时进入待确认；普通背景可以继续保存，相关动作等待规则明确。</p>
+<h3 id="manual-h12">4.4 撤销、替换、纠错与彻底删除</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>你的表达或操作</th>
+<th>服务应该做什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>不再要求必须使用 MySQL</td>
+<td>撤销“必须使用”，不生成“禁止使用”，也不自动创建迁移任务</td>
+</tr>
+<tr>
+<td>把必须使用 MySQL 改成 PostgreSQL</td>
+<td>替换要求，关联旧要求并处理生效时间</td>
+</tr>
+<tr>
+<td>上次记错了，我说的是测试环境</td>
+<td>纠正记忆与适用范围，保留必要的变更关系</td>
+</tr>
+<tr>
+<td>暂时不用显示这些旧讨论</td>
+<td>归档普通背景；有效约束仍保持约束力</td>
+</tr>
+<tr>
+<td>把这段信息从记忆彻底删除</td>
+<td>启动删除作业，列出原文、派生记忆、索引、缓存及备份范围</td>
+</tr>
+</tbody></table></div>
+<p>“删除这条要求”可能表示解除要求，也可能表示不再保留文本。拟议界面提供“停止作为要求”和“彻底删除内容”两个具体选项，不用技术术语让用户猜。</p>
+<p>目标明确且已授权的可逆变更直接执行并提供撤销入口。只有对象不清、影响范围有实质歧义或发生版本冲突时才要求选择，避免每次记忆写入都弹确认。</p>
+<h2 id="manual-h13">5 人工编辑、冲突和防止旧内容复活</h2>
+<p>在记录上选择“编辑”，修改内容、范围、条件或生效日期后保存。系统会记录编辑者和新版本，并展示受影响任务；常规编辑无需让用户理解版本号。</p>
+<p>如果你打开编辑框后另一个 agent 已修改同一记录，系统不能覆盖对方的新内容。拟议冲突页并列显示“你打开时”“当前内容”“你的修改”，提供重新编辑或明确合并。未获准读取的修改不能通过差异页泄漏。</p>
+<p>撤销编辑也会生成新变更。若期间已有其他变更，“撤销”需要重新核对当前版本，不能盲目回退整份数据库。</p>
+<p>旧对话、旧摘要或旧备份可能包含已撤销要求。导入与重新提取必须遵守现有撤销和删除记录；只因再次看到相同旧文字，不会重新启用它。你明确说“恢复之前那条要求”时，系统可以创建新的启用事件并显示来源。</p>
+<p>Markdown 和 JSON 可以导出、离线编辑后导入，但它们是编辑交换文件。文件变更先生成可检查的差异和版本化变更，不能让数据库和文件长期同时成为可独立覆盖的权威来源。</p>
+<h2 id="manual-h14">6 agent 可以读哪些内容</h2>
+<p>任务页面显示“可读取范围”，例如当前用户的全局偏好、当前项目共享接口与后端记录。这里的“全局”仍受任务授权约束；它不会因模型填写 global 标签而自动开放。</p>
+<p>前端/后端等标签帮助检索相关内容，授权由可信宿主与服务端策略决定。协作任务需要额外资料时，可以提交具体请求，说明需要什么以及用于什么工作；是否开放由已有规则或有权限的用户决定，不靠另一个模型自由裁决。</p>
+<p>子任务默认继承经收窄的范围。父任务结束、授权撤销或租约到期后，子任务需要重新校验，不能继续使用复制来的长期凭证。</p>
+<p>“任务正在使用”区分三种情况：已准备上下文、已交给模型、等待刷新。检索到内容不等于模型实际看过；已交给模型也不等于它遵守了要求。可由工具入口强制执行的限制显示为“操作受控”，风格等自然语言要求显示为“依赖模型与结果检查”。</p>
+<h2 id="manual-h15">7 中断后如何继续任务</h2>
+<p>恢复页面展示最近已确认保存的位置、目标、当前要求、已验证结果、待办与需要核实的动作。你选择继续后，宿主先更新权限和当前约束，再恢复工作。</p>
+<p>以下状态必须分开：</p>
+<ol>
+<li><strong>计划中</strong>：agent 打算执行，还没有开始。</li>
+<li><strong>已开始</strong>：动作已发出，但尚无可靠完成证据。</li>
+<li><strong>已确认完成</strong>：有工具结果或环境检查作为证据。</li>
+<li><strong>结果待核实</strong>：程序中断，外部操作可能已发生。</li>
+</ol>
+<p>例如部署请求发出后程序崩溃，恢复不能因为缺少成功日志就再次部署。应先查询部署状态；无法自动核实的操作明确列出，再决定后续处理。文件写入也应检查实际文件与预期结果。</p>
+<p>服务只能恢复已确认持久化的事件。尚未发送或尚未提交的最后一段文字不能宣称已保存。恢复后的旧进程若迟到提交，服务应拒绝它过期的任务身份，防止两个执行者同时接管。</p>
+<h2 id="manual-h16">8 降级行为与故障处理</h2>
+<p>普通背景检索允许有限降级；当前权限和关键操作约束无法确认时，受控动作等待恢复。提示应该说明受影响能力，避免一个“记忆不可用”覆盖所有情况。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>状态或现象</th>
+<th>拟议行为</th>
+<th>用户/运维处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>向量模型离线</td>
+<td>使用关键词和结构字段检索，显示语义检索暂不可用</td>
+<td>可以继续一般查询；重要背景不足时展开来源或调整关键词</td>
+</tr>
+<tr>
+<td>提取模型离线</td>
+<td>原始事件先持久保存；手工记录与明确结构化操作继续；含糊的新规则待处理</td>
+<td>查看“已保存、待整理”；相关关键动作不会误把这当作规则已生效</td>
+</tr>
+<tr>
+<td>索引更新中断</td>
+<td>SQL 仍为权威；增量/全文路径补入新记录；后台重试</td>
+<td>查看积压和最后完成时间；不反复重新导入数据</td>
+</tr>
+<tr>
+<td>主记忆服务失联</td>
+<td>普通任务按既定离线策略处理；无法验证权限或约束的动作暂停</td>
+<td>恢复连接后刷新任务；不能静默换到过期备份</td>
+</tr>
+<tr>
+<td>保存请求超时</td>
+<td>显示“结果待确认”，用同一操作身份查询/重试</td>
+<td>避免连续新建相同操作；确认提交结果后再继续</td>
+</tr>
+<tr>
+<td>磁盘满或写权限失败</td>
+<td>拒绝新写入，已读内容不伪装为已更新</td>
+<td>腾出空间或修复目录权限，再重试原操作</td>
+</tr>
+<tr>
+<td>版本冲突</td>
+<td>保留用户草稿，展示差异</td>
+<td>重新编辑或明确合并</td>
+</tr>
+<tr>
+<td>要求已撤销但任务未刷新</td>
+<td>标注任务待刷新，拒绝依赖旧要求的新受控动作</td>
+<td>刷新或重建上下文；已开始动作单独处理</td>
+</tr>
+<tr>
+<td>数据库损坏</td>
+<td>停止写入并隔离故障文件，进入恢复流程</td>
+<td>从一致性备份恢复，先核对删除清单再开放查询</td>
+</tr>
+<tr>
+<td>任务要求过多</td>
+<td>说明哪些范围使预算不足，建议拆分任务</td>
+<td>缩小当前工作范围；不通过关闭禁止项来凑预算</td>
+</tr>
+</tbody></table></div>
+<p>提取器重试必须检查来源版本；如果原始消息已编辑或删除，迟到的结果不得重新写成有效记忆。更换向量模型后独立重建索引，完成前继续可靠的旧代际或关键词路径，不能混合不兼容向量。</p>
+<h2 id="manual-h17">9 备份、恢复与删除进度</h2>
+<h3 id="manual-h18">9.1 备份</h3>
+<p>拟议备份包包含一致性的权威数据库、必要载荷、版本和迁移信息；索引可以重建，不要求每次完整复制。设置页展示保留周期、上次成功备份和恢复验证日期。</p>
+<p>运行中的数据库应通过受支持的一致性备份接口处理。不要直接复制其中一个正在变化的数据库文件并把它称为完整备份；相关日志和载荷可能尚未一致。</p>
+<h3 id="manual-h19">9.2 恢复</h3>
+<p>恢复在隔离位置进行：校验备份、匹配版本、取得不早于删除请求的最新删除清单、应用删除与撤销信息、核验引用，再开放查询。已删除内容在恢复过程中也不能短暂暴露给模型。</p>
+<p>如果只能找到很旧的备份，且无法取得最新删除清单，恢复状态应显示“无法确认删除记录完整”。服务不得自动向 agent 开放这份数据；应补齐清单或明确采用仅恢复可验证项目的流程。</p>
+<p>恢复也不能覆盖备份产生以后仍存在的有效新事件。导入器按事件与版本去重，保留后续人工修改和撤销关系；“恢复旧版本”不是无条件替换当前整个记忆库。</p>
+<h3 id="manual-h20">9.3 彻底删除</h3>
+<p>拟议删除页分三层报告：</p>
+<ul>
+<li><strong>停止使用</strong>：当前、历史和模型检索已经隐藏目标内容。</li>
+<li><strong>在线副本清理</strong>：服务控制的正文、原始证据、派生摘要、全文/向量索引、缓存等已处理。</li>
+<li><strong>备份处理</strong>：旧备份已清除，或会在显示的保留期限结束后失效；恢复流程持续应用删除清单。</li>
+</ul>
+<p>删除清单保留执行恢复过滤所需的不透明标识、序号和状态，不保存已删除正文。它也必须受保护和备份，避免删除记录本身丢失造成复活。</p>
+<p>用户下载到其他位置的导出文件、其他模型供应商保存的内容，以及宿主尚无删除接口的原始会话日志，都不能直接纳入本服务的完成保证。当前 DSH 原日志采用受版本管理的追加式记录；未来适配器若不能清理某类副本，页面必须逐项显示“尚未清理/不在控制范围”，不能靠删除记忆条目就宣布全部永久删除。</p>
+<h2 id="manual-h21">10 运维检查与术语</h2>
+<p>日常关注保存错误、待整理积压、索引延迟、撤销待刷新任务、租约冲突、删除作业和备份状态。告警只在有可操作问题时出现，普通用户无需持续查看技术计数器。</p>
+<p>故障报告可导出不含正文和凭据的诊断信息：软件版本、操作 ID、时间、错误类别、积压数量及检查结果。开启正文调试应是有期限的显式选择，默认不把记忆全文写入诊断日志。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>术语</th>
+<th>用户可以怎样理解</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>当前有效</td>
+<td>在这个项目、任务和时间里适用</td>
+</tr>
+<tr>
+<td>来源</td>
+<td>谁在哪条消息或哪个可验证结果里表达了这件事</td>
+</tr>
+<tr>
+<td>条件/例外</td>
+<td>要求什么时候适用、哪些明确情况可以不同</td>
+</tr>
+<tr>
+<td>版本冲突</td>
+<td>你开始编辑后，别人也修改了同一内容</td>
+</tr>
+<tr>
+<td>任务快照/上下文收据</td>
+<td>这次任务被提供了哪些内容与版本的记录</td>
+</tr>
+<tr>
+<td>租约</td>
+<td>某个任务执行者暂时获准继续工作的有效期</td>
+</tr>
+<tr>
+<td>索引</td>
+<td>为查找内容建立的辅助目录，坏了可以重建</td>
+</tr>
+<tr>
+<td>撤销</td>
+<td>要求不再适用，历史关系仍可保留</td>
+</tr>
+<tr>
+<td>彻底删除</td>
+<td>停止读取，并按明确范围清理正文和相关副本</td>
+</tr>
+<tr>
+<td>检查点</td>
+<td>已确认保存的工作状态，恢复仍要核验当前规则和实际结果</td>
+</tr>
+</tbody></table></div>
+<p>本包实际运行的参考验证及命令由交付清单统一记录。完整产品投入使用前，还须完成身份授权、宿主接入、恢复演练、删除范围验证和真实用户操作测试；不能把设计中的页面与保证误认为已经交付。</p>
+</section>
+<section class="doc" data-id="evaluation" data-title="创新与评测" hidden><h1 id="evaluation-h0">外部项目记忆服务创新定位与评测方案</h1>
+<h2 id="evaluation-h1">1 创新结论</h2>
+<p>本方案具备明确的工程实施价值，但不能保证学术新颖性。SQL、向量、标签、双时间、记忆增删改、权限、共享、人工编辑和撤销 guard 均存在直接先例。是否形成研究贡献，取决于具体新机制、与最接近工作的区别以及可复现的实验增量。</p>
+<p>适合当前用户的定位是：<strong>本地多 agent 工作站中的可编辑项目约束记忆服务，并配套端到端一致性和使用成本评测。</strong> 第一阶段以可用、可解释、可恢复为交付目标；研究贡献作为独立假设检验，不把产品命名或组件组合写成新原理。</p>
+<h2 id="evaluation-h2">2 最接近工作如何限制主张</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>原本可能主张的创新</th>
+<th>已有直接相关证据</th>
+<th>本项目应如何定位</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>结构化记忆加标签，再交给模型增删改</td>
+<td>Mem0、A-MEM、SimpleMem</td>
+<td>复用或对照，不能主张首次</td>
+</tr>
+<tr>
+<td>来源、版本、权限、迁移、订阅</td>
+<td>MemOS 正文已有相关设计</td>
+<td>对照其具体接口与实现，不把概念当空白</td>
+</tr>
+<tr>
+<td>Markdown 加 SQL 加向量、人工编辑同步</td>
+<td>EverOS 当前实现说明；其他文件式记忆</td>
+<td>作为用户体验与状态同步基线</td>
+</tr>
+<tr>
+<td>项目记忆、时序事实和可解释证据</td>
+<td>LongMemory 当前说明</td>
+<td>比较具体完整性、代价和接入范围</td>
+</tr>
+<tr>
+<td>撤销后通过 guard 屏蔽旧记忆</td>
+<td>Revoked but Still Authoritative</td>
+<td>直接基线，不能称首次引入撤销检查</td>
+</tr>
+<tr>
+<td>处理回写复活与多角色传播</td>
+<td>上述撤销论文附录已有测试</td>
+<td>扩展覆盖的具体场景必须说清楚</td>
+</tr>
+<tr>
+<td>多 agent 授权撤销一致性</td>
+<td>CCS/RCC 与 VERA</td>
+<td>授权撤销与事实/约束变更分开比较</td>
+</tr>
+<tr>
+<td>生命周期评测</td>
+<td>MELT、MemoryStackBench、相关新基准</td>
+<td>扩展既有用例或适配器，避免重复发明基准</td>
+</tr>
+</tbody></table></div>
+<p>证据见 <a href="#projects">项目调研</a> 和 <a href="#papers">论文调研</a>。其中 2026 年 9 月 8 日的撤销研究在其测试设置中观察到被撤销内容仍被检索和采用，并提出检索 guard；该结果不能推广为所有版本、所有配置都失败。<a href="https://arxiv.org/abs/2609.08258">论文</a></p>
+<p>VERA 研究授权委派图中的精确撤销目标，其正确性范围与运行时实际传播需要区分。这里可以借鉴契约与证据设计，但不能用一篇授权撤销论文直接证明本系统语义记忆正确。<a href="https://arxiv.org/abs/2608.30091">VERA</a></p>
+<h2 id="evaluation-h3">3 可检验的改进假设</h2>
+<h3 id="evaluation-h4">H1 条件和例外完整性的预算控制</h3>
+<p>候选机制：检索单元带必要依赖集合，组装器优先补全主体、否定、条件、例外和有效范围，再考虑增加新的背景条目；输出缺失依赖标记。索引仍用于找候选，完整性标记只证明已登记的依赖被处理，不证明自然语言抽取没有遗漏。</p>
+<p>实验问题：在相同最终上下文预算下，与普通 top-k、父子块召回、图扩展及强重排相比，是否减少“只看到禁止、没看到例外”或相反的错误？是否增加检索成本和错误拒答？如果基础抽取经常漏依赖，机制不能靠后处理补救，需单独报告。</p>
+<p>这是待确认的算法贡献方向。须继续按 constraint-aware retrieval、dependency-aware context selection、evidence completeness 等主题做专项查重，不能据本次调查宣称独创。</p>
+<h3 id="evaluation-h5">H2 同一操作链中的约束变更和动作接受证据</h3>
+<p>候选机制：同一服务序号串联用户变更、SQL 版本、派生索引状态、上下文收据、任务 fence 和动作接受记录；把未来生效边界也纳入收据有效期。提供可重放轨迹，解释一个动作是在撤销提交前还是后被接受。</p>
+<p>实验问题：相比仅提示、仅检索 guard、仅 TTL 缓存和已有授权撤销方法，该集成在索引延迟、agent 重启和未来规则切换下能否降低旧策略动作误接受，且不会大量中断无关任务？区分事实撤销、授权撤销与外部副作用。</p>
+<p>分布式序列号、fencing、事务与回执都是成熟技术。本项目潜在贡献是特定工作站约束下的完整协议、实现和测量；是否具有论文增量仍需与上述先例逐项比较。</p>
+<h3 id="evaluation-h6">H3 自主修改与用户打断的联合成本</h3>
+<p>候选机制：按操作风险、目标歧义和来源证据决定自动提交、保存假设或请求澄清。阈值按人工标签校准，而不是使用模型自报置信度直接设定固定概率门槛。</p>
+<p>实验问题：在限制误删和误设约束的条件下，是否减少每百次记忆操作的用户确认次数、总时延和模型成本？对中文口语、否定、含糊指代与跨项目迁移分别报告。不能用“确认次数少”掩盖更多错误修改。</p>
+<h3 id="evaluation-h7">H4 中文多 agent 工作站场景增量</h3>
+<p>候选贡献：在已有生命周期基准的接口上增加口头约束、条件例外、未来时间、直接人工编辑、并发工作树、旧 embedding 回调和进程中断。每个场景同时包含真值状态、允许范围、禁止输出、动作状态与来源证据。</p>
+<p>成立条件：公开生成器、人工核验样例、基线适配器、固定版本、数据拆分、原始结果和成本，不仅提供一个排行榜数字。若与 MELT 或近期 LifecycleBench 已有用例重合，应提交扩展或复用其用例，并具体说明新增覆盖。</p>
+<h2 id="evaluation-h8">4 评测分层</h2>
+<h3 id="evaluation-h9">第一层 确定性协议与存储</h3>
+<p>不调用大模型，先检查版本冲突、去重、时间区间、作用域、回滚、删除屏蔽、旧索引回调、策略 epoch 和 fence。使用固定事件轨迹和故障注入。当前交付中的参考验证属于这一层的有限子集；不等于生产协议经过形式化证明。</p>
+<h3 id="evaluation-h10">第二层 意图与记忆更新</h3>
+<p>输入原始对话，输出结构化变更；由人工真值判断操作、目标、范围、时间、否定、条件和来源是否正确。评分必须包括错误删除、错误覆盖与不应创建的约束，不能只看成功提取的条数。</p>
+<h3 id="evaluation-h11">第三层 检索与最终行为</h3>
+<p>先测候选召回和证据完整性，再测回答及真实模拟动作。检索到正确事实不等于模型采用正确；答案提及旧规则也不总是违规，需区分“解释历史”与“把旧规则当作当前要求”。</p>
+<h3 id="evaluation-h12">第四层 真实接入和易用性</h3>
+<p>在 DSH 主任务与子任务中验证身份传播、第一轮上下文、直接编辑、撤销通知、工具入口、任务重启和迁移。对普通用户测首次完成、纠错时间、误操作和理解程度。</p>
+<h2 id="evaluation-h13">5 数据集建议</h2>
+<p>最小自建集合为 12 类、每类 20 个独立情景，共 240 个情景；每个情景生成中文和英文实例。480 个语言实例不等于 480 个独立实验单位。训练/开发/测试按情景图分组，同一情景的翻译和改写必须放在同一分区。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>类别</th>
+<th>关键对照</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>明确要求与偏好</td>
+<td>必须、最好、可以、可能</td>
+</tr>
+<tr>
+<td>否定与引用</td>
+<td>禁止、不再禁止、引用旧命令</td>
+</tr>
+<tr>
+<td>指代与范围</td>
+<td>那条、这个项目、本次任务、全局</td>
+</tr>
+<tr>
+<td>条件与例外</td>
+<td>生产/演示、一次性、授权前置</td>
+</tr>
+<tr>
+<td>时间与纠错</td>
+<td>未来生效、历史回顾、回溯修正</td>
+</tr>
+<tr>
+<td>替换与撤销</td>
+<td>解除要求不产生相反命令</td>
+</tr>
+<tr>
+<td>人工编辑</td>
+<td>文件/UI修改、旧提取器回写</td>
+</tr>
+<tr>
+<td>并发更新</td>
+<td>两个 agent 基于相同版本更新</td>
+</tr>
+<tr>
+<td>检索与索引延迟</td>
+<td>新记忆未索引、旧回调晚到</td>
+</tr>
+<tr>
+<td>项目和权限</td>
+<td>同词异项目、授权变更、委派范围</td>
+</tr>
+<tr>
+<td>中断和恢复</td>
+<td>提交前崩溃、响应丢失、任务租约失效</td>
+</tr>
+<tr>
+<td>彻底删除</td>
+<td>摘要依赖、旧备份恢复、历史查询</td>
+</tr>
+</tbody></table></div>
+<p>并发情景使用固定随机种子生成多个调度顺序；统计时按独立情景聚类，不把同一情景的几十次重试当作几十份独立证据。保留一批用户真实项目的去标识化且获授权案例作为独立外部测试；本次没有读取或导出真实用户对话。</p>
+<h2 id="evaluation-h14">6 公共基准怎么用</h2>
+<p>LoCoMo 与 LongMemEval 用于对话信息、更新、时间推理与缺证据回答；MemoryArena 与 LongMemEval-V2 用于跨会话任务经验；LOCOMO-CONV 用于隐含信息需求。它们的任务构成不同，不宜混成一个总分。<a href="https://arxiv.org/abs/2410.10813">LongMemEval</a>、<a href="https://arxiv.org/abs/2602.16313">MemoryArena</a>、<a href="https://arxiv.org/abs/2605.12493">LongMemEval-V2</a>、<a href="https://arxiv.org/abs/2609.03467">LOCOMO-CONV</a></p>
+<p>生命周期测试优先适配 MELT 与 MemoryStackBench，固定具体版本、场景集合和评分器，再补充本项目特有事件。基准存在不代表其所有评分已独立验证；抽样人工复核错误案例，避免只依赖模型评审。<a href="https://github.com/shisa-ai/MELT">MELT</a>、<a href="https://github.com/aetna000/MemoryStackBench">MemoryStackBench</a></p>
+<h2 id="evaluation-h15">7 基线与消融</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>基线</th>
+<th>比较目的</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>第一轮</td>
+<td>最近上下文加人工维护 Markdown/关键词</td>
+<td>检查复杂架构是否确有必要</td>
+</tr>
+<tr>
+<td>第一轮</td>
+<td>普通 SQL 过滤加全文/向量混合检索</td>
+<td>隔离生命周期机制的增量</td>
+</tr>
+<tr>
+<td>第一轮</td>
+<td>当前 DSH memory-lite 固定版本</td>
+<td>直接衡量对现有用户的收益</td>
+</tr>
+<tr>
+<td>第一轮</td>
+<td>ReMe 的现有 DSH 插件与固定服务版本</td>
+<td>检查能否直接适配，重点测批量保存窗口和子 agent 覆盖</td>
+</tr>
+<tr>
+<td>第二轮</td>
+<td>Mem0、Graphiti、SimpleMem 的锁定版本</td>
+<td>比较自动记忆提取与检索</td>
+</tr>
+<tr>
+<td>第二轮</td>
+<td>EverOS、LongMemory、MemOS 的适用版本</td>
+<td>比较文件编辑、项目治理、生命周期</td>
+</tr>
+<tr>
+<td>专项</td>
+<td>撤销论文 guard、MELT/相关适配器</td>
+<td>比较失效与撤销行为</td>
+</tr>
+</tbody></table></div>
+<p>采用哪些基线应根据其许可、可运行性与客户端范围最终确定。不能让一个基线使用固定小预算、另一个使用大模型全文和额外重排，再把差异全部归因于架构。</p>
+<p>消融依次移除：时间管理、结构化命题、条件依赖补全、执行入口校验、辅助重排、人工确认策略。每次只改变对应组件，保持模型、数据、预算和重试策略一致。记录无法保持一致的差异，而不是隐去。</p>
+<h2 id="evaluation-h16">8 指标定义</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>定义与注意事项</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>变更精确率</td>
+<td>自动提交且操作/对象/范围/时间均正确的数量 ÷ 自动提交数量</td>
+</tr>
+<tr>
+<td>错误撤销率</td>
+<td>被错误撤销的仍有效要求 ÷ 涉及撤销判断的要求数量</td>
+</tr>
+<tr>
+<td>当前证据召回</td>
+<td>需要的当前有效证据被召回比例；条件和例外单列</td>
+</tr>
+<tr>
+<td>过时信息误用率</td>
+<td>应使用新状态的任务中，把旧内容当当前依据的比例</td>
+</tr>
+<tr>
+<td>撤销后误接受</td>
+<td>撤销提交后仍被受控入口新接受的违规动作数；已派发动作另计</td>
+</tr>
+<tr>
+<td>删除复活率</td>
+<td>删除/撤销后重放来源、回写或恢复使内容重现的比例</td>
+</tr>
+<tr>
+<td>范围隔离违规</td>
+<td>不被授权的正文、来源、摘要或候选泄漏次数</td>
+</tr>
+<tr>
+<td>无证据臆测率</td>
+<td>应回答不足时仍编造事实的比例</td>
+</tr>
+<tr>
+<td>总成本</td>
+<td>记忆写入、embedding、重排、主模型、重试、重建的完整调用成本</td>
+</tr>
+<tr>
+<td>时延</td>
+<td>写入确认、提取完成、检索、变更可见、动作校验分别报告 P50/P95</td>
+</tr>
+<tr>
+<td>用户负担</td>
+<td>每百次修改的澄清数、完成时间、手工纠错数</td>
+</tr>
+</tbody></table></div>
+<p>分母为零时报告不适用，不显示 100%。按场景类型报告均值与置信区间，使用配对比较和按情景聚类的 bootstrap；先登记主指标与阈值，再运行测试集，避免看到结果后更换“最有利指标”。</p>
+<h2 id="evaluation-h17">9 易用性验收目标</h2>
+<p>在依赖已安装且本地模型可用的条件下，建议目标为首次关联项目并完成一条记忆的查看与修改不超过五分钟；这些前提必须在测试说明中列出，不能忽略安装/下载时间后宣传五分钟完整部署。</p>
+<p>招募 5–8 名目标用户做形成性测试，先验证术语、撤销与彻底删除的区分、作用域选择和冲突提示。该样本用于发现问题，不能据此宣称普遍使用效果。后续扩大样本并记录设备与经验差异。</p>
+<p>关键任务：设一条口头约束、建立本次例外、查来源、查看哪个任务用了该记忆、撤销、观察旧任务处理、从中断恢复。页面不要求用户理解 SQL、向量或 epoch。</p>
+<h2 id="evaluation-h18">10 成本模型与停止条件</h2>
+<p>设写入成本为 W，查询次数为 Q，单次检索与筛选成本为 R，主模型减少的重复上下文成本为 S，则净节省近似为 <code>Q × (S − R) − W</code>，再加上维护、缓存与失败成本。该式只是记账框架，必须使用实际输入输出 token 和所用服务价格，不能把所有 token 当同价。</p>
+<p>若复杂检索在相同质量下不能优于关键词基线，应保持简单实现。若辅助模型减少主模型输入但增加总成本或时延，应按用户档位关闭。若新机制未显著改善既有最接近基线，报告工程集成结果和失败案例，不包装成研究突破。</p>
+<h2 id="evaluation-h19">11 当前交付实际验证范围</h2>
+<p><code>validation/reference_model.py</code> 与 <code>validation/test_reference.py</code> 使用 SQLite 和确定性命令验证部分状态规则。实际数量、运行时和通过情况以 <code>validation/results.json</code> 为准。</p>
+<p>没有在本次运行 LLM 记忆基准、安装上述所有项目、验证 embedding 召回、部署 HTTP/MCP 服务、实测云端扩容或证明专利/论文新颖性。原型通过不代表未实现的机制已获验证。完整产品的验收门槛以本文件和实施路线为准。</p>
+</section>
+<section class="doc" data-id="roadmap" data-title="实施路线" hidden><h1 id="roadmap-h0">实施路线与决策记录</h1>
+<p>版本 0.1　设计日期：2026 年 9 月 15 日</p>
+<h2 id="roadmap-h1">1 交付边界与实施原则</h2>
+<p>本包提供研究、产品与架构设计、接口和数据库草案、有限参考验证。它不是已经运行的完整记忆平台。真实的 UI、认证、云端部署、DSH 全量适配、生产迁移、恢复保证和性能数据，都需要后续实现与验收。参考脚本即使通过，也只证明它覆盖的窄范围行为。</p>
+<p>实施主线是先把变更正确地保存、检索与撤销，再增加模型自动整理和语义召回。第一版服务面向单用户、本机持久存储、多个项目和少量并发 agent；所有写入进入同一个权威服务。设计详见<a href="#architecture">产品与架构</a>，操作语义详见<a href="#manual">使用与运维说明</a>。</p>
+<p>已有研究和项目涉及版本、时效、撤销及记忆生命周期，不能把这些概念宣称为独创。研究贡献应落到可复现的机制组合、明确边界和实验证据，例如未来生效边界、旧任务恢复、防复活与实际副作用状态在同一评测中是否改善。</p>
+<p>最新候选中 ReMe 已有 DSH 插件，EverOS、LongMemory、OpenClaw 已覆盖大量记忆治理能力。P0 必须先运行最相关候选的对照用例；满足核心契约时优先适配，后续阶段只补真实缺口。下表以需要自建权威模块的保守路径估工；若复用成功，应重估，不能机械照搬工期。ReMe 当前指南包含批量提交与仅根 agent 的默认选项，因此现成接入不等于已满足本方案的逐事件保存和子 agent 一致性要求。证据见<a href="#projects">项目全景 P38</a>。</p>
+<h2 id="roadmap-h2">2 阶段路线与退出条件</h2>
+<p>下表工时是假设一名熟悉 TypeScript、SQL 和 agent 框架的全职开发者，复用现有界面与库、无需训练模型、只支持一个宿主版本的初步估算。每周按有效开发时间估算，测试与文档在阶段内；不包含长期用户招募、供应商审批、跨平台疑难适配或正式安全审计。不是交付承诺，也不能直接相加视为排期。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>交付内容</th>
+<th>退出条件</th>
+<th>粗估</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>P0 范围与验证准备</td>
+<td>确定数据边界、状态机、威胁模型、20–50 个典型中文/英文场景；梳理现有 DSH 行为；固定基线</td>
+<td>每项关键保证可对应一个案例；哪些属于上下文遵守、哪些可由执行器强制已明确；不确定项有负责人</td>
+<td>1–2 周</td>
+</tr>
+<tr>
+<td>P1 单用户权威服务</td>
+<td>TS 服务、SQLite 事务、项目身份、手工记忆、版本与时间、撤销/替换、幂等操作、HTTP、状态页骨架、全文查询</td>
+<td>并发 v7→v8 冲突、相同键重试、未来生效、保存故障测试通过；没有 SQL 与文件双写权威；明确拒绝未知授权</td>
+<td>3–5 周</td>
+</tr>
+<tr>
+<td>P2 可编辑管理与生命周期</td>
+<td>来源/历史 UI、差异编辑、删除作业、outbox、索引重试、一致性备份及隔离恢复</td>
+<td>用户能完成新增/查来源/撤销/冲突处理；删除后历史检索不可见；旧备份恢复不复活；故障注入后只承诺已提交记录恢复</td>
+<td>3–5 周</td>
+</tr>
+<tr>
+<td>P3 DSH 接入与迁移</td>
+<td>原生适配器、MCP 工具、上下文收据、旧 JSON 导入器、launcher 代理切换、独立运行检查</td>
+<td>同项目新任务能使用当前规则；原型的普通编辑与删除也传播；迁移 dry-run 和 shadow 读校验通过；仅一个写入者</td>
+<td>2–4 周</td>
+</tr>
+<tr>
+<td>P4 自动提取与可选向量</td>
+<td>完整命题提案、来源定位、语义去重候选、中文分词、embedding 代际、检索融合与少量重排</td>
+<td>否定/引用/提议/例外/未来生效均有标注评测；旧版本提取和向量结果被拒绝；离线降级可用；新增模型成本完整计入</td>
+<td>3–5 周</td>
+</tr>
+<tr>
+<td>P5 多 agent 与恢复协议</td>
+<td>可信任务范围、短期租约、单调 fence、撤销游标、受控动作入口、检查点核验</td>
+<td>超时重复提交、过期子任务、撤销与动作竞争、未知副作用恢复等案例通过；明确记录网关覆盖和不能强制的动作</td>
+<td>3–5 周</td>
+</tr>
+<tr>
+<td>P6 试点与差异验证</td>
+<td>真实任务试点、用户操作测试、完整成本对照、公开可复现实验和限制</td>
+<td>达到预先登记的接受阈值；失败案例公开分类；能说明复杂机制的实际收益；未达标部分删减或返回前一阶段</td>
+<td>2–4 周</td>
+</tr>
+</tbody></table></div>
+<p>可用的本地 MVP 以 P1–P3 为核心，粗略范围约 8–14 周；更完整的自动整理与多 agent 试点通常需要数月，且工程人员熟悉度会显著影响估算。若只需验证核心生命周期，可先不做全量 UI、复杂向量索引和所有宿主，缩短到一个更小的研究原型。</p>
+<p>退出条件是可验证的行为，不是“写完模块”。每阶段产出迁移说明、失败恢复说明及相关测试。某阶段达不到条件时，继续保持前一阶段可运行，不用额外堆服务掩盖核心问题。</p>
+<h2 id="roadmap-h3">3 先复用什么，哪些必须新建</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>现有资产</th>
+<th>复用方式</th>
+<th>新增工作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>launcher 记忆管理</td>
+<td>保留搜索、编辑、pin、范围与来源入口，替换长期存储代理</td>
+<td>当前/历史、条件和例外、冲突比较、影响任务、删除进度、独立服务状态</td>
+</tr>
+<tr>
+<td>dsh-memory-lite</td>
+<td>借鉴来源编辑失效、召回回执、摘要管理和查询降级</td>
+<td>完整变更语义、普通编辑/删除传播、SQL 事务、持久任务、逐 agent 授权</td>
+</tr>
+<tr>
+<td>DSH session 与扩展点</td>
+<td>原生插件绑定真实会话身份，写可重建的上下文事件</td>
+<td>正式 memory 事件、提交/投递收据、来源跨度、当前规则装入</td>
+</tr>
+<tr>
+<td>core MCP 客户端</td>
+<td>连接独立服务的工具</td>
+<td>可信任务身份与连接范围；通用桥不自动提供项目授权</td>
+</tr>
+<tr>
+<td>core subagent 生命周期</td>
+<td>使用真实父子 ID、恢复 descriptor 和运行状态</td>
+<td>外部记忆租约与 epoch/fence 对接，不重建一套互相冲突的任务目录</td>
+</tr>
+<tr>
+<td>现有 BM25/CJK 与可选 embedding</td>
+<td>作为基线和迁移期回退</td>
+<td>检索接口、中文评测、索引版本与内容哈希、完整成本统计</td>
+</tr>
+</tbody></table></div>
+<p>细节和代码证据见<a href="#integration">本地集成审查</a>。现有 hooks 适合初期观测与兼容，不承担全部安全保证：部分 session-start 回调不等待完成，部分输入输出字段不完整。关键约束等待和工具入口检查优先使用原生扩展点。</p>
+<h2 id="roadmap-h4">4 memory.json 迁移方案</h2>
+<h3 id="roadmap-h5">4.1 迁移前准备与 dry-run</h3>
+<p>不读取凭据，不以自动扫描全部聊天作为迁移前提。通过已有合法导出或用户选定文件获取 memory 数据，在副本上运行只读检查，展示条数、类型、范围、来源、过时状态、撤销记录、无效结构和潜在 ID 冲突。</p>
+<p>建立映射：<code>legacy_store_id + legacy_item_id → memory_id</code>，使用 migration_id 去重。保留 createdAt、updatedAt、source、sessionId、meta、watermarks 与 withdrawals 的原始含义；迁移时间另记，不能把所有历史内容变成今天新说的要求。</p>
+<p>cwd 通过可信项目映射转换成稳定 project ID；无对应项目的记录先待关联，不默认变全局。缺少原始证据的自动事实标注“历史导入，证据未核验”，不能升级成用户明确要求。原 JSON 数据可能已经被截断，迁移器不能声称恢复原始完整上下文。</p>
+<p>dry-run 只输出差异和风险报告，不写目标权威库、不改源文件。具体命令在实现后写入安装文档，本设计不提供假想的已存在命令。</p>
+<h3 id="roadmap-h6">4.2 导入副本和 shadow 读</h3>
+<p>导入隔离目标库，校验数量、内容哈希、作用范围、来源映射、有效状态及撤销关系。旧向量可视为可重建索引；新模型不能直接使用不兼容向量。</p>
+<p>shadow 读表示对经过授权的同一批查询，同时在旧实现与新实现检索，正式任务仍只收到原系统结果。比较新结果的适用性、漏召回、旧信息误用、延迟和 token 量；记录可解释差异，不要求新旧结果完全一致。</p>
+<p>shadow 阶段新服务不接收独立的用户编辑作为正式权威写入。增量变化通过旧权威提交后形成的导入事件传播，使用稳定 ID/版本去重；若旧系统没有可靠变更日志，应采用短暂冻结写入和再次全量比对，而不是承诺无缝同步。</p>
+<h3 id="roadmap-h7">4.3 单写入切换</h3>
+<p>选择短维护窗口，暂停记忆编辑与自动写入，确认旧插件中在途提取/向量任务已结束或取消。导出最后一致状态，完成增量导入和验证，写切换记录与最终旧版本位置。</p>
+<p>将 UI 和模型写工具指向新服务；关闭旧插件重复的长期记忆提取、注入和同名写工具。旧插件可继续承担 DSH 内部摘要查看/编辑，但相关长期记忆事件只由新适配器写一次。最后开放写入，并验证新建、编辑、撤销、跨任务召回和重启。</p>
+<p>原文件保存为只读迁移证据或按保留策略处理。禁止多个 agent、旧插件和新服务分别直接编辑原 JSON，再期待按时间戳自动合并。</p>
+<h3 id="roadmap-h8">4.4 回退与再迁移</h3>
+<p>回退前暂停新变更，导出切换后全部事件、当前视图、撤销/删除信息及迁移映射，验证操作去重。可以先回退宿主适配器版本，同时继续保留新服务为存储权威，以减少数据格式回退风险。</p>
+<p>如果必须切回旧存储，生成经核验的兼容视图。旧格式无法表达未来生效、条件例外或删除范围时，必须列出损失并阻止相关规则降级；可保持新服务只提供这些政策，或暂时停止依赖它们的任务。不能把不兼容规则平铺成普通 note 后声称语义保留。</p>
+<p>不能简单复制迁移前的备份覆盖当前库；那会丢失新事件并可能复活已删内容。重新迁移时沿用稳定映射，保留所有后续撤销和删除屏障。</p>
+<h2 id="roadmap-h9">5 决策记录</h2>
+<p>以下 ADR 是本方案拟采用的技术决策，状态为“设计选择，待原型验证”，不表示仓库已按此改造。</p>
+<h3 id="roadmap-h10">ADR-01 独立 TypeScript 服务，HTTP 与 MCP 共用业务层</h3>
+<p><strong>选择。</strong> 独立进程拥有存储、事务和生命周期；HTTP 面向管理 UI 与可信宿主，MCP 提供少量模型工具。采用 TypeScript 与现有 DSH 生态一致。</p>
+<p><strong>理由。</strong> 服务可在 DSH 退出或容器重建后继续存在；客户端复用一致规则，降低两套接口行为不同的风险。MCP 工具不是全部产品能力，宿主仍需注入身份并管理上下文。</p>
+<p><strong>代价。</strong> 增加安装、进程监督、兼容版本与通信失败处理。第一版由明确的数据目录、健康状态和幂等请求控制复杂度，不立即引入多服务编排。</p>
+<p><strong>重新评估条件。</strong> 核心数据处理出现不可接受的运行时瓶颈，或选定数据库依赖在目标平台无法稳定部署；先测量再决定局部换语言。</p>
+<h3 id="roadmap-h11">ADR-02 本地权威库采用 SQLite，集中控制变更</h3>
+<p><strong>选择。</strong> SQL 保存原始事件引用、版本、关系、状态、收据和 outbox；主服务是唯一写入入口。使用 SQLite 本地文件，配置事务和持久化要求。</p>
+<p><strong>理由。</strong> 当前规模假设下部署简单，关系与版本可以在同一事务提交。禁止客户端直接打开跨机器共享数据库文件。</p>
+<p><strong>代价。</strong> 单写者和单机可用性限制，需要备份、恢复和明确的写入排队。直接文本编辑改为导入变更流程，牺牲随意覆盖文件的便利，换取可检测的冲突。</p>
+<p><strong>重新评估条件。</strong> 实测写入排队、恢复目标或高可用需求无法满足，再迁移 PostgreSQL；容量门槛由真实负载决定，不凭记录条数拍板。</p>
+<h3 id="roadmap-h12">ADR-03 全文检索先行，向量可选</h3>
+<p><strong>选择。</strong> SQL 精确过滤加 FTS5 提供默认查找；中文分词需要单独验证。向量是可重建索引，先允许小集合精确检索，sqlite-vec 等库锁定版本后再验证平台和过滤能力。</p>
+<p><strong>理由。</strong> 让本地无模型条件也可保存和查找；约束不依赖向量召回。初期能清楚测量 embedding 和重排带来的额外收益。</p>
+<p><strong>代价。</strong> 首版语义泛化有限；关键词不匹配可能漏召回。提供来源展开与改写查询，同时用基线测量缺口，不把加向量视为自动解决。</p>
+<p><strong>重新评估条件。</strong> 真实查询显示语义检索明显改善且成本可接受，再启用向量默认路径；多租户检索规模扩大时评估 pgvector 或独立向量服务。</p>
+<h3 id="roadmap-h13">ADR-04 关系先用 SQL 表，不先部署图库</h3>
+<p><strong>选择。</strong> 用明确的 <code>replaces</code>、<code>exception_to</code>、<code>derived_from</code>、<code>depends_on</code> 关系表达生命周期与证据依赖；查询先控制深度和结果预算。</p>
+<p><strong>理由。</strong> 当前最关键的是规则替换、例外与删除传播，不需要一开始自动构建通用知识图谱。关系与版本同事务写入更容易核验。</p>
+<p><strong>代价。</strong> 大规模多跳查询可能需要额外优化；关系抽取错误仍会影响结果。</p>
+<p><strong>重新评估条件。</strong> 消融证明多跳检索有稳定收益且关系表成为瓶颈时，再引入图服务作为查询投影；不能让它成为第二份独立权威。</p>
+<h3 id="roadmap-h14">ADR-05 提取器提出变更，服务负责提交</h3>
+<p><strong>选择。</strong> 模型输出带原文证据的结构化提案；服务验证身份、范围、来源、时间、目标版本与操作资格。明确、目标唯一的已授权变更自动提交；不确定内容保留 hypothesis 或待确认身份。</p>
+<p><strong>理由。</strong> JSON 格式正确不等于语义正确。正则可做格式处理，不负责判断撤销对象；隐藏思维链不作为存储证据。</p>
+<p><strong>代价。</strong> 需要可标注案例、语义校准和少量用户确认；纯模型自由写库更简单，但难以获得所需变更可靠性。</p>
+<p><strong>重新评估条件。</strong> 模型版本变化或新领域引起误设/误删升高，重新校准而非放宽全部校验。</p>
+<h3 id="roadmap-h15">ADR-06 撤销、彻底删除和归档分别实现</h3>
+<p><strong>选择。</strong> 撤销结束适用期；归档改变普通背景检索优先级；彻底删除先阻断读取，再清理服务控制的副本和备份。审计外壳尽量不含正文。</p>
+<p><strong>理由。</strong> 用户不再要求某行为，不等于要求禁止它，也不等于删除全部历史。删除操作必须可查看进度，恢复不能带回已删内容。</p>
+<p><strong>代价。</strong> 引入依赖清理、删除清单和备份期限；宿主或外部 provider 副本可能不在控制范围。</p>
+<p><strong>重新评估条件。</strong> 某些部署要求更强磁盘清除或加密密钥销毁，应独立定义并验证删除承诺，不能把普通 SQL delete 当成保证。</p>
+<h3 id="roadmap-h16">ADR-07 当前约束单独编译，受控动作重新检查</h3>
+<p><strong>选择。</strong> 约束路径按身份、范围和时间确定性加载；背景路径进行检索。收据记录版本与时效，租约/fence 约束恢复后的旧执行者。</p>
+<p><strong>理由。</strong> 单纯 top-k 检索和更新通知无法保证旧上下文不会指导下一次操作。未来生效时间也可能在没有新写入的情况下改变规则。</p>
+<p><strong>代价。</strong> 需要宿主和工具入口配合；风格等自然语言要求不能全部形式化，必须披露保证强度。动作已被接受或已发往外部后的取消只作尽力处理。</p>
+<p><strong>重新评估条件。</strong> 网关覆盖不足时降低宣称的保证范围；不要通过文字提示把未接入动作包装成受控动作。</p>
+<h3 id="roadmap-h17">ADR-08 云端阶段使用 PostgreSQL，保持业务语义</h3>
+<p><strong>选择。</strong> 云端、高并发多主机写入或高可用需求成立后再采用 PostgreSQL；保留 memory ID、操作语义、幂等收据、expected_revision、epoch、时间区间和删除作业接口。</p>
+<p><strong>理由。</strong> 存储后端变化不应让用户的“撤销”在云端变成另一种含义。先稳定接口与语义测试，再替换数据库适配。</p>
+<p><strong>代价。</strong> 两种后端的隔离级别、锁、全文检索和时间处理并非天然等价，必须运行同一组语义与故障测试；不能承诺复制 schema 即可迁移。</p>
+<p><strong>重新评估条件。</strong> 出现真实团队需求和部署预算后再启动，不以“未来可能需要”为由提前维护两套生产后端。</p>
+<h3 id="roadmap-h18">ADR-09 采用开源组件，以固定版本证据决定范围</h3>
+<p><strong>选择。</strong> 复用 DSH 接入与 UI；把 Mem0、Letta、Graphiti、Cognee、文件式记忆等作为对照、算法参考或独立适配候选，不同时堆叠为四份记忆权威。具体项目事实见<a href="#projects">开源项目调研</a>。</p>
+<p><strong>理由。</strong> 生命周期规则必须由一个系统解释；多套自动更新/删除策略叠加会增加不一致和评测混淆。</p>
+<p><strong>许可处理。</strong> 本地 DSH core、memory-lite 和根仓库文件声明 MIT，详见<a href="#integration">代码审查</a>。拟采用的每个外部版本分别记录源码 LICENSE、依赖许可、分发方式与 NOTICE；模型权重和托管 API 条款单独核对。调研时仓库证据不代表未来版本不变，也不构成法律保证。</p>
+<h2 id="roadmap-h19">6 差异验证与避免过早扩张</h2>
+<p>评测应同时包含传统长对话 QA 和完整生命周期任务。单次回答正确率不足以证明项目约束稳定：还要测修改后传播、旧来源重放、并发编辑、离线子任务、未来生效边界、备份恢复和外部副作用核实。</p>
+<p>先比较以下可解释版本：近期上下文加文件/关键词、普通向量检索、结构化版本记忆、再加入上下文收据与动作检查的完整方案。逐项移除时间模型、关系补全、辅助模型或执行校验，观察哪些机制实际贡献收益。不要只和一个没有状态过滤的弱 grep 基线比较。</p>
+<p>提前登记指标：误设约束、误删、过时信息误用、作用域误用、撤销后新动作误接受、恢复成功、任务完成质量、完整 token/费用、P50/P95 延迟、首次成功与手工纠错时间。模型、提示、数据与评价者版本固定，区分开发集调参和保留测试集。</p>
+<p>已有论文、预印本和项目包含撤销与生命周期评测，因此预期新意应写成“待验证假设”：把稳定身份、双时间、删除屏障、上下文收据、任务租约及受控动作边界协同起来，是否在相同成本下改善真实多 agent 项目可靠性。若实验未证明，仍可作为工程产品贡献，但不能宣称首创机制或保证精度不下降。</p>
+<p>暂缓通用图库、训练记忆策略、多地域多主、全量历史自动采集和每次检索都启动辅助 agent。只有某类失败在数据中反复出现，且新机制有对照收益时才扩大范围。</p>
+<h2 id="roadmap-h20">7 启动实施前的检查清单</h2>
+<ul>
+<li>确认目标平台、宿主版本、单用户/团队边界和可控工具范围。</li>
+<li>固定本地/云端数据传输偏好，确认主任务模型也在数据流清单中。</li>
+<li>选择少量真实但可授权使用的项目场景，准备脱敏和可公开的故障样本。</li>
+<li>定义持久化确认、撤销接受边界、彻底删除范围和备份保留语义。</li>
+<li>锁定依赖版本并记录源码与许可证据；保持最小依赖集合。</li>
+<li>选定 P1–P3 的退出条件和试点用户任务，不提前承诺全部高级功能。</li>
+</ul>
+<p>本包实际建立与运行的参考文件、检查命令及结果由交付清单统一列出。后续实施应在版本发布说明中持续区分“已实现且验证”“实验开关”“已设计未实现”和“尚未决定”，避免说明书中的拟议能力被误认为生产保证。</p>
+</section>
+<section class="doc" data-id="projects" data-title="开源项目" hidden><h1 id="projects-h0">外置 AI 记忆系统：开源项目全景与选型</h1>
+<p>核对日期：<strong>2026-09-15</strong>。本报告覆盖 <strong>42 条相关项目记录</strong>：23 条核心记忆系统（含历史实现）、9 条框架与协议、7 条检索存储基座、2 条生命周期评测，以及 1 条同名模型架构辨析。它们不是 42 个功能相同、均适合直接部署的产品。</p>
+<p><strong>结论：已有项目已经覆盖用户方案中的大量组合。</strong> 外部持久化、结构化记忆、标签/作用域、混合检索、时态处理、可编辑文件、管理界面和跨会话接入均有明确先例。尤其应先对照 ReMe、EverOS、LongMemory、MemOS、Mem0、Hindsight 和 Engram，再决定自建范围。潜在增量应写成可验证的具体保障与使用体验，而不是宣称“外部数据库加记忆 agent”本身首次出现。</p>
+<h2 id="projects-h1">阅读方法与证据边界</h2>
+<ul>
+<li>“已有能力”是对官方 README/文档的概括；“建议”是针对本项目的工程判断。<strong>所有条目均未安装、未运行、未复现其 benchmark，也未完成源码或依赖审计。</strong> README 出现某能力不等于已验证其实现正确。</li>
+<li>对每条核对官方仓库及根 LICENSE 原文；对有独立文档、改名、迁移、SaaS 范围争议的条目补读相关官方资料。许可证结论只覆盖链接的仓库/版本范围，不自动覆盖第三方依赖、模型权重、资产或托管后端。</li>
+<li>JSON 保留 <code>checked_at</code>、实际取回时间、README/许可证据链接与文本 SHA-256。13 个现版仓库另固定 commit SHA；历史 OpenMemory 使用删除前的固定提交。其他分支链接会变化，不应将本报告日期与未来网页状态混用。</li>
+<li>“未归档”来自所列 GitHub 元数据，不代表功能持续开发或提供生产支持；最近推送也可能只是依赖更新。MELT、MemoryStackBench、Redis Agent Memory Server 及补充的 P38–P42 的机器可读归档字段未核对成功，已明确记录。</li>
+<li><code>projects.json</code> 是同一调查的机器可读索引。本文不使用 star 数量或厂商榜单分数作为选型依据。</li>
+</ul>
+<h2 id="projects-h2">首轮选型：按要验证的问题挑基线</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>要验证的问题</th>
+<th>优先候选</th>
+<th>选择理由与边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>现有 DSH 的最短接入与可编辑共享记忆</td>
+<td>P38 ReMe</td>
+<td>已有 DSH 插件；先核对宿主版本，再测异步落盘、子 agent 覆盖与撤销</td>
+</tr>
+<tr>
+<td>文件可读、手改后同步到 SQL/向量索引</td>
+<td>P10 EverOS</td>
+<td>与原构想最直接重合；先试修改、删除、并发和 watcher 故障</td>
+</tr>
+<tr>
+<td>时态、来源、作用域与可解释取回</td>
+<td>P19 LongMemory</td>
+<td>当前文档已明确治理和证据选择；需要逐条验证保证</td>
+</tr>
+<tr>
+<td>当前工作站的本地插件体验</td>
+<td>P05 MemOS；P18 Engram</td>
+<td>分别对照较完整插件与单二进制轻量路径</td>
+</tr>
+<tr>
+<td>自动事实抽取及低上下文检索</td>
+<td>P02 Mem0；P06 Hindsight</td>
+<td>对照累积事实检索，以及 retain/recall/reflect 分离</td>
+</tr>
+<tr>
+<td>原子分块与笔记组织</td>
+<td>P09 SimpleMem；P12 A-MEM</td>
+<td>用于抽取质量、来源保真和召回消融</td>
+</tr>
+<tr>
+<td>时间关系和跨实体推理</td>
+<td>P03 Graphiti</td>
+<td>可选第二阶段图适配器，首版不必强制引入图服务</td>
+</tr>
+<tr>
+<td>约束纠正、撤销、隔离与审计</td>
+<td>P35 MELT；P36 MemoryStackBench；P41 OpenClaw</td>
+<td>复用生命周期评测并对照宿主已有来源/删除机制，明确适配器是否代做操作</td>
+</tr>
+<tr>
+<td>最小持久化基座</td>
+<td>P29 SQLite + FTS5</td>
+<td>一个外置记忆服务拥有写入口；从真实事件和明确规则开始</td>
+</tr>
+<tr>
+<td>多机器与多写者</td>
+<td>P30 PostgreSQL + pgvector</td>
+<td>共享服务与数据库事务；保留可重建检索投影</td>
+</tr>
+</tbody></table></div>
+<p>这是待实测的候选顺序，不是性能排名。首轮可以只跑 5–7 个最相关候选；其余保留为算法、接入或架构参照。</p>
+<h2 id="projects-h3">2026 版本变化：会直接影响设计判断</h2>
+<ol>
+<li><p><strong>Mem0 需分清 2025 论文和当前实现。</strong> 当前 README 的流程已改为 ADD-only 事实积累，并结合语义、BM25、实体及时间信号检索；不能继续把早期 ADD/UPDATE/DELETE/NOOP 写成现版默认行为。README 也明确平台结果包含专有优化，不能据此给开源 SDK 承诺同样成绩。<a href="https://raw.githubusercontent.com/mem0ai/mem0/c7ee362aff94a369af70f13f2b4f853f6793ff4c/README.md">当前固定版本 README</a></p>
+</li>
+<li><p><strong>Letta 主实现已迁移。</strong> 原 <code>letta-ai/letta</code> 主分支指向 Letta Code；V1 server 在历史分支。当前 MemFS、Git 上下文与宿主接入应按新仓库评估。<a href="https://github.com/letta-ai/letta">旧仓库迁移说明</a>、<a href="https://github.com/letta-ai/letta-code">现版 Letta Code</a></p>
+</li>
+<li><p><strong>EverOS 与 LongMemory 是直接架构对照。</strong> EverOS 当前采用可编辑 Markdown、SQLite 与 LanceDB；LongMemory 当前已有来源、时态事实、项目治理、证据解释与 token 上限。不能把这些能力整体列为市场空白。<a href="https://raw.githubusercontent.com/EverMind-AI/EverOS/5076683ab88d714390573d8f88ff3c470e51129a/README.md">EverOS 固定版本</a>、<a href="https://raw.githubusercontent.com/CaviraOSS/LongMemory/4da4986d0069dbaa59d9209a84e2267749a67b3f/README.md">LongMemory 固定版本</a></p>
+</li>
+<li><p><strong>OpenMemory 至少有三个需分开的身份。</strong> Mem0 旧子目录已经 sunset；新 <code>mem0ai/openmemory</code> 是会话迁移 CLI/TUI，实时 autosync 等仍列在路线图；原 CaviraOSS/OpenMemory 已改名 LongMemory，属于独立项目。<a href="https://raw.githubusercontent.com/mem0ai/mem0/553e2751126b240632967339723260fa30421615/openmemory/README.md">旧版 sunset 原文</a>、<a href="https://github.com/mem0ai/openmemory">新迁移工具</a>、<a href="https://github.com/CaviraOSS/LongMemory">LongMemory</a></p>
+</li>
+<li><p><strong>“SDK 开源”不能推出托管服务端开源。</strong> Zep 当前公开仓库明确是示例和集成，旧 CE 已不支持；Graphiti 是可单独评估的开源引擎。Supermemory 官方现在宣称提供本地开源自托管，但本次仅闭环核实了公开仓库 MIT 许可，未确认完整本地引擎与公开源码、发布件的一一对应；因此既不能断言全部闭源，也不能宣称全部服务已可从源码重建。<a href="https://github.com/getzep/zep">Zep 范围</a>、<a href="https://supermemory.ai/docs/self-hosting/local-vs-enterprise">Supermemory 本地与企业版差别</a></p>
+</li>
+<li><p><strong>许可与维护状态也在变化。</strong> OpenViking 当前根许可是 AGPLv3；memU 的 Apache 声明与改写的 LICENSE.txt 需要进一步澄清；MCP 参考仓库有 Apache/MIT 贡献来源过渡和文档许可。GraphRAG 未归档但已进入维护模式；Redis Agent Memory Server 的现版说明把生产路径指向 Iris，旧实现定位为 V0 研究基础。具体证据见 P14、P15、P26、P28、P37。</p>
+</li>
+<li><p><strong>ReMe 已有现成 DSH 接入，OpenClaw 已有细化的来源与删除契约。</strong> ReMe 官方插件覆盖指南注入、检索、自动捕获、后台整合和状态 UI；默认按已完成回合异步批量提交，且排除子 agent，因此不能直接据此承诺每事件耐久性。OpenClaw 的来源文档已讨论派生 lineage、禁止再次摄取、缓存清理和索引发布前复查，并明确删除边界。优先试装对照这些组件，仅在本产品关键生命周期测试不满足时补建控制层。<a href="https://raw.githubusercontent.com/agentscope-ai/ReMe/16269c9a76a094c8b58cb0523ed73504e33fe79f/integrations/dsh/README.md">ReMe 固定 DSH 指南</a>、<a href="https://raw.githubusercontent.com/openclaw/openclaw/e00500a654295dac85d6a461f9e46c67e6bf5197/docs/concepts/memory-provenance.md">OpenClaw 固定来源/删除文档</a></p>
+</li>
+</ol>
+<h2 id="projects-h4">逐项核对</h2>
+<p>以下各项均是文档/许可级核对。建议中的“采用”“试装”表示后续设计候选，<strong>不表示已经替用户安装或完成运行验证</strong>。</p>
+<h3 id="projects-h5">P01 · Letta / Letta Code（MemGPT 演进项目）</h3>
+<p><a href="https://github.com/letta-ai/letta-code">仓库</a> · <a href="https://docs.letta.com/letta-code/memory">文档</a> · <a href="https://raw.githubusercontent.com/letta-ai/letta-code/5bc853fd6fd69f00c115e320316fa4c0654a3dfb/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/letta-ai/letta-code/5bc853fd6fd69f00c115e320316fa4c0654a3dfb/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；Apache-2.0（代码）；LICENSE 明确排除品牌名称、标志、图像和 ASCII art 等资产。</li>
+<li><strong>已有能力：</strong> 有状态 agent harness，记忆块、历史消息检索、跨会话身份和技能；MemFS 以 Git 跟踪上下文；支持子 agent、hooks 和本地 App Server。</li>
+<li><strong>与本项目的关系：</strong> 适合作为完整 agent 产品和可编辑、可版本化上下文的对照。</li>
+<li><strong>局限与未证实：</strong> 旧 letta-ai/letta 主分支已转为迁移说明；V1 server 在 archive 分支，不能混用 V1 文档判断现版行为；跨电脑 Cloud 功能和本地源码范围需分别评估；未验证项目约束撤销后的所有缓存传播。</li>
+<li><strong>选型建议：</strong> 借鉴 MemFS、记忆可视化和固定上下文块；优先作为集成对照，避免为本项目整体替换现有 harness。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/15 7:54:35；活动源码已迁移至 letta-code；letta 原仓库未归档但 V1 实现已退役。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:29。</li>
+<li><strong>固定版本：</strong> <code>5bc853fd6fd69f00c115e320316fa4c0654a3dfb</code>。README 与 LICENSE 原文链接已固定到该提交。</li>
+</ul>
+<h3 id="projects-h6">P02 · Mem0</h3>
+<p><a href="https://github.com/mem0ai/mem0">仓库</a> · <a href="https://docs.mem0.ai/open-source/overview">文档</a> · <a href="https://raw.githubusercontent.com/mem0ai/mem0/c7ee362aff94a369af70f13f2b4f853f6793ff4c/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/mem0ai/mem0/c7ee362aff94a369af70f13f2b4f853f6793ff4c/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；Apache-2.0。</li>
+<li><strong>已有能力：</strong> 提取对话事实，按 user/session/agent 组织；提供库、自托管服务和托管平台；当前 README 的 2026 新流程为 ADD-only 提取、实体关联及向量/BM25/实体多信号检索。</li>
+<li><strong>与本项目的关系：</strong> 最重要的事实提取与检索比较基线；可避免从零写各模型/向量库适配。</li>
+<li><strong>局限与未证实：</strong> 2025 论文的 ADD/UPDATE/DELETE/NOOP 与 2026 当前主分支流程必须分版本描述；README 明示榜单包含平台专有优化，不等于开源 SDK 的成绩；agent 输出等权入库并不适合直接作为用户约束权威。</li>
+<li><strong>选型建议：</strong> 纳入优先基线；可采用适配和提取组件，约束生效/撤销由独立规则服务裁决。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/14 19:12:46。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:24。</li>
+<li><strong>固定版本：</strong> <code>c7ee362aff94a369af70f13f2b4f853f6793ff4c</code>。README 与 LICENSE 原文链接已固定到该提交。</li>
+</ul>
+<h3 id="projects-h7">P03 · Graphiti</h3>
+<p><a href="https://github.com/getzep/graphiti">仓库</a> · <a href="https://github.com/getzep/graphiti">文档</a> · <a href="https://raw.githubusercontent.com/getzep/graphiti/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/getzep/graphiti/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；Apache-2.0。</li>
+<li><strong>已有能力：</strong> 从原始 episodes 建立可追溯的实体和事实关系；事实有效时间及历史失效管理；语义、关键词、图遍历混合检索。</li>
+<li><strong>与本项目的关系：</strong> 适合判断同一事实在不同时间是否成立，以及从检索结果追溯证据。</li>
+<li><strong>局限与未证实：</strong> 独立图基座与模型处理增加运行和写入成本；事实 invalidation 不等于所有原文、摘要、索引、备份的彻底删除；跨存储撤销需要额外验证。</li>
+<li><strong>选型建议：</strong> 作为时间语义/关系推理基线或第二阶段可选适配器；首版不必强制上图数据库。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/11 20:16:31。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:23。</li>
+</ul>
+<h3 id="projects-h8">P04 · Cognee</h3>
+<p><a href="https://github.com/topoteretes/cognee">仓库</a> · <a href="https://docs.cognee.ai/core-concepts/architecture">文档</a> · <a href="https://raw.githubusercontent.com/topoteretes/cognee/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/topoteretes/cognee/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；Apache-2.0。</li>
+<li><strong>已有能力：</strong> 文档、代码、会话转为实体、关系和可检索片段；remember/recall/improve/forget 接口，session 缓存与后台图记忆衔接。</li>
+<li><strong>与本项目的关系：</strong> 与项目知识、代码依赖、会话经验整理有关，适合多源知识整合。</li>
+<li><strong>局限与未证实：</strong> Cloud 与自托管范围不同；模型和图加工成本需计入；未实测手工修改、会话蒸馏和异步入图并发时的版本一致性。</li>
+<li><strong>选型建议：</strong> 作为多源图记忆基线，借鉴 ingest/recall 分离及 session 到长期记忆的审核入口。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/15 12:33:55。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:24。</li>
+</ul>
+<h3 id="projects-h9">P05 · MemOS（MemTensor）</h3>
+<p><a href="https://github.com/MemTensor/MemOS">仓库</a> · <a href="https://github.com/MemTensor/MemOS">文档</a> · <a href="https://raw.githubusercontent.com/MemTensor/MemOS/de8069428a9247bfa7a3d35f59a9b39fa8f231d2/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/MemTensor/MemOS/de8069428a9247bfa7a3d35f59a9b39fa8f231d2/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；Apache-2.0。</li>
+<li><strong>已有能力：</strong> Memory Cube 组织、隔离和组合知识库；编辑、删除、自然语言反馈；本地插件使用 SQLite、FTS5+向量、技能演化和 Memory Viewer；另有自托管/Cloud。</li>
+<li><strong>与本项目的关系：</strong> 直接覆盖用户的多 agent、项目隔离、可编辑记忆和当前 DSH 工作流。</li>
+<li><strong>局限与未证实：</strong> 完整自托管方案与本地插件底层不同，前者要求的外部服务不能强加给后者；README 的隔离/并发宣称未做安全与一致性实测；图反馈不等于明确约束覆盖协议。</li>
+<li><strong>选型建议：</strong> 优先试装候选之一；对照本地插件的最小体验和 Cube 作用域管理。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/9 12:54:27。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:26。</li>
+<li><strong>固定版本：</strong> <code>de8069428a9247bfa7a3d35f59a9b39fa8f231d2</code>。README 与 LICENSE 原文链接已固定到该提交。</li>
+</ul>
+<h3 id="projects-h10">P06 · Hindsight</h3>
+<p><a href="https://github.com/vectorize-io/hindsight">仓库</a> · <a href="https://hindsight.vectorize.io/">文档</a> · <a href="https://raw.githubusercontent.com/vectorize-io/hindsight/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/vectorize-io/hindsight/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；MIT。</li>
+<li><strong>已有能力：</strong> retain/recall/reflect 三类操作，按 bank 管理记忆；提供 observations、mental models、MCP、控制界面及本地/服务/Cloud 接入。</li>
+<li><strong>与本项目的关系：</strong> 可对照辅助模型整理、综合判断与事实检索的分工。</li>
+<li><strong>局限与未证实：</strong> 一般部署需要数据库和模型配置；嵌入开发模式与生产外部 PostgreSQL 的建议不同；反思生成结论仍应标注为推断；未验证用户撤销对已派生 mental models 的完整影响。</li>
+<li><strong>选型建议：</strong> 优先完整产品基线；借鉴 retain 与 reflect 分离，不把反思结论提升为用户授权。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/15 12:39:19。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:24。</li>
+</ul>
+<h3 id="projects-h11">P07 · MemMachine</h3>
+<p><a href="https://github.com/MemMachine/MemMachine">仓库</a> · <a href="https://docs.memmachine.ai/getting_started/quickstart">文档</a> · <a href="https://raw.githubusercontent.com/MemMachine/MemMachine/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/MemMachine/MemMachine/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；Apache-2.0。</li>
+<li><strong>已有能力：</strong> episodic 图记忆、SQL profile 记忆和 working memory 分层；API/SDK/MCP；org/project/group/agent/user/session 多维上下文。</li>
+<li><strong>与本项目的关系：</strong> 高度符合 SQL 管理结构信息、长短期分层与跨会话持久化。</li>
+<li><strong>局限与未证实：</strong> 客户端示例依赖运行中的服务，不能把安装 SDK 当作已持久化；图和 SQL 双存储的一致性、权威优先级与撤销传播未实测。</li>
+<li><strong>选型建议：</strong> 纳入分层记忆基线；借鉴事件原文与 profile 分开。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/15 6:22:04。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:24。</li>
+</ul>
+<h3 id="projects-h12">P08 · Memobase</h3>
+<p><a href="https://github.com/memodb-io/memobase">仓库</a> · <a href="https://github.com/memodb-io/memobase">文档</a> · <a href="https://raw.githubusercontent.com/memodb-io/memobase/main/readme.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/memodb-io/memobase/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；Apache-2.0。</li>
+<li><strong>已有能力：</strong> 可配置用户画像与用户事件时间线；缓冲会话批量处理，通过 API 组装用户相关上下文。</li>
+<li><strong>与本项目的关系：</strong> 适合用户偏好、个人事实和画像类长期记忆。</li>
+<li><strong>局限与未证实：</strong> README 明确重点为用户画像而非通用 agent 经验；后台缓冲可能引入新鲜度延迟；仓库未归档，但最后推送较早且 README 导流 Acontext；不能由未归档推断积极维护。</li>
+<li><strong>选型建议：</strong> 用户偏好基线；不单独承担项目规则、任务工作状态和多 agent 权限。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/1/11 3:51:40；GitHub 记录 pushed_at 为 2026-01-11；README 宣传新项目 Acontext。此处仅记录观测，不推断弃用。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:25。</li>
+</ul>
+<h3 id="projects-h13">P09 · SimpleMem / Omni-SimpleMem / EvolveMem</h3>
+<p><a href="https://github.com/aiming-lab/SimpleMem">仓库</a> · <a href="https://github.com/aiming-lab/SimpleMem/blob/main/docs/PACKAGE_USAGE.md">文档</a> · <a href="https://raw.githubusercontent.com/aiming-lab/SimpleMem/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/aiming-lab/SimpleMem/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；MIT。</li>
+<li><strong>已有能力：</strong> 从对话生成结构化原子记忆，再索引和检索；当前统一 Python 包包含文本/多模态后端以及离线检索优化入口。</li>
+<li><strong>与本项目的关系：</strong> 直接对应语义单元切分、元数据索引、查询意图与 token 控制。</li>
+<li><strong>局限与未证实：</strong> semantic lossless 是项目表述，不能解释为信息理论上的无损或任意约束都保真；文本 MCP 与完整多模态 Python 能力不同；自动优化必须用独立开发集。</li>
+<li><strong>选型建议：</strong> 优先语义切块/压缩基线，保留原文证据；首版不自动演化线上检索配置。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/7/24 7:40:38。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:25。</li>
+</ul>
+<h3 id="projects-h14">P10 · EverOS（原 EverMemOS）</h3>
+<p><a href="https://github.com/EverMind-AI/EverOS">仓库</a> · <a href="https://docs.evermind.ai">文档</a> · <a href="https://raw.githubusercontent.com/EverMind-AI/EverOS/5076683ab88d714390573d8f88ff3c470e51129a/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/EverMind-AI/EverOS/5076683ab88d714390573d8f88ff3c470e51129a/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；Apache-2.0。</li>
+<li><strong>已有能力：</strong> 可读可编辑 Markdown 为源，SQLite 与 LanceDB 为索引；文件 watcher 级联同步；user/agent/app/project/session 检索维度；用户画像、案例、skills、wiki、离线反思。</li>
+<li><strong>与本项目的关系：</strong> 是与用户“可编辑文件+SQL+向量+跨任务”方案最直接重叠的候选。</li>
+<li><strong>局限与未证实：</strong> 现版与旧 EverMemOS 的 MongoDB/Elasticsearch/Redis 服务栈不同，需锁定版本；直接编辑文件的并发冲突、watcher 失败、删除再派生及实时落盘保证尚未实测。</li>
+<li><strong>选型建议：</strong> 优先试装与架构对照；必须先验证修改/删除/崩溃恢复链路，再决定复用程度。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/9 2:59:13；官方旧仓库地址重定向 EverMind-AI/EverOS，现 README 描述本地 Markdown+SQLite+LanceDB 架构。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:26。</li>
+<li><strong>固定版本：</strong> <code>5076683ab88d714390573d8f88ff3c470e51129a</code>。README 与 LICENSE 原文链接已固定到该提交。</li>
+<li><strong>别名/旧地址：</strong> EverMind-AI/EverMemOS。</li>
+</ul>
+<h3 id="projects-h15">P11 · MemoryBank / SiliconFriend</h3>
+<p><a href="https://github.com/zhongwanjun/MemoryBank-SiliconFriend">仓库</a> · <a href="https://github.com/zhongwanjun/MemoryBank-SiliconFriend">文档</a> · <a href="https://raw.githubusercontent.com/zhongwanjun/MemoryBank-SiliconFriend/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/zhongwanjun/MemoryBank-SiliconFriend/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；MIT。</li>
+<li><strong>已有能力：</strong> 按重要性与时间进行记忆遗忘/强化；回顾会话形成事件摘要与用户人格信息，附中英实验和聊天演示。</li>
+<li><strong>与本项目的关系：</strong> 对应用户提出的记忆退化机制。</li>
+<li><strong>局限与未证实：</strong> 参考实现最后推送为 2023 年，依赖和模型样例需适配；遗忘曲线适合软偏好或检索优先级，不适合自动使禁止项/明确承诺失效；代码许可不覆盖所有基础模型权重。</li>
+<li><strong>选型建议：</strong> 作为历史算法基线和遗忘策略消融，首版禁止对有效硬约束应用衰减。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2023/5/24 3:19:27；未归档；GitHub pushed_at 为 2023-05-24，按历史研究实现处理。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:28。</li>
+</ul>
+<h3 id="projects-h16">P12 · A-MEM</h3>
+<p><a href="https://github.com/agiresearch/A-mem">仓库</a> · <a href="https://github.com/agiresearch/A-mem">文档</a> · <a href="https://raw.githubusercontent.com/agiresearch/A-mem/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/agiresearch/A-mem/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；MIT。</li>
+<li><strong>已有能力：</strong> 生成包含标签、关键词、时间戳及上下文描述的笔记；通过语义关联建立链接，更新相关历史笔记；支持记忆 CRUD。</li>
+<li><strong>与本项目的关系：</strong> 是用户“辅助模型分块打标、更新关联记忆”的直接研究先例。</li>
+<li><strong>局限与未证实：</strong> 系统实现与论文复现实验仓库是两个仓库；动态演化可能改动历史表达；未验证强来源权威、权限或多写者一致性。</li>
+<li><strong>选型建议：</strong> 结构化记忆与链接算法基线；保留不可变源事件，再评估可变派生笔记。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2025/12/12 21:15:29。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:25。</li>
+</ul>
+<h3 id="projects-h17">P13 · MemoryOS（BAI-LAB）</h3>
+<p><a href="https://github.com/BAI-LAB/MemoryOS">仓库</a> · <a href="https://bai-lab.github.io/MemoryOS/docs">文档</a> · <a href="https://raw.githubusercontent.com/BAI-LAB/MemoryOS/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/BAI-LAB/MemoryOS/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；Apache-2.0。</li>
+<li><strong>已有能力：</strong> 短期、中期、长期个人记忆分层；存储、更新、检索、生成模块；MCP、Playground 和 Chroma 变体。</li>
+<li><strong>与本项目的关系：</strong> 适合研究长期偏好留存与短期会话迁移。</li>
+<li><strong>局限与未证实：</strong> 与 MemTensor/MemOS 无关，名字相似不能互换文档；多个实现入口的状态和支持可能不同；未验证项目粒度权限及删除语义。</li>
+<li><strong>选型建议：</strong> 分层/晋升策略研究基线；避免直接把个人记忆流程当团队规则服务。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/7/7 12:32:18。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:26。</li>
+</ul>
+<h3 id="projects-h18">P14 · memU</h3>
+<p><a href="https://github.com/NevaMind-AI/memU">仓库</a> · <a href="https://github.com/NevaMind-AI/memU">文档</a> · <a href="https://raw.githubusercontent.com/NevaMind-AI/memU/08e1ed4cdf4c0cb1fe5387e4a532ea588a8cbe46/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/NevaMind-AI/memU/08e1ed4cdf4c0cb1fe5387e4a532ea588a8cbe46/LICENSE.txt">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；Apache-2.0 声明；LICENSE.txt 为改写文本，标准许可一致性未核实（GitHub NOASSERTION）。</li>
+<li><strong>已有能力：</strong> 主 agent 从会话历史准备并提交可读 memory/skill Markdown；服务负责存储、embedding 和检索；多个编码助手 host adapter；本地 SQLite/PostgreSQL 与 Cloud 模式。</li>
+<li><strong>与本项目的关系：</strong> 高度对应跨 agent 的个人 wiki、可复用技能和外部统一存储。</li>
+<li><strong>局限与未证实：</strong> README 宣称 Apache-2.0，但 LICENSE.txt 有改写且 GitHub 标为 NOASSERTION，标准许可证一致性未核实；依赖日志桥接与 host 指令注入，支持范围随宿主变化；不代表任何网页聊天均可接入。</li>
+<li><strong>选型建议：</strong> 借鉴 prepare→agent→commit 与渐进取回；正式直接复用前先澄清 LICENSE.txt 的许可标识。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/14 8:30:50。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:27。</li>
+<li><strong>固定版本：</strong> <code>08e1ed4cdf4c0cb1fe5387e4a532ea588a8cbe46</code>。README 与 LICENSE 原文链接已固定到该提交。</li>
+</ul>
+<h3 id="projects-h19">P15 · OpenViking</h3>
+<p><a href="https://github.com/volcengine/OpenViking">仓库</a> · <a href="https://docs.openviking.ai/en/concepts/01-architecture">文档</a> · <a href="https://raw.githubusercontent.com/volcengine/OpenViking/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/volcengine/OpenViking/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；AGPL-3.0（当前根 LICENSE，未进一步推断 only/or-later）。</li>
+<li><strong>已有能力：</strong> viking:// 虚拟文件系统统一 resources、memories、skills；L0摘要/L1概览/L2原文逐级加载；目录内检索与会话提交后后台记忆提取。</li>
+<li><strong>与本项目的关系：</strong> 直接对应“先读简介再读完整上下文”和可浏览记忆组织。</li>
+<li><strong>局限与未证实：</strong> 当前根 LICENSE 为 AGPLv3，旧资料可能列出其他许可，采用时需按具体版本核对；提交会话后的后台提取不保证当前回合已经完成索引；虚拟路径本身不等于权限验证。</li>
+<li><strong>选型建议：</strong> 优先对照渐进加载/可浏览目录方案；需要闭源分发集成时先核对具体许可要求。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/15 12:36:59。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:26。</li>
+</ul>
+<h3 id="projects-h20">P16 · Memento</h3>
+<p><a href="https://github.com/Memento-Teams/Memento">仓库</a> · <a href="https://github.com/Memento-Teams/Memento">文档</a> · <a href="https://raw.githubusercontent.com/Memento-Teams/Memento/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/Memento-Teams/Memento/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；MIT。</li>
+<li><strong>已有能力：</strong> planner/executor 与 Case Bank；复用成功及失败经验；非参数/参数化案例选择策略，MCP 工具执行；不更新主 LLM 权重。</li>
+<li><strong>与本项目的关系：</strong> 对应从多 agent 任务轨迹中复用方法和避坑经验。</li>
+<li><strong>局限与未证实：</strong> 重点是任务经验而非用户事实与约束生命周期；完整执行环境及实验依赖较多；部分参数化案例选择需要额外训练/推理配置。</li>
+<li><strong>选型建议：</strong> 案例/技能层研究基线，首版借鉴 task→action→outcome 记录结构。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2025/10/5 14:34:18；旧组织地址重定向 Memento-Teams/Memento；最后推送 2025-10-05，研究实现按锁定版本复现。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:27。</li>
+<li><strong>别名/旧地址：</strong> Agent-on-the-Fly/Memento。</li>
+</ul>
+<h3 id="projects-h21">P17 · claude-mem（当前 README 品牌为 Grok Mem）</h3>
+<p><a href="https://github.com/thedotmack/claude-mem">仓库</a> · <a href="https://docs.claude-mem.ai/">文档</a> · <a href="https://raw.githubusercontent.com/thedotmack/claude-mem/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/thedotmack/claude-mem/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；Apache-2.0（当前根 LICENSE）；托管 observer/CMEM Pro 不由该文件授予服务端源码权利。</li>
+<li><strong>已有能力：</strong> 宿主 hooks 或日志观察收集工作记录；渐进检索和上下文注入；本地 worker、SQLite/FTS5、Web Viewer 和观察记录引用；可选择托管 observer。</li>
+<li><strong>与本项目的关系：</strong> 适合可视化记忆、编码助手接入和渐进披露体验。</li>
+<li><strong>局限与未证实：</strong> 宿主是否有 hooks 影响实时性；捕获记录并非隐含的内部思考状态；当前品牌、安装默认及许可已变化；root Apache-2.0 不自动覆盖托管 observer/CMEM Pro 服务。</li>
+<li><strong>选型建议：</strong> UX 与接入基线；本地/托管模式明确区分，首版优先借鉴可见引用与预览→详情检索。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/13 9:42:20。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:26。</li>
+</ul>
+<h3 id="projects-h22">P18 · Engram（Gentleman-Programming，agent 记忆）</h3>
+<p><a href="https://github.com/Gentleman-Programming/engram">仓库</a> · <a href="https://github.com/Gentleman-Programming/engram/blob/main/DOCS.md">文档</a> · <a href="https://raw.githubusercontent.com/Gentleman-Programming/engram/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/Gentleman-Programming/engram/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；MIT。</li>
+<li><strong>已有能力：</strong> Go 单二进制、SQLite+FTS5，CLI/HTTP/MCP/TUI；稳定 topic_key 更新主题，按 search→timeline→完整 observation 渐进取回，保存 session handoff。</li>
+<li><strong>与本项目的关系：</strong> 非常适合做用户想要的本地、直观、低依赖 MVP 对照。</li>
+<li><strong>局限与未证实：</strong> 不是 DeepSeek Engram 模型模块；保存质量依赖宿主按协议写入；全文搜索不能单独保证同义中文意图召回或复杂时态推理。</li>
+<li><strong>选型建议：</strong> 优先轻量可用性基线；借鉴稳定主题键、项目确认、检索预览与完整证据分离。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/15 9:31:09。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:27。</li>
+</ul>
+<h3 id="projects-h23">P19 · LongMemory（原 CaviraOSS/OpenMemory）</h3>
+<p><a href="https://github.com/CaviraOSS/LongMemory">仓库</a> · <a href="https://github.com/CaviraOSS/LongMemory">文档</a> · <a href="https://raw.githubusercontent.com/CaviraOSS/LongMemory/4da4986d0069dbaa59d9209a84e2267749a67b3f/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/CaviraOSS/LongMemory/4da4986d0069dbaa59d9209a84e2267749a67b3f/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；Apache-2.0。</li>
+<li><strong>已有能力：</strong> 本地 SQLite 持久化，不可变内容、来源和时态事实；可解释证据选择、token 上限、project governance，API/MCP/dashboard/VS Code 多入口。</li>
+<li><strong>与本项目的关系：</strong> 与用户当前构想在存储、来源、范围及可解释检索上高度重叠。</li>
+<li><strong>局限与未证实：</strong> 旧 OpenMemory SDK/文档不能默认与现 LongMemory API 兼容；README 明示的治理能力需要故障注入/越权/撤销实测；Python 包只是 HTTP 客户端，主引擎在 TypeScript 服务。</li>
+<li><strong>选型建议：</strong> 优先治理类对照；检验其已满足哪些需求后，才决定自建哪些控制功能。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/14 12:02:21；原仓库重定向 LongMemory；已核对现版 README 和 Apache LICENSE。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:25。</li>
+<li><strong>固定版本：</strong> <code>4da4986d0069dbaa59d9209a84e2267749a67b3f</code>。README 与 LICENSE 原文链接已固定到该提交。</li>
+<li><strong>别名/旧地址：</strong> CaviraOSS/OpenMemory。</li>
+</ul>
+<h3 id="projects-h24">P20 · Supermemory</h3>
+<p><a href="https://github.com/supermemoryai/supermemory">仓库</a> · <a href="https://supermemory.ai/docs/self-hosting/overview">文档</a> · <a href="https://raw.githubusercontent.com/supermemoryai/supermemory/2415a5c796d62c7ea9d709bc9337a6e1b6f6d837/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/supermemoryai/supermemory/2415a5c796d62c7ea9d709bc9337a6e1b6f6d837/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；MIT（已核实公开仓库代码）；本地引擎完整对应源码/发布件许可范围未完成核实。</li>
+<li><strong>已有能力：</strong> 官方文档提供本地二进制、用户 profile、时态事实与混合检索；公开仓库含 Web/MCP/集成代码；本地及平台具有 API 兼容入口。</li>
+<li><strong>与本项目的关系：</strong> 适合作为零配置体验、用户画像和统一检索 API 的产品基线。</li>
+<li><strong>局限与未证实：</strong> 已核实公开仓库 MIT；本地完整引擎对应源码/发布件许可范围尚未闭环核实，不将官方 open source 宣传等价为已验证可从源码重建全部服务；本地单组织单 API key；连接器、组织权限及专有提取模型属平台/Enterprise，不能套用平台分数推断本地效果。</li>
+<li><strong>选型建议：</strong> 可以保留产品/API对照；在本地引擎源码与许可范围核清前，不作为“全部可审计开源”的唯一核心依赖。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/14 18:02:22。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:25。</li>
+<li><strong>固定版本：</strong> <code>2415a5c796d62c7ea9d709bc9337a6e1b6f6d837</code>。README 与 LICENSE 原文链接已固定到该提交。</li>
+</ul>
+<h3 id="projects-h25">P21 · OpenMemory（mem0ai 新独立仓库，会话迁移）</h3>
+<p><a href="https://github.com/mem0ai/openmemory">仓库</a> · <a href="https://github.com/mem0ai/openmemory">文档</a> · <a href="https://raw.githubusercontent.com/mem0ai/openmemory/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/mem0ai/openmemory/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 框架和协议；MIT。</li>
+<li><strong>已有能力：</strong> TUI/CLI 发现、预览、选择并导入导出编码助手会话；当前 Beta 涵盖 Claude Code、Codex、OpenCode。</li>
+<li><strong>与本项目的关系：</strong> 对跨宿主迁移会话和用户能看见正在迁移什么有用。</li>
+<li><strong>局限与未证实：</strong> 这是会话迁移工具，不是旧 OpenMemory MCP 记忆服务；README 把实时 autosync、Skills/MCP/AGENTS.md 迁移列为 roadmap，不能当成已提供。</li>
+<li><strong>选型建议：</strong> 借鉴迁移预览与宿主会话适配；不承担记忆语义处理或实时跨 agent 一致性。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/7/29 9:40:39。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:28。</li>
+</ul>
+<h3 id="projects-h26">P22 · OpenMemory MCP（mem0 旧子目录，已 sunset）</h3>
+<p><a href="https://github.com/mem0ai/mem0/tree/553e2751126b240632967339723260fa30421615/openmemory">仓库</a> · <a href="https://github.com/mem0ai/mem0/blob/553e2751126b240632967339723260fa30421615/openmemory/README.md">文档</a> · <a href="https://raw.githubusercontent.com/mem0ai/mem0/553e2751126b240632967339723260fa30421615/openmemory/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/mem0ai/mem0/553e2751126b240632967339723260fa30421615/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统（历史）；Apache-2.0（对应历史提交根 LICENSE，子目录范围未做逐文件审计）。</li>
+<li><strong>已有能力：</strong> 历史版本提供本地记忆 API、MCP 和可视化 UI；README 提供不同 LLM/embedding 服务配置。</li>
+<li><strong>与本项目的关系：</strong> 能解释用户可能看到的 OpenMemory 旧教程，以及本地多客户端共享记忆设计。</li>
+<li><strong>局限与未证实：</strong> 历史 README 明确 Sunsetting，建议改用 Mem0 self-hosted server；2026-07-29 从主仓库删除；旧 main/openmemory 安装路径失效，不应给用户作为当前快速开始。</li>
+<li><strong>选型建议：</strong> 只作历史参照；新部署使用现版 Mem0 自托管或其他候选。</li>
+<li><strong>维护观测：</strong> 未完成机器可读归档状态核对；历史提交 README 已声明 sunset；2026-07-29 删除主分支 openmemory 子目录。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文核对；归档元数据未核实；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:51:31。</li>
+<li><strong>固定版本：</strong> <code>553e2751126b240632967339723260fa30421615</code>。README 与 LICENSE 原文链接已固定到该提交。</li>
+</ul>
+<h3 id="projects-h27">P23 · Zep SDK / examples（区分托管 Zep 与 Graphiti）</h3>
+<p><a href="https://github.com/getzep/zep-python">仓库</a> · <a href="https://help.getzep.com/sdks">文档</a> · <a href="https://raw.githubusercontent.com/getzep/zep-python/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/getzep/zep-python/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 框架和协议；Apache-2.0（SDK/示例代码）；不覆盖 Zep Cloud 服务端。</li>
+<li><strong>已有能力：</strong> 公开 Python 客户端与集成入口，访问 Zep Cloud/历史 CE 接口；getzep/zep 现为示例、框架集成与工具集合。</li>
+<li><strong>与本项目的关系：</strong> 便于接入托管基线及理解 managed service 与开源引擎差别。</li>
+<li><strong>局限与未证实：</strong> SDK 开源不代表 Zep Cloud 后端开源；getzep/zep README 明示其不是产品服务源码；legacy Community Edition 已不再支持，SDK README 的旧 CE 指南需谨慎。</li>
+<li><strong>选型建议：</strong> 只作托管适配/评测入口；如要完全自托管的时序图引擎，评估 Graphiti。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/11 15:35:28；SDK 仓库未归档；Zep CE 的不再支持声明来自 getzep/zep 当前 README，不等于 SDK 仓库归档。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:23。</li>
+</ul>
+<h3 id="projects-h28">P24 · LangGraph</h3>
+<p><a href="https://github.com/langchain-ai/langgraph">仓库</a> · <a href="https://docs.langchain.com/oss/python/langgraph/overview">文档</a> · <a href="https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/langchain-ai/langgraph/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 框架和协议；MIT。</li>
+<li><strong>已有能力：</strong> 持久执行、checkpoint、暂停恢复和人工干预；区分 thread 工作状态与跨会话 store；支持长期运行/多步骤 agent。</li>
+<li><strong>与本项目的关系：</strong> 适合在模型容器故障后恢复流程，承载幂等写入与任务状态机。</li>
+<li><strong>局限与未证实：</strong> 框架不会替用户定义事实权威、约束优先级、撤销规则；持久化必须配置后端；云部署/LangSmith 与开源库范围不同。</li>
+<li><strong>选型建议：</strong> 需要复杂 agent 工作流时采用；首版简单服务可不引入，用其持久执行思想设计恢复协议。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/14 19:45:22。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:24。</li>
+</ul>
+<h3 id="projects-h29">P25 · LangMem</h3>
+<p><a href="https://github.com/langchain-ai/langmem">仓库</a> · <a href="https://langchain-ai.github.io/langmem/">文档</a> · <a href="https://raw.githubusercontent.com/langchain-ai/langmem/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/langchain-ai/langmem/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 框架和协议；MIT。</li>
+<li><strong>已有能力：</strong> 结构化记忆提取、管理和搜索工具；热路径/后台整合及提示更新原语；可接任意存储，也可接 LangGraph Store。</li>
+<li><strong>与本项目的关系：</strong> 适合作为可插拔抽取器/记忆工作流组件而非重造所有基础能力。</li>
+<li><strong>局限与未证实：</strong> README 的 InMemoryStore 示例重启会丢失；持久服务应选数据库 Store；提示自动优化和语义合并不应直接修改已批准项目规则。</li>
+<li><strong>选型建议：</strong> 优先抽取管线基线；将输出作为候选变更，由独立验证器提交。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/9 6:44:43。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:24。</li>
+</ul>
+<h3 id="projects-h30">P26 · MCP Knowledge Graph Memory 参考服务</h3>
+<p><a href="https://github.com/modelcontextprotocol/servers">仓库</a> · <a href="https://github.com/modelcontextprotocol/servers/blob/main/src/memory/README.md">文档</a> · <a href="https://raw.githubusercontent.com/modelcontextprotocol/servers/main/src/memory/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/modelcontextprotocol/servers/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 框架和协议；Apache-2.0 / MIT 按贡献来源过渡；文档 CC-BY-4.0（根 LICENSE 明示）。</li>
+<li><strong>已有能力：</strong> 以实体、关系、原子 observations 保存本地知识图谱；提供创建、删除、search_nodes、open_nodes 与可读资源，接入 MCP 客户端。</li>
+<li><strong>与本项目的关系：</strong> 是最小可互操作外部记忆工具面和基本 CRUD 基线。</li>
+<li><strong>局限与未证实：</strong> 参考实现不是完整语义记忆平台；未验证服务器端租户权限/时态约束策略；MCP 只规定工具通信，不提供全局记忆真实性与一致性；当前 LICENSE 处于过渡。</li>
+<li><strong>选型建议：</strong> 采用 MCP 作为接入协议，参考原子 observation 和工具 schema；不直接把参考服务器当生产治理层。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/3 1:42:26。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:51:31。</li>
+</ul>
+<h3 id="projects-h31">P27 · LlamaIndex OSS</h3>
+<p><a href="https://github.com/run-llama/llama_index">仓库</a> · <a href="https://developers.llamaindex.ai/python/framework/">文档</a> · <a href="https://raw.githubusercontent.com/run-llama/llama_index/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/run-llama/llama_index/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 框架和协议；MIT。</li>
+<li><strong>已有能力：</strong> 文档摄取、分块、索引、检索与 agent 编排组件；core 与独立集成包可组合模型、embedding 和向量存储。</li>
+<li><strong>与本项目的关系：</strong> 适合处理文档格式、检索流程和 parent/child 内容组织。</li>
+<li><strong>局限与未证实：</strong> OSS 框架与 LlamaParse/LlamaCloud 付费服务不同；README 明示公司重心转向文档解析；开源框架仍提供，不应误写成已归档。</li>
+<li><strong>选型建议：</strong> 按需采用文档接入/检索组件；用户规则数据模型和事务控制自行维护。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/15 1:48:43。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:27。</li>
+</ul>
+<h3 id="projects-h32">P28 · Microsoft GraphRAG</h3>
+<p><a href="https://github.com/microsoft/graphrag">仓库</a> · <a href="https://microsoft.github.io/graphrag">文档</a> · <a href="https://raw.githubusercontent.com/microsoft/graphrag/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/microsoft/graphrag/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 框架和协议；MIT。</li>
+<li><strong>已有能力：</strong> 从语料提取图结构、组织社区和相关上下文用于问答；提供图驱动语料检索/摘要的研究管线。</li>
+<li><strong>与本项目的关系：</strong> 适用于跨文档全局主题和关系问答，对普通对话规则只属中等相关。</li>
+<li><strong>局限与未证实：</strong> 当前 README 明确 maintenance mode，不再接受新功能PR，仍做适当修复/依赖更新；官方明确索引可能昂贵，且为研究演示而非正式支持产品；不是实时约束服务。</li>
+<li><strong>选型建议：</strong> 保留全局知识问答研究基线；首版不作为核心在线记忆引擎。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/14 7:35:41；GitHub 未归档，但 README 明示 maintenance mode、无新功能；不能仅依据近期推送称积极扩展。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:27。</li>
+</ul>
+<h3 id="projects-h33">P29 · SQLite（含 FTS5/关系元数据基座）</h3>
+<p><a href="https://sqlite.org/src">仓库</a> · <a href="https://sqlite.org/docs.html">文档</a> · <a href="https://sqlite.org/fts5.html">README/资料原文</a> · <a href="https://sqlite.org/copyright.html">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 检索与存储基座；Public domain（交付的 SQLite 代码与文档；部分构建脚本另有许可证）。</li>
+<li><strong>已有能力：</strong> 本地单文件事务型数据库，适合事件、版本、标签和当前有效状态；可用全文索引做关键词召回，服务层把多个查询组合成小型上下文包。</li>
+<li><strong>与本项目的关系：</strong> 最适合本地易用首版的权威状态存储。</li>
+<li><strong>局限与未证实：</strong> 同一数据库同时只有一个写者；不应让多容器直接在网络文件系统共写数据库文件；数据库持久化不等于向量/文件投影同步；备份需使用一致性备份方法并正确处理 WAL。</li>
+<li><strong>选型建议：</strong> 首版采用：单记忆服务持有SQLite写入口；规模/写并发增长后迁移PostgreSQL。</li>
+<li><strong>维护观测：</strong> 未完成机器可读归档状态核对；官方仍维护；本条未取 Fossil 提交 SHA，不据此提供版本支持承诺。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文核对；归档元数据未核实；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:54:46。</li>
+</ul>
+<h3 id="projects-h34">P30 · PostgreSQL + pgvector</h3>
+<p><a href="https://github.com/pgvector/pgvector">仓库</a> · <a href="https://github.com/pgvector/pgvector">文档</a> · <a href="https://raw.githubusercontent.com/pgvector/pgvector/master/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/pgvector/pgvector/master/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 检索与存储基座；PostgreSQL License（pgvector 根 LICENSE 原文；GitHub 自动识别 NOASSERTION）。</li>
+<li><strong>已有能力：</strong> 在 PostgreSQL 行中存向量，支持精确/近似邻近查询；可与SQL过滤、JOIN、事务、备份和数据库权限结合。</li>
+<li><strong>与本项目的关系：</strong> 可把内容、状态、标签和embedding放在同一事务域，降低多库指针失配复杂度。</li>
+<li><strong>局限与未证实：</strong> 近似索引有召回/速度取舍，过滤后的候选量仍需测试；不负责语义切块或规则冲突；选 PostgreSQL 不会自动产生正确行级权限策略。</li>
+<li><strong>选型建议：</strong> 团队/多写者阶段优先采用；把向量字段视作可重建投影。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/10 13:49:14。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:27。</li>
+</ul>
+<h3 id="projects-h35">P31 · Qdrant</h3>
+<p><a href="https://github.com/qdrant/qdrant">仓库</a> · <a href="https://qdrant.tech/documentation/">文档</a> · <a href="https://raw.githubusercontent.com/qdrant/qdrant/master/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/qdrant/qdrant/master/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 检索与存储基座；Apache-2.0。</li>
+<li><strong>已有能力：</strong> 向量 points 与 metadata payload，过滤检索和 API；可自托管服务；另有 Cloud 与 Edge 形态。</li>
+<li><strong>与本项目的关系：</strong> 适用于需要独立向量服务、标签预过滤和较大规模召回。</li>
+<li><strong>局限与未证实：</strong> 根仓库许可不自动覆盖所有云/Edge商业形态；SQL权威状态与外部向量库双写时，需 outbox、版本过滤、删除确认和重建机制。</li>
+<li><strong>选型建议：</strong> 当单库向量方案不够时选用；仅存检索投影，不以向量库决定有效约束。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/15 12:03:10。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:27。</li>
+</ul>
+<h3 id="projects-h36">P32 · Chroma</h3>
+<p><a href="https://github.com/chroma-core/chroma">仓库</a> · <a href="https://docs.trychroma.com">文档</a> · <a href="https://raw.githubusercontent.com/chroma-core/chroma/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/chroma-core/chroma/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 检索与存储基座；Apache-2.0。</li>
+<li><strong>已有能力：</strong> 文档、metadata 和 embedding 的 collection API；提供增删改、相似检索、metadata/文档内容过滤及本地/服务形态。</li>
+<li><strong>与本项目的关系：</strong> 接入容易，适合向量召回原型与 A-MEM 类基线。</li>
+<li><strong>局限与未证实：</strong> README 最小 Client 示例是内存形态，持久化需配置；Cloud 的无服务器混合检索表述不直接证明本地版本同功能；没有用户约束治理语义。</li>
+<li><strong>选型建议：</strong> 作为轻量向量适配/基线；生产持久、访问控制与索引删除单独验证。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/15 7:28:54。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:27。</li>
+</ul>
+<h3 id="projects-h37">P33 · LanceDB</h3>
+<p><a href="https://github.com/lancedb/lancedb">仓库</a> · <a href="https://docs.lancedb.com">文档</a> · <a href="https://raw.githubusercontent.com/lancedb/lancedb/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/lancedb/lancedb/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 检索与存储基座；Apache-2.0。</li>
+<li><strong>已有能力：</strong> 基于 Lance 列式格式的本地/云向量与多模态存储；支持向量、全文、SQL和metadata过滤，数据版本管理。</li>
+<li><strong>与本项目的关系：</strong> 适合本地大文件/多模态及可重建检索索引，与 EverOS 选型相关。</li>
+<li><strong>局限与未证实：</strong> 表版本管理并不自动等价于用户规则版本/撤销语义；外部SQL权威记录与LanceDB投影一致性需要应用协议；Cloud/Enterprise能力需分开。</li>
+<li><strong>选型建议：</strong> 本地向量后端候选，先与 SQLite FTS 和 pgvector 对照成本及删除恢复行为。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/9/15 12:40:48。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:28。</li>
+</ul>
+<h3 id="projects-h38">P34 · Engram（DeepSeek，模型条件记忆）</h3>
+<p><a href="https://github.com/deepseek-ai/Engram">仓库</a> · <a href="https://github.com/deepseek-ai/Engram">文档</a> · <a href="https://raw.githubusercontent.com/deepseek-ai/Engram/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/deepseek-ai/Engram/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 边界澄清：模型架构；Apache-2.0（当前仓库 LICENSE；演示代码，未核实完整模型权重发布）。</li>
+<li><strong>已有能力：</strong> 通过静态 N-gram 记忆查表与动态隐状态融合，为模型提供条件记忆；官方仓库提供核心数据流演示；与 MoE 条件计算作对照。</li>
+<li><strong>与本项目的关系：</strong> 只用于澄清用户 MoE 类比，与外部用户可编辑数据库不是同一层。</li>
+<li><strong>局限与未证实：</strong> 官方明确演示代码模拟 Attention/MoE/mHC 等标准组件，不能当完整可部署模型；不提供项目级 CRUD、标签权限、来源撤销或跨任务事件存储。</li>
+<li><strong>选型建议：</strong> 不作为此项目依赖或记忆服务基线；在术语章节区分参数/架构内记忆与外部状态服务。</li>
+<li><strong>维护观测：</strong> GitHub API 核对未归档；最后推送 2026/1/14 1:13:02。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:28。</li>
+</ul>
+<h3 id="projects-h39">P35 · MELT（Memory Evaluation for Lifecycle Testing）</h3>
+<p><a href="https://github.com/shisa-ai/MELT">仓库</a> · <a href="https://github.com/shisa-ai/MELT">文档</a> · <a href="https://raw.githubusercontent.com/shisa-ai/MELT/47c819f417b0d81a57f781ec54d8a5cf84e0c833/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/shisa-ai/MELT/47c819f417b0d81a57f781ec54d8a5cf84e0c833/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 生命周期评测；Apache-2.0。</li>
+<li><strong>已有能力：</strong> 评测写入、纠正、矛盾、时态、项目隔离、来源、衰减、撤销和拒答；SUT 适配协议；冻结 suite/scorer/比较键，支持 checkpoint 和严格报告元数据。</li>
+<li><strong>与本项目的关系：</strong> 直接覆盖用户真正关心的记忆生命周期，优先于只测问答回忆率。</li>
+<li><strong>局限与未证实：</strong> 官方称 early release，语料及适配器仍在发展；不同 suite/scorer/比较键不可混作同榜；能力不支持应标 not_supported，不应由适配器代做后虚报。</li>
+<li><strong>选型建议：</strong> 作为首要生命周期评测框架，增加本产品特有的并发编辑、容器崩溃和撤销传播测试。</li>
+<li><strong>维护观测：</strong> 未完成机器可读归档状态核对；官方页面未见归档提示；GitHub API 配额耗尽，未核对机器可读归档字段/最后推送日期。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文核对；归档元数据未核实；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:29。</li>
+<li><strong>固定版本：</strong> <code>47c819f417b0d81a57f781ec54d8a5cf84e0c833</code>。README 与 LICENSE 原文链接已固定到该提交。</li>
+</ul>
+<h3 id="projects-h40">P36 · MemoryStackBench</h3>
+<p><a href="https://github.com/aetna000/MemoryStackBench">仓库</a> · <a href="https://github.com/aetna000/MemoryStackBench">文档</a> · <a href="https://raw.githubusercontent.com/aetna000/MemoryStackBench/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/aetna000/MemoryStackBench/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 生命周期评测；Apache-2.0。</li>
+<li><strong>已有能力：</strong> plant→interfere→probe 多会话场景与统一 adapter；记录转录、记忆快照、检索证据、删除行为和独立可审计性矩阵。</li>
+<li><strong>与本项目的关系：</strong> 可检查记忆污染、删除残留、原始来源和适配器对结果的影响。</li>
+<li><strong>局限与未证实：</strong> 当前 seven_sins_v0_1 为少量场景/断言，不能把通过率推广为一般安全保证；官方明确部分分数来自带显式写入/更新/删除策略的 store harness，不是各产品所有自动抽取路径。</li>
+<li><strong>选型建议：</strong> 作为第二生命周期/审计评测；同时报告原生系统与加控制层后的结果，透明记录适配器代做哪些工作。</li>
+<li><strong>维护观测：</strong> 未完成机器可读归档状态核对；官方页面未见归档提示；GitHub API 配额耗尽，未核对机器可读归档字段/最后推送日期。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文核对；归档元数据未核实；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:28。</li>
+</ul>
+<h3 id="projects-h41">P37 · Redis Agent Memory Server（V0 研究实现）</h3>
+<p><a href="https://github.com/redis/agent-memory-server">仓库</a> · <a href="https://github.com/redis/agent-memory-server/tree/main/V0">文档</a> · <a href="https://raw.githubusercontent.com/redis/agent-memory-server/main/README.md">README/资料原文</a> · <a href="https://raw.githubusercontent.com/redis/agent-memory-server/main/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统（历史/研究）；Apache-2.0（本参考实现）；Redis 数据库版本/托管 Iris 的许可和服务条款另核。</li>
+<li><strong>已有能力：</strong> V0 提供 REST/MCP、working/long-term memory 和可配置提取策略；Redis 支持语义检索；现产品 Iris 提供托管记忆路径。</li>
+<li><strong>与本项目的关系：</strong> 适合作为短期状态、后台记忆晋升与 TTL 策略的参考。</li>
+<li><strong>局限与未证实：</strong> 当前 README 明示 V0 是研究基础而非当前受支持生产路径；仓库 Apache-2.0 不等于依赖 Redis 各版本或托管 Iris 许可；TTL 不能直接抹去有效硬约束。</li>
+<li><strong>选型建议：</strong> 只列研究基线或已有Redis团队的对照；本项目首版避免新增不必要服务依赖。</li>
+<li><strong>维护观测：</strong> 未完成机器可读归档状态核对；当前主README将受支持路径指向托管Iris，原开源实现移至V0；未据此推断整个仓库归档；官方页面未见归档提示；GitHub API 配额耗尽，未核对机器可读归档字段/最后推送日期。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文核对；归档元数据未核实；未安装、未运行、未完成源码审计；核对日期 2026-09-15；证据取回 2026/9/15 12:46:28。</li>
+</ul>
+<h3 id="projects-h42">P38 · ReMe（AgentScope）</h3>
+<p><a href="https://github.com/agentscope-ai/ReMe">仓库</a> · <a href="https://reme.agentscope.io">文档</a> · <a href="https://raw.githubusercontent.com/agentscope-ai/ReMe/16269c9a76a094c8b58cb0523ed73504e33fe79f/README.md">README 原文</a> · <a href="https://raw.githubusercontent.com/agentscope-ai/ReMe/16269c9a76a094c8b58cb0523ed73504e33fe79f/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 核心记忆系统；Apache-2.0。</li>
+<li><strong>已有能力：</strong> Markdown、frontmatter、wikilink 为可编辑长期源；session/resource→daily→digest 分层，索引可重建；BM25、可选向量与链接扩展；独立 CLI/HTTP/MCP/Python 服务及 DSH/OpenClaw 等宿主插件。</li>
+<li><strong>与本项目的关系：</strong> 与用户的外置、可编辑、跨 agent 共享和后台整合构想高度相关，也贴近当前 DSH 工作站。</li>
+<li><strong>局限与未证实：</strong> 默认关闭 embeddings，基础文件/BM25/链接功能不需要 LLM；自动抽取、Auto Dream 等需要模型配置，不能混算成本；reindex 从已摄取 chunks 重建索引，不重新扫描文件；文件 watcher、异步抽取和派生 digest 的删除一致性仍需故障实测；DSH 插件默认每 5 个完成回合异步批量提交，rootAgentsOnly=true，关闭仅有限 drain；聊天完成不等于记忆已持久化，不能据此承诺逐事件防丢失。</li>
+<li><strong>选型建议：</strong> 加入首轮直接基线，优先检查 DSH 接入、手工编辑同步和 auto_memory/auto_dream 的来源与撤销语义。</li>
+<li><strong>维护观测：</strong> 已取得当前远程 HEAD；GitHub API 配额限制，未核对机器可读归档字段与最后推送日期。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文核对；未安装、未运行、未完成源码审计；机器可读归档元数据未核实；核对日期 2026-09-15；证据取回 2026/9/15 13:03:36。</li>
+<li><strong>固定版本：</strong> <code>16269c9a76a094c8b58cb0523ed73504e33fe79f</code>。README 与 LICENSE 原文链接已固定到该提交。</li>
+<li><strong>DSH 具体接入：</strong> <a href="https://raw.githubusercontent.com/agentscope-ai/ReMe/16269c9a76a094c8b58cb0523ed73504e33fe79f/integrations/dsh/README.md">固定版本官方指南</a>；包名 <code>@agentscope-ai/reme-dsh-plugin</code>，指南对应 DSH <code>0.1.5-rc.2</code>。提供会话使用指南、<code>reme_search</code>、回合结束自动捕获、定时整合和 ReMe Status。指南报告的示例测试由项目方完成，本次没有复测；本机 DSH 版本兼容性尚未核对。</li>
+<li><strong>索引边界证据：</strong> <a href="https://raw.githubusercontent.com/agentscope-ai/ReMe/16269c9a76a094c8b58cb0523ed73504e33fe79f/docs/en/memory_search.md">固定版本 memory_search</a> 区分文件 watcher 与 <code>reindex</code>；后者不重新扫描文件。</li>
+</ul>
+<h3 id="projects-h43">P39 · Memvid（v2 单文件记忆）</h3>
+<p><a href="https://github.com/memvid/memvid">仓库</a> · <a href="https://docs.memvid.com">文档</a> · <a href="https://raw.githubusercontent.com/memvid/memvid/e6bd9f7b9c38cd8d5370fa0fc936ac1dcd751813/README.md">README 原文</a> · <a href="https://raw.githubusercontent.com/memvid/memvid/e6bd9f7b9c38cd8d5370fa0fc936ac1dcd751813/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 检索与存储基座；Apache-2.0。</li>
+<li><strong>已有能力：</strong> 将内容、metadata、全文/向量/时间索引组织在 .mv2 文件中；immutable Smart Frames 与内嵌 WAL；Rust core、CLI、Python/Node SDK；可选本地 ONNX embedding、BM25、多模态及历史状态查询。</li>
+<li><strong>与本项目的关系：</strong> 可移植、断网使用与崩溃恢复的存储对照，也适合研究可携带的记忆快照。</li>
+<li><strong>局限与未证实：</strong> v1 的 QR/视频存储路线已弃用，不能以旧宣传描述 v2；崩溃安全和历史回溯只是本次文档观察；单文件及 append-only 不自动保证多写者、权限或派生内容彻底删除；README 性能及准确率宣称未复现。</li>
+<li><strong>选型建议：</strong> 作为便携存储对照；首版不替换事务权威层，先验证提交恢复、增删改及并发访问。</li>
+<li><strong>维护观测：</strong> 已取得当前远程 HEAD；GitHub API 配额限制，未核对机器可读归档字段与最后推送日期。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文核对；未安装、未运行、未完成源码审计；机器可读归档元数据未核实；核对日期 2026-09-15；证据取回 2026/9/15 13:03:36。</li>
+<li><strong>固定版本：</strong> <code>e6bd9f7b9c38cd8d5370fa0fc936ac1dcd751813</code>。README 与 LICENSE 原文链接已固定到该提交。</li>
+</ul>
+<h3 id="projects-h44">P40 · QMD（Query Markup Documents）</h3>
+<p><a href="https://github.com/tobi/qmd">仓库</a> · <a href="https://github.com/tobi/qmd#sdk--library-usage">文档</a> · <a href="https://raw.githubusercontent.com/tobi/qmd/04e4dbd8245c527a88f1a8f0bda547aef9ca81fb/README.md">README 原文</a> · <a href="https://raw.githubusercontent.com/tobi/qmd/04e4dbd8245c527a88f1a8f0bda547aef9ca81fb/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 检索与存储基座；MIT（根 LICENSE；另有第三方 notices）。</li>
+<li><strong>已有能力：</strong> 本地 Markdown/代码集合搜索，BM25+向量+查询扩展+RRF+本地 LLM 重排；SQLite 索引、上下文目录、metadata 过滤、CLI/SDK/MCP；按结果预览到指定行原文渐进取回。</li>
+<li><strong>与本项目的关系：</strong> 直接检验“标签筛选+混合检索+少量原文”是否足够，能作为较小的本地检索组件。</li>
+<li><strong>局限与未证实：</strong> collection/metadata 过滤不等于访问控制；README 明确 HTTP 端点没有身份认证，远程使用需独立控制；索引 update 与 embedding 分步；本地模型仍有下载/内存/推理成本，中文意图与时间约束正确性未测。</li>
+<li><strong>选型建议：</strong> 加入轻量检索基线；借鉴上下文目录和 preview→get，权限、规则生效和撤销由外部服务负责。</li>
+<li><strong>维护观测：</strong> 已取得当前远程 HEAD；GitHub API 配额限制，未核对机器可读归档字段与最后推送日期。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文核对；未安装、未运行、未完成源码审计；机器可读归档元数据未核实；核对日期 2026-09-15；证据取回 2026/9/15 13:03:06。</li>
+<li><strong>固定版本：</strong> <code>04e4dbd8245c527a88f1a8f0bda547aef9ca81fb</code>。README 与 LICENSE 原文链接已固定到该提交。</li>
+</ul>
+<h3 id="projects-h45">P41 · OpenClaw memory（harness 机制参照）</h3>
+<p><a href="https://github.com/openclaw/openclaw">仓库</a> · <a href="https://docs.openclaw.ai/concepts/memory">文档</a> · <a href="https://raw.githubusercontent.com/openclaw/openclaw/e00500a654295dac85d6a461f9e46c67e6bf5197/README.md">README 原文</a> · <a href="https://raw.githubusercontent.com/openclaw/openclaw/e00500a654295dac85d6a461f9e46c67e6bf5197/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 框架和协议；MIT（根 LICENSE；另有第三方 notices）。</li>
+<li><strong>已有能力：</strong> USER.md/MEMORY.md/每日笔记分层；默认 SQLite 混合检索，压缩前 flush、dreaming、可插拔 memory engine；官方来源/删除机制记录 session lineage、admission、forget 与派生追踪，清理索引及缓存并在发布前重查来源。</li>
+<li><strong>与本项目的关系：</strong> 作为完整宿主如何捕获、注入、压缩、回顾、删除记忆的现实对照；不是独立通用数据库产品。</li>
+<li><strong>局限与未证实：</strong> memory 文档明确记忆能保留许可上下文但不会强制执行政策；真实控制来自宿主工具权限等机制；forget 不覆盖原始转录、无来源旧笔记、自由手改与外部副本；跨 agent/备份删除和延迟写入处理必须依各自边界验证。</li>
+<li><strong>选型建议：</strong> 用其 memory-provenance、action-sensitive memory 和宿主生命周期做设计及测试对照，不为记忆需求整体替换当前宿主。</li>
+<li><strong>维护观测：</strong> 已取得当前远程 HEAD；GitHub API 配额限制，未核对机器可读归档字段与最后推送日期。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文核对；未安装、未运行、未完成源码审计；机器可读归档元数据未核实；核对日期 2026-09-15；证据取回 2026/9/15 13:03:37。</li>
+<li><strong>固定版本：</strong> <code>e00500a654295dac85d6a461f9e46c67e6bf5197</code>。README 与 LICENSE 原文链接已固定到该提交。</li>
+<li><strong>来源与删除证据：</strong> <a href="https://raw.githubusercontent.com/openclaw/openclaw/e00500a654295dac85d6a461f9e46c67e6bf5197/docs/concepts/memory-provenance.md">固定版本 memory-provenance</a>。文档已讨论合并/替换后来源保留、禁止再次摄取、embedding cache 清理与索引发布前复查；同时明确不覆盖原始转录、无来源旧记录和外部副本。这些是直接设计对照，不能把全部机制当作尚无先例，也不能从文档推定所有不变量已经成立。</li>
+</ul>
+<h3 id="projects-h46">P42 · LightRAG（HKUDS）</h3>
+<p><a href="https://github.com/HKUDS/LightRAG">仓库</a> · <a href="https://github.com/HKUDS/LightRAG">文档</a> · <a href="https://raw.githubusercontent.com/HKUDS/LightRAG/0edad35089f42f40ed72000f65592512fc7ab27a/README.md">README 原文</a> · <a href="https://raw.githubusercontent.com/HKUDS/LightRAG/0edad35089f42f40ed72000f65592512fc7ab27a/LICENSE">许可原文</a></p>
+<ul>
+<li><strong>类别/许可：</strong> 框架和协议；MIT。</li>
+<li><strong>已有能力：</strong> 图结构与向量结合的文档检索，实体/关系抽取、引用、检索上下文返回和 WebUI/API；多种文本分块、可替换存储后端、多模态接入；文档删除可触发知识图谱重建。</li>
+<li><strong>与本项目的关系：</strong> 文档/代码知识层、语义分块、图检索和删除后索引修复的组件及实验基线。</li>
+<li><strong>局限与未证实：</strong> 文档知识 RAG 不等于用户约束或 agent 工作状态；删除引起图重建不等于已验证跨缓存撤销；多模型角色与存储后端增加部署/提取成本；未经配置的默认网络服务不提供本项目所需租户策略。</li>
+<li><strong>选型建议：</strong> 按需采用文档接入或图检索组件；在线规则服务仍保留独立的数据模型与事务控制。</li>
+<li><strong>维护观测：</strong> 已取得当前远程 HEAD；GitHub API 配额限制，未核对机器可读归档字段与最后推送日期。</li>
+<li><strong>证据等级与时间：</strong> V1：官方 README/文档与 LICENSE 原文核对；未安装、未运行、未完成源码审计；机器可读归档元数据未核实；核对日期 2026-09-15；证据取回 2026/9/15 13:03:06。</li>
+<li><strong>固定版本：</strong> <code>0edad35089f42f40ed72000f65592512fc7ab27a</code>。README 与 LICENSE 原文链接已固定到该提交。</li>
+</ul>
+<h2 id="projects-h47">从已有项目中提取的设计决策</h2>
+<p>下面是本报告的工程判断，尚需实现和实验验证。</p>
+<ol>
+<li><strong>先定义权威记录与派生索引。</strong> SQL 事件、明确约束及来源记录应有稳定 ID 和版本；全文、向量、图和摘要可作为可重建投影。采用 Markdown 为权威源同样可行，但必须定义文件修改如何进入事务、冲突和失败如何恢复。EverOS 是后一方向的重要对照。</li>
+<li><strong>把“用户说了什么”“模型推断什么”“当前必须遵守什么”分开。</strong> 标签适合查询筛选，不能单独决定谁有权覆盖约束。抽取 agent 提交候选事实或变更，明确的生效、撤销与作用域由服务处理；反思结论保留其推断身份。</li>
+<li><strong>避免只用向量相似度和最新时间戳裁决。</strong> 相似句可能是另一项目、另一时间条件、引用或否定。应先明确对象、作用域、权限、来源、有效时间和变更关系，再用语义匹配辅助识别候选。</li>
+<li><strong>把可见编辑体验作为第一阶段功能。</strong> 支持查看原文依据、当前有效规则、替换关系与最近取回原因；用户可编辑并看见结果。需要重点验证手工删除如何影响原文、摘要、向量、缓存和其他 agent 已拿到的上下文。</li>
+<li><strong>不要从 README 的完整程度推导可靠性。</strong> MELT 和 MemoryStackBench 已覆盖多种生命周期问题；用它们做共同基线，再增加当前工作站的容器崩溃、并发编辑、重复事件、撤销后迟到写入、跨 agent 缓存失效和恢复测试。</li>
+<li><strong>创新主张应限定到实验能证实的增量。</strong> 例如特定的约束版本协议、可编辑文件与事务状态的一致性保证、可执行的撤销传播契约、面向真实宿主的低配置接入。在没有检索到完全相同实现、也没有基线实测的情况下，仍不能声称这些方向首次出现。撤销、治理、可解释性本身已有相关系统和研究。</li>
+</ol>
+<h2 id="projects-h48">检索方式、筛选与未覆盖边界</h2>
+<h3 id="projects-h49">代表性查询与核对路径</h3>
+<ul>
+<li>核心项目及许可证：<code>MemOS MemTensor GitHub LICENSE</code>、<code>MemMachine Memobase GitHub memory</code>、<code>site:github.com MemoryOS BAI-LAB</code>、<code>site:github.com memU NevaMind</code>。</li>
+<li>同名和范围辨析：<code>OpenMemory CaviraOSS mem0 GitHub</code>、<code>Supermemory GitHub self host open source license</code>、<code>Engram memory DeepSeek Gentleman Programming</code>。</li>
+<li>历史工作与生命周期：<code>MemoryBank Enhancing Large Language Models Long-Term Memory github</code>，以及 MELT、MemoryStackBench 官方仓库的 README、适配说明和根许可。</li>
+<li>收尾定向补检：<code>ReMe AgentScope github memory</code>、<code>memvid github official</code>、<code>tobi qmd github</code>、<code>OpenClaw memory docs github</code>；另直接核对 HKUDS/LightRAG。P38–P42 完成后截止扩搜。</li>
+<li>从已确认的官方仓库继续检查 README 指向的官网/文档、仓库迁移页、源码目录与 LICENSE 原文；关键候选使用远程 HEAD 固定 commit，避免只引用会移动的主分支。</li>
+</ul>
+<p>这是一组代表性检索路径，不是声称具有完整可复现日志的系统综述。论文预印本与基准论文另见同一设计包的论文研究文件。</p>
+<h3 id="projects-h50">纳入原则</h3>
+<p>纳入用户点名或与其目标直接相关的记忆系统；补入可编辑/可治理/本地持久化/多 agent 接入的对照；同时覆盖框架、存储基座和生命周期评测。保留少量历史或边界条目，是为了防止把旧部署文档、SaaS SDK、同名模型模块误当当前自托管记忆服务。</p>
+<h3 id="projects-h51">明确未覆盖</h3>
+<ul>
+<li>未穷尽 GitHub、新发布预印本、各语言生态和全部宿主插件；没有检索到某功能不等于该项目不存在此功能。</li>
+<li>未安装、未测吞吐/延迟/token 成本、未复现宣传分数，也未验证离线可用性、Windows 适配、删除彻底性、跨租户隔离或灾难恢复。</li>
+<li>未做逐文件许可证、依赖、模型权重、SaaS 条款审计；开源标签和根 LICENSE 不能替代这些检查。</li>
+<li>未将云端平台独有功能或 proprietary 优化成绩转移到 OSS 版本；使用开源 SDK 不代表可以自行部署其服务端。</li>
+<li>维护状态为核对时点观察；API 配额限制下，P35–P42 的归档字段与最后推送日期标为未核实。其余未固定 SHA 的链接以后可能变化。</li>
+<li>评测必须分开报告系统原生行为、适配器补充策略和新增控制层；否则可能测到评测脚本的能力，而不是记忆系统本身。</li>
+</ul>
+<h2 id="projects-h52">下一步：最小可判定实验</h2>
+<p>先核对当前 DSH 版本并试装 ReMe 的独立插件，再选 EverOS、LongMemory、MemOS、Mem0/Hindsight 中至少一个，以及 Engram/QMD + SQLite 轻量对照；用相同宿主事件和作用域运行。OpenClaw 作为已有宿主来源/删除契约参照。优先回答四个问题：<strong>约束是否正确生效，明确撤销是否传播，崩溃后能否恢复，用户能否理解和修改当前记忆</strong>。在同等任务成功率和约束违例率下再比较总 token、模型调用、延迟及人工修复成本。优先适配已有组件；仅在具体生命周期能力确实不足时补建控制层。通过这些实验决定复用与自建边界，才足以支撑“更省 token 且不损精度”的结论。</p>
+</section>
+<section class="doc" data-id="papers" data-title="论文与预印本" hidden><h1 id="papers-h0">外置 AI 记忆系统：45 项一手研究论文与综述与可检验研究增量</h1>
+<p>核查日期：<strong>2026-09-15</strong>。范围：2022—2026 年公开研究，45 项（44 项原始研究及 1 项综述）；其中 <strong>16 项核对关键正文，29 项核对摘要及元数据</strong>。结构化同版清单见 <a href="research/papers.json">papers.json</a>。</p>
+<h2 id="papers-h1">1. 结论先行</h2>
+<p>外部记忆、原子事实提炼、元数据标签、时间失效、辅助模型增删改和多通道检索，已经形成密集的研究与开源生态。这个方向具有产品价值，但仅把 SQLite、向量库、标签和整理 agent 组合起来，不能作为足够的研究新颖性主张。直接近邻包括 Mem0、A-MEM、SimpleMem、MemOS 与 Fortunate Recall。<a href="https://arxiv.org/abs/2504.19413">R02</a> <a href="https://arxiv.org/abs/2502.12110">R04</a> <a href="https://arxiv.org/abs/2601.02553">R24</a> <a href="https://arxiv.org/abs/2507.03724">R25</a> <a href="https://arxiv.org/abs/2609.10413">R40</a></p>
+<p>尤其需要修正的是：撤销 guard、旧记忆写回后复活、多角色继续使用旧规则、授权撤销一致性以及委托图的精确撤销目标，都已有直接研究。可进一步检验的是这些机制在本地 DSH 真实任务中的联合行为、运行中更新、人工编辑与故障恢复，而不能笼统称为首次解决撤销。<a href="https://arxiv.org/abs/2609.08258">R36</a> <a href="https://arxiv.org/abs/2603.09875">R37</a> <a href="https://arxiv.org/abs/2608.30091">R38</a></p>
+<p>MD 和文件搜索不能预先判负。LongMemEval-V2 给出了有竞争力的文件与工作流记忆基线；LOCOMO-CONV 表明隐含需求与直接问答不同；MemoryArena 推动测试从“答对”走向跨会话真正完成动作。这三者更贴近项目目标。<a href="https://arxiv.org/abs/2605.12493">R34</a> <a href="https://arxiv.org/abs/2609.03467">R35</a> <a href="https://arxiv.org/abs/2602.16313">R39</a></p>
+<p>最后补齐 G-Memory 的团队协作轨迹、MemoryAgentBench 的选择性遗忘、ACE 的增量经验手册、RLM 的程序化外部上下文，以及 agent-memory 综述的形式／功能／动态分类。五项均核对摘要和最新元数据，保留原 R01—R40 编号；本轮检索在此截止。<a href="https://arxiv.org/abs/2506.07398">R41</a> <a href="https://arxiv.org/abs/2507.05257">R42</a> <a href="https://arxiv.org/abs/2510.04618">R43</a> <a href="https://arxiv.org/abs/2512.24601">R44</a> <a href="https://arxiv.org/abs/2512.13564">R45</a></p>
+<h2 id="papers-h2">2. 核查口径</h2>
+<ul>
+<li><strong>日期</strong>是 arXiv 首次提交日期，不是网页抓取日或正式发表日；另列核查时最新版本与日期。45 项日期均对元数据复核，未从编号月份推断日期。</li>
+<li><strong>发表状态</strong>区分正式会议／期刊页面已核实、作者元数据／官方仓库报告，以及本轮仅核实预印本而未核实正式发表。后者不表示一定未发表。</li>
+<li><strong>正文核对</strong>表示阅读列示关键章节，未声称逐页通读。其余机制概要按摘要与官方项目资料处理。</li>
+<li><strong>代码链接</strong>是作者关联的仓库、项目或归档入口；本轮未运行代码，未检查所有论文功能是否在当前仓库完整实现。空值只表示本轮未核实。</li>
+<li><strong>设计相关点与部分边界</strong>是本报告的工程分析；作者自述局限会明确指出。不给跨论文营销分数排序，不据检索覆盖声称绝对原创。</li>
+<li>记忆接口建议保存原话、可见工具回执、结构化操作和简短依据；隐藏思维链不是可靠的存储接口，正则只能验证格式。</li>
+</ul>
+<h2 id="papers-h3">3. 最值得先读的 12 项</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>关心的问题</th>
+<th>优先工作</th>
+<th>直接借鉴或反证</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>如何提炼、替代和合并记忆</td>
+<td><a href="https://arxiv.org/abs/2504.19413">R02</a>、<a href="https://arxiv.org/abs/2508.19828">R22</a>、<a href="https://arxiv.org/abs/2601.02553">R24</a></td>
+<td>操作式管理、训练式管理、原子事实与混合检索</td>
+</tr>
+<tr>
+<td>标签、上下文、笔记关联是否新</td>
+<td><a href="https://arxiv.org/abs/2502.12110">R04</a></td>
+<td>字段组合与关联演化已有直接先例</td>
+</tr>
+<tr>
+<td>事实何时有效、何时失效</td>
+<td><a href="https://arxiv.org/abs/2501.13956">R03</a>、<a href="https://arxiv.org/abs/2609.10413">R40</a></td>
+<td>双时间、槽位身份、状态与类型生命周期</td>
+</tr>
+<tr>
+<td>权限、版本、快照与管理接口</td>
+<td><a href="https://arxiv.org/abs/2507.03724">R25</a></td>
+<td>大范围管理层构件已经系统描述</td>
+</tr>
+<tr>
+<td>删除为何未阻止旧规则继续使用</td>
+<td><a href="https://arxiv.org/abs/2609.08258">R36</a>、<a href="https://arxiv.org/abs/2608.30091">R38</a></td>
+<td>撤销执行、写回复活、合法授权路径保护</td>
+</tr>
+<tr>
+<td>怎样测试隐含需要与真实任务</td>
+<td><a href="https://arxiv.org/abs/2605.12493">R34</a>、<a href="https://arxiv.org/abs/2609.03467">R35</a>、<a href="https://arxiv.org/abs/2602.16313">R39</a></td>
+<td>环境经验、自然对话需求、多会话行动</td>
+</tr>
+</tbody></table></div>
+<h2 id="papers-h4">4. 分类论文清单</h2>
+<h3 id="papers-h5">外部记忆</h3>
+<h4 id="papers-h6">R01 · MemGPT: Towards LLMs as Operating Systems</h4>
+<p><strong>首次提交：2023-10-12；最新：v2（2024-02-12）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2310.08560">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：§2.1–2.3；<a href="https://arxiv.org/html/2310.08560v2">所读正文版本</a>。</li>
+<li><strong>机制：</strong> 把上下文分成系统指令、可改写工作区和消息队列；以函数在主上下文、归档库与历史召回库之间分页，内存压力触发迁移。</li>
+<li><strong>与设计的关系：</strong> 直接支持短常驻上下文加外部按需记忆；用户方案的外置分层与自动换入已有清晰先例。</li>
+<li><strong>局限／适用边界：</strong> 正文描述的分页不等于多 agent 事务一致性；记忆调用仍依赖模型决策。当前 Letta 仓库已演化，不能当作论文版本的完全复现。</li>
+<li><strong>代码：</strong> <a href="https://github.com/letta-ai/letta">作者代码／项目入口</a>；已核对作者当前 Letta 项目；不是论文代码冻结快照。</li>
+</ul>
+<h4 id="papers-h7">R02 · Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory</h4>
+<p><strong>首次提交：2025-04-28；最新：v1（2025-04-28）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2504.19413">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：§2.1–2.2、§3、§4.5；<a href="https://arxiv.org/html/2504.19413v1">所读正文版本</a>。</li>
+<li><strong>机制：</strong> 从新消息对、近期对话和全局摘要抽取候选记忆；找相似既有记忆后通过 ADD、UPDATE、DELETE、NOOP 管理。图变体为关系保留失效历史。</li>
+<li><strong>与设计的关系：</strong> 与抽取、向量候选、辅助模型判定增删改的提案高度接近；应作为首要实现基线。</li>
+<li><strong>局限／适用边界：</strong> 操作判定可能误合并；论文主要问答评估不能证明撤销与权限正确。部分评估排除对抗或不可回答类别；检索输入 token 不等于包含写入的总成本。</li>
+<li><strong>代码：</strong> <a href="https://github.com/mem0ai/mem0">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h8">R03 · Zep: A Temporal Knowledge Graph Architecture for Agent Memory</h4>
+<p><strong>首次提交：2025-01-20；最新：v1（2025-01-20）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2501.13956">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：§2.2.2–2.2.3、附录6.1.5；<a href="https://arxiv.org/html/2501.13956v1">所读正文版本</a>。</li>
+<li><strong>机制：</strong> 以实体、关系和事件构建时间知识图；区分系统记录时间与事实有效时间，同实体对候选关系做去重和矛盾检测，冲突时使旧关系失效。</li>
+<li><strong>与设计的关系：</strong> 双时间、有效状态与保留历史是现成设计依据；不能把入库较晚简单等同于事实较新。</li>
+<li><strong>局限／适用边界：</strong> 时间、实体和冲突仍可能抽取错误；时间图本身不提供用户指令优先级或执行授权。最新矛盾边规则还需考虑来源、适用范围和证据。</li>
+<li><strong>代码：</strong> <a href="https://github.com/getzep/graphiti">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h9">R04 · A-MEM: Agentic Memory for LLM Agents</h4>
+<p><strong>首次提交：2025-02-17；最新：v11（2025-10-08）。</strong> 发表：NeurIPS 2025。作者 arXiv 元数据或官方仓库报告该发表状态；本轮未另核正式论文集。 <a href="https://arxiv.org/abs/2502.12110">发表依据</a> <a href="https://arxiv.org/abs/2502.12110">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：§3.1–3.3、§6；<a href="https://arxiv.org/html/2502.12110v11">所读正文版本</a>。</li>
+<li><strong>机制：</strong> 用原文、交互时间、关键词、标签、上下文描述、向量和链接组成知识笔记；先找相似笔记再由模型建立关联、演化旧笔记。</li>
+<li><strong>与设计的关系：</strong> 几乎直接覆盖用户提出的类型、时间、简介、上下文、向量指针以及记忆整理 agent；仅组合这些字段不足以声称创新。</li>
+<li><strong>局限／适用边界：</strong> 作者明确指出组织质量依赖 LLM，当前主要面向文本。结构化字段不能保证事实真实、分块语义完整或更新原子性。</li>
+<li><strong>代码：</strong> <a href="https://github.com/WujiangXu/A-mem">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+<li><strong>补充一手入口：</strong> <a href="https://github.com/WujiangXu/A-mem-sys">入口 1</a>。</li>
+</ul>
+<h4 id="papers-h10">R05 · Generative Agents: Interactive Simulacra of Human Behavior</h4>
+<p><strong>首次提交：2023-04-07；最新：v2（2023-08-06）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2304.03442">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 以观察记忆流记录经历，联合近期程度、重要性和相关性检索；通过反思生成高层理解，再用于计划和交互。</li>
+<li><strong>与设计的关系：</strong> 重要性与召回频度可影响可选记忆的选择；原始观察与反思结果应分开存储。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：模拟人物行为可信度不等于项目事实正确或执行权限正确；反思不能自动升级为用户授权。</li>
+<li><strong>代码：</strong> <a href="https://github.com/joonspk-research/generative_agents">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h11">R06 · MemoryBank: Enhancing Large Language Models with Long-Term Memory</h4>
+<p><strong>首次提交：2023-05-17；最新：v3（2023-05-21）。</strong> 发表：AAAI 2024。正式会议／期刊页面已核实；本文机制仍以列示 arXiv 版本为准。 <a href="https://ojs.aaai.org/index.php/AAAI/article/view/29946">发表依据</a> <a href="https://arxiv.org/abs/2305.10250">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 长期记忆库结合用户画像、检索和受遗忘曲线启发的衰减及强化机制，为持续交互提供历史。</li>
+<li><strong>与设计的关系：</strong> 为记忆退化提供先例；可以把衰减用于排序或归档策略。</li>
+<li><strong>局限／适用边界：</strong> 摘要级设计评议：很少访问不等于失效；明确禁止事项、当前目标和有效合同式约束不能只随时间衰减而消失。</li>
+<li><strong>代码：</strong> <a href="https://github.com/zhongwanjun/MemoryBank-SiliconFriend">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h12">R25 · MemOS: A Memory OS for AI System</h4>
+<p><strong>首次提交：2025-07-04；最新：v4（2025-12-03）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2507.03724">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：§4.2、§5.3–5.5；<a href="https://arxiv.org/html/2507.03724v4">所读正文版本</a>。</li>
+<li><strong>机制：</strong> 以 MemCube 统一记忆内容与来源、类型、时间、权限、TTL、优先级、版本和衍生关系；提出增删改、生命周期、快照回滚、订阅和跨层调度等接口。</li>
+<li><strong>与设计的关系：</strong> 广泛覆盖提案的管理层、标签权限、版本、审计和多 agent 共享；这些总体构件已不是未探索方向。</li>
+<li><strong>局限／适用边界：</strong> 正文是架构与实验描述，不能据此断言当前开源版本已完整实现全部治理功能或提供生产级事务保证；应另查实现及失败测试。</li>
+<li><strong>代码：</strong> <a href="https://github.com/MemTensor/MemOS">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h13">R26 · Memory OS of AI Agent</h4>
+<p><strong>首次提交：2025-05-30；最新：v1（2025-05-30）。</strong> 发表：EMNLP 2025 Oral。作者 arXiv 元数据或官方仓库报告该发表状态；本轮未另核正式论文集。 <a href="https://github.com/BAI-LAB/MemoryOS">发表依据</a> <a href="https://arxiv.org/abs/2506.06326">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> MemoryOS 以短期、中期与长期个人记忆组织对话，通过队列、对话链和分页式管理进行更新及检索。</li>
+<li><strong>与设计的关系：</strong> 为分层记忆、分页及个性化提供另一实现基线；必须与名称接近的 MemOS 区分。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：热度、频度和层级不等于事实有效性或用户授权；不能仅依据冷却把仍有效的硬约束移除。</li>
+<li><strong>代码：</strong> <a href="https://github.com/BAI-LAB/MemoryOS">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h14">R27 · Hindsight is 20/20: Building Agent Memory that Retains, Recalls, and Reflects</h4>
+<p><strong>首次提交：2025-12-14；最新：v1（2025-12-14）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2512.12818">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：§3；<a href="https://arxiv.org/html/2512.12818v1">所读正文版本</a>。</li>
+<li><strong>机制：</strong> 分开世界事实、agent 经历、带置信度的观点与实体观察摘要；以 retain、recall、reflect 管理，联合向量、关键词、图与时间召回，再融合重排。</li>
+<li><strong>与设计的关系：</strong> 支持事实、推断、经历分型，以及多通道检索和预算控制。</li>
+<li><strong>局限／适用边界：</strong> 观点置信度不等于授权强度；agent 自报经历不等于工具已成功完成。仍需来源证据、执行回执与状态核验。</li>
+<li><strong>代码：</strong> <a href="https://github.com/vectorize-io/hindsight">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h3 id="papers-h15">写入与演化</h3>
+<h4 id="papers-h16">R22 · Memory-R1: Enhancing Large Language Model Agents to Manage and Utilize Memories via Reinforcement Learning</h4>
+<p><strong>首次提交：2025-08-27；最新：v5（2026-01-14）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2508.19828">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：§3.1–3.2、§4.1；<a href="https://arxiv.org/html/2508.19828v5">所读正文版本</a>。</li>
+<li><strong>机制：</strong> 分别训练管理记忆和回答问题的 agent；管理器以 ADD、UPDATE、DELETE、NOOP 操作演化记忆，答案器学习提炼检索内容，以问答结果奖励优化。</li>
+<li><strong>与设计的关系：</strong> 给出辅助模型决定增删改的训练路线；正文的第二只宠物误覆盖第一只宠物案例说明相似不等于替代。</li>
+<li><strong>局限／适用边界：</strong> 问答奖励未必惩罚错误撤销、跨范围覆盖或违反用户授权。官方仓库本轮仍标注 Code coming soon，不能视为已可运行的完整复现。</li>
+<li><strong>代码：</strong> <a href="https://github.com/yansikuan/memory-r1">作者代码／项目入口</a>；官方仓库可访问，但仍标注 Code coming soon。</li>
+</ul>
+<h4 id="papers-h17">R23 · MemAgent: Reshaping Long-Context LLM with Multi-Conv RL-based Memory Agent</h4>
+<p><strong>首次提交：2025-07-03；最新：v2（2026-07-29）。</strong> 发表：ICLR 2026 Oral。作者 arXiv 元数据或官方仓库报告该发表状态；本轮未另核正式论文集。 <a href="https://arxiv.org/abs/2507.02259">发表依据</a> <a href="https://arxiv.org/abs/2507.02259">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 通过多轮强化学习训练 agent 分段读取长文本，并持续改写有界记忆，以支持后续长文问答。</li>
+<li><strong>与设计的关系：</strong> 展示记忆选择和覆写可以端到端学习；适合与固定压缩规则比较。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：针对长文任务的记忆覆写不自动满足用户约束不可误删要求；需要额外训练成本与分布迁移评估。</li>
+<li><strong>代码：</strong> <a href="https://github.com/BytedTsinghua-SIA/MemAgent">作者代码／项目入口</a>；作者项目页链接到的官方代码仓库已核对；未运行代码。</li>
+<li><strong>补充一手入口：</strong> <a href="https://memagent-sialab.github.io/">入口 1</a>。</li>
+</ul>
+<h4 id="papers-h18">R24 · SimpleMem: Efficient Lifelong Memory for LLM Agents</h4>
+<p><strong>首次提交：2026-01-05；最新：v3（2026-01-29）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2601.02553">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：§2.1–2.3；<a href="https://arxiv.org/html/2601.02553v3">所读正文版本</a>。</li>
+<li><strong>机制：</strong> 由重叠输入窗口提炼消歧且时间标准化的原子事实，写入前做会话内整合；以向量、BM25 和符号元数据建立多视图索引，再按意图规划与自适应深度检索。</li>
+<li><strong>与设计的关系：</strong> 是用户原子块、标签、时间、辅助检索 agent 方案的直接近邻；必须纳入强基线。</li>
+<li><strong>局限／适用边界：</strong> 作者的 semantic lossless compression 是方法名称，不能解释为数学无损承诺。解析、合并与时间标准化仍可能出错，应保留原文并测细节保持率。</li>
+<li><strong>代码：</strong> <a href="https://github.com/aiming-lab/SimpleMem">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h19">R28 · Sleep-time Compute: Beyond Inference Scaling at Test-time</h4>
+<p><strong>首次提交：2025-04-17；最新：v1（2025-04-17）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2504.13171">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 在查询前利用空闲时间对已知上下文预先计算可能有用的推理或表示，将计算移到离线阶段并通过多次查询摊销。</li>
+<li><strong>与设计的关系：</strong> 为后台整理和辅助 agent 是否省成本提供正确问题：预处理能否被足够次数复用。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：降低在线延迟或单次查询 token 不保证降低总成本；应计入预计算、预测失误、更新失效及利用率。</li>
+<li><strong>代码：</strong> <a href="https://github.com/letta-ai/sleep-time-compute">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h20">R40 · Fortunate Recall: Ontology-Driven Memory Lifecycle Management for Persistent Coherence in LLMs</h4>
+<p><strong>首次提交：2026-09-09；最新：v1（2026-09-09）。</strong> arXiv 预印本，正文标注 under review；不能视为已审稿发表。 <a href="https://arxiv.org/abs/2609.10413">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：§3–4、§6.7、§7；<a href="https://arxiv.org/html/2609.10413v1">所读正文版本</a>。</li>
+<li><strong>机制：</strong> Fortunate Recall 使用行为类别本体、事实槽位、active／superseded／expired／retracted 状态、事件和入库时间，再结合确定性衰减、槽位替代与检索路由管理生命周期。</li>
+<li><strong>与设计的关系：</strong> 标签、时间、状态与语义替代在近期工作中已有直接组合。作者比较通用生命周期与类型本体，有助于避免把所有收益归于标签。</li>
+<li><strong>局限／适用边界：</strong> 作者承认缺乏人工验证、使用模型评审；过宽槽位可能误废除仍有效事实。归档链接可在正文核实，但本轮未能打开并运行归档文件。</li>
+<li><strong>代码：</strong> <a href="https://doi.org/10.5281/zenodo.20067778">作者代码／项目入口</a>；正文给出 Zenodo 归档入口；本轮打开归档失败，未下载或运行。</li>
+</ul>
+<h4 id="papers-h21">R43 · Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models</h4>
+<p><strong>首次提交：2025-10-06；最新：v3（2026-03-29）。</strong> 发表：ICLR 2026。作者 arXiv 元数据或官方仓库报告该发表状态；本轮未另核正式论文集。 <a href="https://arxiv.org/abs/2510.04618">发表依据</a> <a href="https://arxiv.org/abs/2510.04618">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> ACE 将上下文作为持续演化的经验手册，以生成、反思和整理模块增量积累及修订策略，缓解过度简写和反复整体改写导致的细节流失。</li>
+<li><strong>与设计的关系：</strong> 整理 agent、增量修改和保留细节已有直接路线；与原文事实库并列时，应区分用户规则和通过执行反馈形成的经验。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：防止上下文坍缩不是数学无损保证；经验会错误或过时，不能因整理模型认可便升级成用户约束。此 ACE 指 Context Engineering，避免与同缩写其他论文混淆。</li>
+<li><strong>代码／配套资源：</strong> <a href="https://github.com/ace-agent/ace">作者入口</a>；作者关联官方代码入口已核对；未运行代码。</li>
+<li><strong>补充一手入口：</strong> <a href="https://ace-agent.github.io/">入口 1</a>。</li>
+</ul>
+<h3 id="papers-h22">检索与切块</h3>
+<h4 id="papers-h23">R07 · HippoRAG: Neurobiologically Inspired Long-Term Memory for Large Language Models</h4>
+<p><strong>首次提交：2024-05-23；最新：v3（2025-01-14）。</strong> 发表：NeurIPS 2024。作者 arXiv 元数据或官方仓库报告该发表状态；本轮未另核正式论文集。 <a href="https://arxiv.org/abs/2405.14831">发表依据</a> <a href="https://arxiv.org/abs/2405.14831">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 以实体知识图和个性化 PageRank 进行关联、多跳检索，将离线知识整合与在线召回结合。</li>
+<li><strong>与设计的关系：</strong> 适合跨多个 chunk 才能回答的事实关联；提供向量相似以外的召回通道。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：实体抽取、图构建和边错误有成本；关联检索并不自动解决新旧状态、授权或删除传播。</li>
+<li><strong>代码：</strong> <a href="https://github.com/OSU-NLP-Group/HippoRAG">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h24">R08 · From RAG to Memory: Non-Parametric Continual Learning for Large Language Models</h4>
+<p><strong>首次提交：2025-02-20；最新：v2（2025-06-19）。</strong> 发表：ICML 2025。作者 arXiv 元数据或官方仓库报告该发表状态；本轮未另核正式论文集。 <a href="https://arxiv.org/abs/2502.14802">发表依据</a> <a href="https://arxiv.org/abs/2502.14802">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> HippoRAG 2 加强段落层信息整合，以图结构、LLM 与检索机制支持非参数持续知识积累和关联记忆。</li>
+<li><strong>与设计的关系：</strong> 可比较实体、段落和关系三种检索粒度，补足纯标签过滤可能丢失的跨域证据。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：非参数持续学习在此主要是检索知识演化，不是数据库事务承诺；多跳关联仍需回到原始证据核实。</li>
+<li><strong>代码：</strong> <a href="https://github.com/OSU-NLP-Group/HippoRAG">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h25">R09 · RAPTOR: Recursive Abstractive Processing for Tree-Organized Retrieval</h4>
+<p><strong>首次提交：2024-01-31；最新：v1（2024-01-31）。</strong> 发表：ICLR 2024。正式会议／期刊页面已核实；本文机制仍以列示 arXiv 版本为准。 <a href="https://proceedings.iclr.cc/paper_files/paper/2024/hash/8a2acd174940dbca361a6398a4f9df91-Abstract-Conference.html">发表依据</a> <a href="https://arxiv.org/abs/2401.18059">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 递归嵌入、聚类并摘要文档，构建由细节到高层摘要的树，在多个抽象层次检索。</li>
+<li><strong>与设计的关系：</strong> 适合先定位主题再展开源段落；可作为父子块和分层上下文选择的基线。</li>
+<li><strong>局限／适用边界：</strong> 摘要会丢失细节，树更新和重建有成本；规则、否定词与日期的答案必须能追溯到原始段落。</li>
+<li><strong>代码：</strong> <a href="https://github.com/parthsarthi03/raptor">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h26">R10 · LightRAG: Simple and Fast Retrieval-Augmented Generation</h4>
+<p><strong>首次提交：2024-10-08；最新：v3（2025-04-28）。</strong> 发表：EMNLP 2025。作者 arXiv 元数据或官方仓库报告该发表状态；本轮未另核正式论文集。 <a href="https://github.com/HKUDS/LightRAG">发表依据</a> <a href="https://arxiv.org/abs/2410.05779">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 图结构结合低层实体与高层主题检索，并支持增量知识更新。</li>
+<li><strong>与设计的关系：</strong> 可作为标签、关键词、向量之外的图检索基线；检索入口应依据任务而定。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：增量插入能力不能直接解释为完整撤销、物理删除、审计或一致性协议；当前仓库可能超出论文版本。</li>
+<li><strong>代码：</strong> <a href="https://github.com/HKUDS/LightRAG">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h27">R11 · From Local to Global: A Graph RAG Approach to Query-Focused Summarization</h4>
+<p><strong>首次提交：2024-04-24；最新：v2（2025-02-19）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2404.16130">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 先抽取实体知识图并构造社区摘要，再通过多层摘要与汇总回答跨语料的全局性问题。</li>
+<li><strong>与设计的关系：</strong> 适合总结项目全貌；与逐条精准找当前约束属于不同检索需求。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：索引和摘要维护成本显著，社区概括可能遗漏精确约束；不能把全局总结优势外推为每次任务最省 token。</li>
+<li><strong>代码：</strong> <a href="https://github.com/microsoft/graphrag">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h28">R12 · Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection</h4>
+<p><strong>首次提交：2023-10-17；最新：v1（2023-10-17）。</strong> 发表：ICLR 2024。正式会议／期刊页面已核实；本文机制仍以列示 arXiv 版本为准。 <a href="https://proceedings.iclr.cc/paper_files/paper/2024/hash/25f7be9694d7b32d5cc670927b8091e1-Abstract-Conference.html">发表依据</a> <a href="https://arxiv.org/abs/2310.11511">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 训练模型使用反思标记，判断何时检索、检索证据是否相关、答案是否受支持，并指导生成。</li>
+<li><strong>与设计的关系：</strong> 意图与证据选择可以显式结构化并训练；不需要提取模型私有思维链，操作结果和简短依据足够形成接口。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：依赖特定训练与模型能力；反思标记不是可信权限判定器，也不保证外部存储一致性。</li>
+<li><strong>代码：</strong> <a href="https://github.com/AkariAsai/self-rag">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h29">R13 · Corrective Retrieval Augmented Generation</h4>
+<p><strong>首次提交：2024-01-29；最新：v3（2024-10-07）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2401.15884">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 用轻量检索评估器判断候选材料质量，按置信度修正检索、分解精炼材料，并在需要时扩展到网络证据。</li>
+<li><strong>与设计的关系：</strong> 为辅助模型先评价候选、再决定是否补检提供依据；检索应允许无足够证据的结果。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：网络扩展不直接适用于私有项目记忆；置信度需校准，且访问控制必须在候选读取前执行。</li>
+<li><strong>代码：</strong> <a href="https://github.com/HuskyInSalt/CRAG">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h30">R14 · Late Chunking: Contextual Chunk Embeddings Using Long-Context Embedding Models</h4>
+<p><strong>首次提交：2024-09-07；最新：v3（2025-07-07）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2409.04701">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：引言、§3；<a href="https://arxiv.org/html/2409.04701v3">所读正文版本</a>。</li>
+<li><strong>机制：</strong> 先对较长完整文本计算上下文化 token 表示，再按块边界池化成块向量，使块表示保留周围指代与语义。</li>
+<li><strong>与设计的关系：</strong> 是跨块语境损失的直接技术基线；可与结构边界、父段落回取和原文证据指针组合。</li>
+<li><strong>局限／适用边界：</strong> 需要兼容的长上下文 token embedding 与池化接口；超过模型窗口仍要处理。它不自动找出完美语义边界，也不保证召回文本含有完整证据。</li>
+<li><strong>代码：</strong> <a href="https://github.com/jina-ai/late-chunking">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h31">R44 · Recursive Language Models</h4>
+<p><strong>首次提交：2025-12-31；最新：v3（2026-05-11）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2512.24601">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> RLM 将长提示作为外部环境，允许模型用程序检查、分解材料，并对片段递归调用语言模型；最新版本还报告围绕该方式的小规模后训练。</li>
+<li><strong>与设计的关系：</strong> 为按需检查上下文、程序化定位和子调用分解提供直接对照；外置内容不必只靠固定向量 top-k 访问。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：这是推理时组织方式，并非天然的跨任务持久记忆或模型内部架构。递归调用的延迟、累计费用和错误传播需测量；不解决权限、版本或精确删除。</li>
+<li><strong>代码／配套资源：</strong> <a href="https://github.com/alexzhang13/rlm">作者入口</a>；作者关联官方代码入口已核对；未运行代码。</li>
+</ul>
+<h3 id="papers-h32">多agent与工作经验／治理</h3>
+<h4 id="papers-h33">R29 · Reflexion: Language Agents with Verbal Reinforcement Learning</h4>
+<p><strong>首次提交：2023-03-20；最新：v4（2023-10-10）。</strong> 发表：NeurIPS 2023。正式会议／期刊页面已核实；本文机制仍以列示 arXiv 版本为准。 <a href="https://proceedings.neurips.cc/paper_files/paper/2023/hash/1b44b878bb782e6954cd888628510e90-Abstract-Conference.html">发表依据</a> <a href="https://arxiv.org/abs/2303.11366">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 将任务反馈转成文本式反思并保存于情节记忆，使 agent 在后续尝试中利用经验，而不更新主模型权重。</li>
+<li><strong>与设计的关系：</strong> 适合保存失败原因、修复建议与环境经验；来源应包含真实反馈和结果。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：自我反思可能错误，不能让模型反思覆盖已确认用户规则，也不能用反思文本代替真实完成证据。</li>
+<li><strong>代码：</strong> <a href="https://github.com/noahshinn/reflexion">作者代码／项目入口</a>；作者官方代码仓库已核对；未运行代码。</li>
+</ul>
+<h4 id="papers-h34">R30 · Memento: Fine-tuning LLM Agents without Fine-tuning LLMs</h4>
+<p><strong>首次提交：2025-08-22；最新：v2（2025-08-25）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2508.16153">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 通过情节案例记忆、案例选择及在线适应提高 agent 表现，在不微调主 LLM 的条件下利用历史任务经验。</li>
+<li><strong>与设计的关系：</strong> 任务经验可与用户事实分开管理；相似案例检索适合跨任务复用做法。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：不微调主模型不代表没有训练或维护成本；任务结果与记忆选择分布相关，并不提供跨容器并发一致性。</li>
+<li><strong>代码：</strong> <a href="https://github.com/Memento-Teams/Memento">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h35">R31 · Learning Hierarchical Procedural Memory for LLM Agents through Bayesian Selection and Contrastive Refinement</h4>
+<p><strong>首次提交：2025-12-22；最新：v1（2025-12-22）。</strong> 发表：AAMAS 2026。作者 arXiv 元数据或官方仓库报告该发表状态；本轮未另核正式论文集。 <a href="https://arxiv.org/abs/2512.18950">发表依据</a> <a href="https://arxiv.org/abs/2512.18950">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：引言、方法概览；<a href="https://arxiv.org/html/2512.18950v1">所读正文版本</a>。</li>
+<li><strong>机制：</strong> MACLA 将轨迹拆为可重用程序和元程序，以贝叶斯可靠度估计与对比式成功／失败修订优化选择；组合策略支持继续、跳过、重复和终止。</li>
+<li><strong>与设计的关系：</strong> 可记录具体操作的前提、结果和可靠度；成功任务中仍可能有坏步骤，失败任务中也可能有可复用步骤。</li>
+<li><strong>局限／适用边界：</strong> 可靠度依赖环境反馈质量；程序记忆不等同于用户事实，也不能因历史成功而获得新项目权限。论文倍率只适用于其比较设置。</li>
+<li><strong>代码：</strong> <a href="https://github.com/S-Forouzandeh/MACLA-LLM-Agents-AAMAS-2026-Conference">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h36">R36 · Revoked but Still Authoritative: An Empirical Study of Revocation Enforcement in Agent-Memory Systems</h4>
+<p><strong>首次提交：2026-09-08；最新：v1（2026-09-08）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2609.08258">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：§5.1–5.2、附录A.3与C；<a href="https://arxiv.org/html/2609.08258v1">所读正文版本</a>。</li>
+<li><strong>机制：</strong> 检查撤销记忆在多种系统中仍被当作有效依据的失败；提出检索边界的状态与冲突检查。附录还测试写回后复活、多跳重新激活及多个角色继续使用旧规则。</li>
+<li><strong>与设计的关系：</strong> 撤销 guard、共享记忆传播与写回复活已有直接先例，不能当作独立原创点；应与更强基线比较实际执行边界的一致性。</li>
+<li><strong>局限／适用边界：</strong> 有限系统、模型和情境实验不等于所有系统的普遍结论。来源时间不明时保留冲突；结果不能证明已进入模型上下文的旧信息被物理抹除。</li>
+<li><strong>代码：</strong> <a href="https://github.com/VulcanLab/Memory-Rebirth-Attack">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h37">R37 · The Bureaucracy of Speed: Structural Equivalence Between Memory Consistency Models and Multi-Agent Authorization Revocation</h4>
+<p><strong>首次提交：2026-03-10；最新：v1（2026-03-10）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2603.09875">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：摘要、§8.1与模拟设置；<a href="https://arxiv.org/html/2603.09875v1">所读正文版本</a>。</li>
+<li><strong>机制：</strong> 把多 agent 授权撤销与内存一致性建立结构对应，提出 CCS／RCC，以执行次数等界限补充传统时间到期机制，并用离散事件模拟比较。</li>
+<li><strong>与设计的关系：</strong> 权限不是死锁问题；应显式定义授权撤销允许多长时间、多少次执行仍可能看见旧状态。</li>
+<li><strong>局限／适用边界：</strong> 正文实验采用 tick 模拟，理论结论依赖假设；不能把模拟的性能倍率当作真实分布式运行时保证。</li>
+<li><strong>代码：</strong> <a href="https://github.com/hipvlady/prizm">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h38">R38 · VERA: Authority-Preserving Edge Revocation for Federated AI-Agent Workflows</h4>
+<p><strong>首次提交：2026-08-30；最新：v1（2026-08-30）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2608.30091">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：§III–IV、§VIII–IX；<a href="https://arxiv.org/html/2608.30091v1">所读正文版本</a>。</li>
+<li><strong>机制：</strong> VERA 在签名委托 DAG 中，以撤销某边前后的可达性差集确定受影响对象，保护仍有其他合法授权路径的共享 agent，并提供可核验证据。</li>
+<li><strong>与设计的关系：</strong> 为多路径授权与最小撤销目标提供直接先例，避免整子树撤销误伤；确定性权限图比模型自由判断可审计。</li>
+<li><strong>局限／适用边界：</strong> 正文明确区分撤销目标正确与消息送达、状态新鲜度；延迟、压制传播及更强拜占庭场景不在所证范围。适用任一合法路径即可授权的语义。</li>
+<li><strong>代码：</strong> 正文描述参考实现，未核实公开代码入口。</li>
+</ul>
+<h4 id="papers-h39">R41 · G-Memory: Tracing Hierarchical Memory for Multi-Agent Systems</h4>
+<p><strong>首次提交：2025-06-09；最新：v2（2025-06-16）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2506.07398">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 以 insight、query、interaction 三层图记录高层经验、任务和协作轨迹；双向遍历为新任务取回可泛化见解与 agent 相关经历，执行后更新图层级。</li>
+<li><strong>与设计的关系：</strong> 直接覆盖跨任务、多 agent 协作轨迹的分层记忆与角色定制；共享经验不能只视作普通用户事实向量。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：团队任务收益不等于权限、撤销或崩溃一致性保证；图组织还需来源证据、版本与真实结果核验。</li>
+<li><strong>代码／配套资源：</strong> <a href="https://github.com/bingreeky/GMemory">作者入口</a>；作者关联官方代码入口已核对；未运行代码。</li>
+</ul>
+<h3 id="papers-h40">模型内记忆对照</h3>
+<h4 id="papers-h41">R16 · Titans: Learning to Memorize at Test Time</h4>
+<p><strong>首次提交：2024-12-31；最新：v1（2024-12-31）。</strong> 发表：NeurIPS 2025。正式会议／期刊页面已核实；本文机制仍以列示 arXiv 版本为准。 <a href="https://proceedings.neurips.cc/paper_files/paper/2025/hash/a4ca07aa108036f80cbb5b82285fd4b1-Abstract-Conference.html">发表依据</a> <a href="https://arxiv.org/abs/2501.00663">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 将注意力短期记忆、持久先验与测试时可更新的神经长期记忆结合，以新输入更新记忆模块。</li>
+<li><strong>与设计的关系：</strong> 说明模型内部记忆与外置数据库属于不同技术层；可作为概念对照。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：需要模型架构和训练侧支持；神经记忆不是可逐条编辑的 SQLite 事实，也没有天然的精确规则删除接口。</li>
+<li><strong>代码：</strong> 本轮未核实官方代码发布入口。</li>
+</ul>
+<h4 id="papers-h42">R17 · It&#39;s All Connected: A Journey Through Test-Time Memorization, Attentional Bias, Retention, and Online Optimization</h4>
+<p><strong>首次提交：2025-04-17；最新：v1（2025-04-17）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2504.13173">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> MIRAS 以关联记忆视角统一架构、注意偏置、保留策略与在线优化的设计，并给出不同记忆模型。</li>
+<li><strong>与设计的关系：</strong> 有助于准确区分记忆保留、更新和读取这几个独立设计轴。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：属于模型层框架；不能将其效果当作把数据库内容放入提示词的直接证明，二者成本单位和可控性不同。</li>
+<li><strong>代码：</strong> 本轮未核实官方代码发布入口。</li>
+<li><strong>补充一手入口：</strong> <a href="https://research.google/blog/titans-miras-helping-ai-have-long-term-memory/">入口 1</a>。</li>
+</ul>
+<h4 id="papers-h43">R18 · Conditional Memory via Scalable Lookup: A New Axis of Sparsity for Large Language Models</h4>
+<p><strong>首次提交：2026-01-12；最新：v2（2026-07-12）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2601.07372">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> Engram 以可扩展的条件查找记忆处理局部知识模式，将条件记忆作为稀疏架构的另一设计方向。</li>
+<li><strong>与设计的关系：</strong> 为用户的按需激活类比提供更接近的对照，但仍需清楚区分外置文本检索与模型模块。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：训练得到的模型查找记忆不是动态用户事件数据库；不能由 MoE 或 Engram 类比推导精度不下降、零维护成本或可撤销性。</li>
+<li><strong>代码：</strong> <a href="https://github.com/deepseek-ai/Engram">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h44">R19 · Memorizing Transformers</h4>
+<p><strong>首次提交：2022-03-16；最新：v1（2022-03-16）。</strong> 发表：ICLR 2022 Spotlight。作者 arXiv 元数据或官方仓库报告该发表状态；本轮未另核正式论文集。 <a href="https://arxiv.org/abs/2203.08913">发表依据</a> <a href="https://arxiv.org/abs/2203.08913">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 在 Transformer 中保存并近似检索内部键值表示，以非可微近邻记忆扩展可利用的历史。</li>
+<li><strong>与设计的关系：</strong> 外部近邻记忆已有较早先例；应区分模型表征记忆与可读文本事实库。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：缓存与模型表示绑定，跨模型和跨版本可移植性不同于保存原文；这不是完整的用户约束生命周期系统。</li>
+<li><strong>代码：</strong> <a href="https://github.com/google-research/meliad">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h45">R20 · Leave No Context Behind: Efficient Infinite Context Transformers with Infini-attention</h4>
+<p><strong>首次提交：2024-04-10；最新：v2（2024-08-09）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2404.07143">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> Infini-attention 将局部注意力与压缩的长期记忆机制结合，支持在有界内存下处理更长输入流。</li>
+<li><strong>与设计的关系：</strong> 可以对照流式长上下文处理与外部按需恢复的不同路线。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：无限输入长度不等于所有细节无限精确可恢复；需要模型内部机制，压缩记忆不易逐条审计或人工修改。</li>
+<li><strong>代码：</strong> 本轮未核实官方代码发布入口。</li>
+</ul>
+<h4 id="papers-h46">R21 · Recurrent Context Compression: Efficiently Expanding the Context Window of LLM</h4>
+<p><strong>首次提交：2024-06-10；最新：v1（2024-06-10）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2406.06110">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 以循环方式压缩上下文，并训练模型利用压缩表示扩展可处理的上下文长度。</li>
+<li><strong>与设计的关系：</strong> 可作为潜在表示压缩与可审计显式记忆的对照。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：训练压缩并非无损文本存档；精确的来源、规则版本和删除语义需要外部另行记录。</li>
+<li><strong>代码：</strong> <a href="https://github.com/WUHU-G/RCC_Transformer">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h3 id="papers-h47">评测与边界</h3>
+<h4 id="papers-h48">R15 · Lost in the Middle: How Language Models Use Long Contexts</h4>
+<p><strong>首次提交：2023-07-06；最新：v3（2023-11-20）。</strong> 发表：TACL 2024。正式会议／期刊页面已核实；本文机制仍以列示 arXiv 版本为准。 <a href="https://aclanthology.org/2024.tacl-1.9/">发表依据</a> <a href="https://arxiv.org/abs/2307.03172">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 通过多文档问答与键值检索分析证据位置对长上下文模型使用信息的影响，发现中部证据可能较难利用。</li>
+<li><strong>与设计的关系：</strong> 为短上下文检索、证据排列及长上下文基线提供实验动机。</li>
+<li><strong>局限／适用边界：</strong> 结果针对当时模型与任务；不能把 2023 年的退化幅度当作所有 2026 年模型定律，必须测实际使用的模型与预算。</li>
+<li><strong>代码：</strong> <a href="https://github.com/nelson-liu/lost-in-the-middle">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h49">R32 · Evaluating Very Long-Term Conversational Memory of LLM Agents</h4>
+<p><strong>首次提交：2024-02-27；最新：v1（2024-02-27）。</strong> 发表：ACL 2024。正式会议／期刊页面已核实；本文机制仍以列示 arXiv 版本为准。 <a href="https://aclanthology.org/2024.acl-long.747/">发表依据</a> <a href="https://arxiv.org/abs/2402.17753">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> LoCoMo 以长期多会话对话、人物与时间事件结构评估问答、摘要及相关记忆任务。</li>
+<li><strong>与设计的关系：</strong> 可测长期信息、多跳与时间事实的召回；为早期可复现实验提供数据。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：以问答为主不足以证明真实动作和撤销正确；不同论文可能使用不同数据版本、类别与排除项，必须锁定数据哈希和口径。</li>
+<li><strong>代码：</strong> <a href="https://github.com/snap-research/locomo">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h50">R33 · LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory</h4>
+<p><strong>首次提交：2024-10-14；最新：v2（2025-03-04）。</strong> 发表：ICLR 2025。作者 arXiv 元数据或官方仓库报告该发表状态；本轮未另核正式论文集。 <a href="https://github.com/xiaowu0162/LongMemEval">发表依据</a> <a href="https://arxiv.org/abs/2410.10813">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> LongMemEval 测试信息提取、多会话推理、时间推理、知识更新与拒答，并分析索引粒度、检索键及时间感知查询。</li>
+<li><strong>与设计的关系：</strong> 较直接覆盖旧信息更新和不确定时拒答；应与一般相似性检索分数分开评估。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：回答正确不等于执行前获得正确权限或崩溃恢复一致；需要加入动作与实际状态判定。</li>
+<li><strong>代码：</strong> <a href="https://github.com/xiaowu0162/LongMemEval">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h51">R34 · LongMemEval-V2: Evaluating Long-Term Agent Memory Toward Experienced Colleagues</h4>
+<p><strong>首次提交：2026-05-12；最新：v1（2026-05-12）。</strong> arXiv 预印本，作者明确标注 Work in Progress。 <a href="https://arxiv.org/abs/2605.12493">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：§3.3、§4.1–4.2、§5；<a href="https://arxiv.org/html/2605.12493v1">所读正文版本</a>。</li>
+<li><strong>机制：</strong> LongMemEval-V2 从长期环境轨迹测试静态状态、环境动态、工作流、陷阱与前提意识；以 Insert 后 Query 的接口在有界上下文内评估准确率和查询延迟。</li>
+<li><strong>与设计的关系：</strong> 其 AgentRunbook-R 与 AgentRunbook-C 提供结构化、原始轨迹和文件工作流基线；说明不能预先断言 MD／文件搜索必然差。</li>
+<li><strong>局限／适用边界：</strong> 作者标注 Work in Progress。记忆检索问答不是完整实时执行验证；文件代理的较高延迟与检索质量需同时计入。</li>
+<li><strong>代码：</strong> <a href="https://github.com/xiaowu0162/LongMemEval-V2/">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h52">R35 · When Users Don&#39;t Ask: Benchmarking Context-Driven Memory Retrieval in Conversational Agents</h4>
+<p><strong>首次提交：2026-09-03；最新：v1（2026-09-03）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2609.03467">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 关键正文：方法、实验与局限；<a href="https://arxiv.org/html/2609.03467v1">所读正文版本</a>。</li>
+<li><strong>机制：</strong> LOCOMO-CONV 在 LoCoMo 证据基础上构造对话、隐含、反事实和组合查询，测试用户未直接提问时模型能否主动找到所需记忆。</li>
+<li><strong>与设计的关系：</strong> 比明确问答更贴近如何知道本轮需要什么；支持将查询改写效果与摘要质量分开消融。</li>
+<li><strong>局限／适用边界：</strong> 正文限制包括基础对话规模较小、LLM 改写和标注、有限人工验证与答题／评审模型范围。召回到了也不保证生成实际用对。</li>
+<li><strong>代码：</strong> <a href="https://github.com/MiuLab/LoCoMo-Conv/">作者代码／项目入口</a>；已核对作者关联的项目或仓库入口；未运行代码。</li>
+</ul>
+<h4 id="papers-h53">R39 · MemoryArena: Benchmarking Agent Memory in Interdependent Multi-Session Agentic Tasks</h4>
+<p><strong>首次提交：2026-02-18；最新：v1（2026-02-18）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2602.16313">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> MemoryArena 通过相互依赖的多会话 agent 任务，把记忆、agent 和环境放在循环中测试，涵盖需要利用先前结果的后续行动。</li>
+<li><strong>与设计的关系：</strong> 提供从记住事实推进到真正做完任务的评测方向；应加入任务间状态和结果依赖。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：环境和任务分布仍有限；选定任务成功不等于所有项目权限、删除和持久化约定都满足。</li>
+<li><strong>代码：</strong> 本轮未核实官方代码发布入口。</li>
+</ul>
+<h4 id="papers-h54">R42 · Evaluating Memory in LLM Agents via Incremental Multi-Turn Interactions</h4>
+<p><strong>首次提交：2025-07-07；最新：v4（2026-06-28）。</strong> 发表：ICLR 2026。作者 arXiv 元数据或官方仓库报告该发表状态；本轮未另核正式论文集。 <a href="https://github.com/HUST-AI-HYZ/MemoryAgentBench">发表依据</a> <a href="https://arxiv.org/abs/2507.05257">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> MemoryAgentBench 将长上下文数据和新数据转成逐步注入的多轮交互，覆盖准确检索、测试时学习、长期理解和选择性遗忘四类能力。</li>
+<li><strong>与设计的关系：</strong> 补足单纯问答或静态长文评测；可用选择性遗忘任务检查该忘的是否忘、仍有效的是否被误删。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：基准中的选择性遗忘不能自动等同于物理清除、授权撤销或在途上下文失效；仍需项目级动作和持久化测试。</li>
+<li><strong>代码／配套资源：</strong> <a href="https://github.com/HUST-AI-HYZ/MemoryAgentBench">作者入口</a>；作者关联官方代码入口已核对；未运行代码。</li>
+</ul>
+<h3 id="papers-h55">综述与概念框架</h3>
+<h4 id="papers-h56">R45 · Memory in the Age of AI Agents</h4>
+<p><strong>首次提交：2025-12-15；最新：v2（2026-01-13）。</strong> 已核实 arXiv 预印本；本轮未核实正式发表状态。 <a href="https://arxiv.org/abs/2512.13564">论文与版本记录</a></p>
+<ul>
+<li><strong>阅读深度：</strong> 摘要及元数据；未作完整正文核对。</li>
+<li><strong>机制：</strong> 综述以形式、功能和动态过程组织 agent memory：形式分 token、参数与潜在表示；功能分事实、经验和工作记忆；过程分形成、演化和检索，并梳理基准和框架。</li>
+<li><strong>与设计的关系：</strong> 为本设计区分显式事实、任务状态、经验与模型内部记忆提供框架；指出多 agent、自动化、强化学习与可信记忆等研究方向。</li>
+<li><strong>局限／适用边界：</strong> 摘要级核对：综述用于研究地图，不是某一系统的实验效果证明，也不能证明某个组合原创。准确标题按 arXiv 元数据记录，作者仓库使用带 A Survey 的名称。</li>
+<li><strong>代码／配套资源：</strong> <a href="https://github.com/Shichun-Liu/Agent-Memory-Paper-List">作者入口</a>；作者综述配套文献目录已核对；这是资源目录，不是算法代码。</li>
+</ul>
+<h2 id="papers-h57">5. 可以验证的 8 个增量假设</h2>
+<p>以下是<strong>待实验验证的候选贡献</strong>。没有一个在这里被认定为首次提出；最接近的先例必须成为对照。优先价值在中文真实项目数据、DSH 集成、故障证据和统一评测，而不是重新命名已有构件。</p>
+<h3 id="papers-h58">H1 · 中文口头约束的意图、范围与授权归属</h3>
+<p><strong>假设：</strong> 在真实中文口头修改指令上，带原文证据和显式操作类型的解析器，能以可接受的澄清率降低误撤销和跨范围覆盖。</p>
+<ul>
+<li><strong>最近先例：</strong> <a href="https://arxiv.org/abs/2504.19413">R02</a>、<a href="https://arxiv.org/abs/2502.12110">R04</a>、<a href="https://arxiv.org/abs/2601.02553">R24</a>、<a href="https://arxiv.org/abs/2609.10413">R40</a>。</li>
+<li><strong>候选增量：</strong> 增量候选是公开、人工标注的中文项目约束数据及错误分析；结构化抽取、标签或生命周期本身不主张首次。</li>
+<li><strong>实验：</strong> 构造并人工双标确认、假设、引用、取消要求、明确禁止、仅当前任务例外、替代及彻底忘记等最小对照；按项目和表达者划分训练／测试。比较通用记忆抽取、规则模板、结构化模型与证据约束版本。</li>
+<li><strong>指标：</strong> 操作类型准确率；错误撤销率；跨范围覆盖率；应保留事实召回率；必要澄清率与额外 token。</li>
+<li><strong>什么结果会否定这项主张：</strong> 若优势仅来自更多模型调用，或在相同预算下不优于现有抽取器，不能称为新的方法贡献。</li>
+</ul>
+<h3 id="papers-h59">H2 · 撤销、在途 agent 与行动边界的联合一致性</h3>
+<p><strong>假设：</strong> 在本地 DSH 多 agent 流程中，将权威版本、衍生来源失效和执行前新鲜度检查联合实现，可以减少撤销后的错误动作，并保持合法替代授权可用。</p>
+<ul>
+<li><strong>最近先例：</strong> <a href="https://arxiv.org/abs/2507.03724">R25</a>、<a href="https://arxiv.org/abs/2609.08258">R36</a>、<a href="https://arxiv.org/abs/2603.09875">R37</a>、<a href="https://arxiv.org/abs/2608.30091">R38</a>。</li>
+<li><strong>候选增量：</strong> 候选增量是完整运行环境中的端到端证据、故障模型和工程集成；guard、授权图、写回复活和多角色传播已有直接研究。</li>
+<li><strong>实验：</strong> 让 agent 读取旧规则后暂停，再撤销或替代；注入事件延迟、索引落后、重试、旧摘要写回和多路径授权。与 R36 风格 guard、R38 风格授权目标计算、R37 有界授权及其合理组合比较。</li>
+<li><strong>指标：</strong> 撤销生效后执行旧规则的次数；撤销可见延迟的 p50／p95／p99；合法行动误拦截率；写回复活率；收敛时间。</li>
+<li><strong>什么结果会否定这项主张：</strong> 若只比无撤销检查的朴素基线好，或无法证明实际动作已被拦截而只是答案改变，不支持该增量。</li>
+</ul>
+<h3 id="papers-h60">H3 · 人工编辑、派生索引与崩溃回放的一致性</h3>
+<p><strong>假设：</strong> 一个权威事实源加事务事件投递、版本校验和可重建派生索引，在用户编辑与容器崩溃交错时，能保持已确认变更的一致性。</p>
+<ul>
+<li><strong>最近先例：</strong> <a href="https://arxiv.org/abs/2507.03724">R25</a>、<a href="https://arxiv.org/abs/2609.08258">R36</a>、<a href="https://arxiv.org/abs/2609.10413">R40</a>。</li>
+<li><strong>候选增量：</strong> 属于可复现系统整合和故障评测候选；数据库事务、事件投递和版本控制不是新的发明。</li>
+<li><strong>实验：</strong> 经 UI 或受控文件导入修改记忆，在权威写入、回执、索引重建和导出各边界终止进程；注入重复事件、乱序事件及双人编辑。比较有无版本校验和可靠事件投递。</li>
+<li><strong>指标：</strong> 已确认事件丢失数；重放后权威状态哈希一致率；检索返回已失效版本的比例；重复副作用数；人工冲突处理负担。</li>
+<li><strong>什么结果会否定这项主张：</strong> 若只能在正常关闭或单写者下成立，不能宣称解决沙盒突然终止和多 agent 稳定性。</li>
+</ul>
+<h3 id="papers-h61">H4 · 有预算的证据展开与原子事实检索</h3>
+<p><strong>假设：</strong> 按任务补回原子记忆的父段落和来源证据，能在固定上下文预算内提高否定、条件和时间细节的使用正确率。</p>
+<ul>
+<li><strong>最近先例：</strong> <a href="https://arxiv.org/abs/2401.18059">R09</a>、<a href="https://arxiv.org/abs/2409.04701">R14</a>、<a href="https://arxiv.org/abs/2601.02553">R24</a>、<a href="https://arxiv.org/abs/2605.12493">R34</a>、<a href="https://arxiv.org/abs/2609.03467">R35</a>。</li>
+<li><strong>候选增量：</strong> 待检验点是选择何时展开及在项目任务中的预算效果；父子块、上下文化向量和多层检索已有先例。</li>
+<li><strong>实验：</strong> 保持同一模型、语料与预算，比较固定分块、原子事实、late chunking、父子块、文件搜索及按需证据展开；增加跨句指代、例外条款、相似旧版本和隐含需求。</li>
+<li><strong>指标：</strong> 必要证据召回率；条件和否定词遗漏率；实际任务成功率；引用支持率；总上下文 token。</li>
+<li><strong>什么结果会否定这项主张：</strong> 若固定窗口或文件基线以同样成本达到相同效果，不能把更复杂流程算作有效改进。</li>
+</ul>
+<h3 id="papers-h62">H5 · 写入和后台整理的总生命周期成本</h3>
+<p><strong>假设：</strong> 以复用率和更新频率决定何时做辅助整理，在一定查询复用区间内可降低总成本而保持任务质量。</p>
+<ul>
+<li><strong>最近先例：</strong> <a href="https://arxiv.org/abs/2504.19413">R02</a>、<a href="https://arxiv.org/abs/2508.19828">R22</a>、<a href="https://arxiv.org/abs/2601.02553">R24</a>、<a href="https://arxiv.org/abs/2504.13171">R28</a>。</li>
+<li><strong>候选增量：</strong> 贡献候选是可测的触发策略和成本交叉点；多一个 agent 必然省 token 不是已成立结论。</li>
+<li><strong>实验：</strong> 系统改变每条记忆查询次数、更新频度、任务跨度和闲时计算预算；对照同步提炼、全部后台提炼、检索时整理及自适应策略。</li>
+<li><strong>指标：</strong> 写入加维护加查询加回答的累计 token／费用；嵌入与重排调用数；冷启动和热查询延迟；任务质量；预处理失效率。</li>
+<li><strong>什么结果会否定这项主张：</strong> 若节省仅来自排除后台成本，或只有超出目标使用量的高复用场景才回本，必须缩小适用范围。</li>
+</ul>
+<h3 id="papers-h63">H6 · 项目范围隔离与可审计的有限协作</h3>
+<p><strong>假设：</strong> 在用户预先允许的授权策略内，以确定性范围检查和短期窄授权支持协作，可以减少无关上下文，同时维持跨角色任务成功率。</p>
+<ul>
+<li><strong>最近先例：</strong> <a href="https://arxiv.org/abs/2507.03724">R25</a>、<a href="https://arxiv.org/abs/2603.09875">R37</a>、<a href="https://arxiv.org/abs/2608.30091">R38</a>。</li>
+<li><strong>候选增量：</strong> 增量候选是 DSH 工作流及可复现的效用／隔离联合评测；ACL、临时授权和委托图本身不是新颖机制。</li>
+<li><strong>实验：</strong> 比较固定角色隔离、所有已授权材料全量可见、确定性窄授权协作；加入共享合法路径和撤销一个授权路径的场景。不得用模型自称需要作为超出用户策略的授权来源。</li>
+<li><strong>指标：</strong> 任务成功率；未授权材料被送入模型的次数；无关上下文 token；授权请求数与处理延迟；合法共享路径误撤销率。</li>
+<li><strong>什么结果会否定这项主张：</strong> 若减少 token 的代价是无法完成常见跨角色任务，或依靠放宽真实权限，不能称为同等质量的效率改进。</li>
+</ul>
+<h3 id="papers-h64">H7 · 计划、尝试、工具成功和验证完成的证据分型</h3>
+<p><strong>假设：</strong> 把工作记忆中的完成状态绑定到工具回执与独立状态证据，可以降低崩溃恢复后误报完成和重复执行。</p>
+<ul>
+<li><strong>最近先例：</strong> <a href="https://arxiv.org/abs/2512.12818">R27</a>、<a href="https://arxiv.org/abs/2303.11366">R29</a>、<a href="https://arxiv.org/abs/2512.18950">R31</a>、<a href="https://arxiv.org/abs/2602.16313">R39</a>。</li>
+<li><strong>候选增量：</strong> 候选增量是动作状态证据模式与持久化联合故障实验；区分事实与观点已有研究，不能仅靠字段名称主张原创。</li>
+<li><strong>实验：</strong> 在工具执行前、执行成功但回执丢失、回执已存但验证未完成等位置终止会话；以真实文件、数据库和工具最终状态为独立判定依据。</li>
+<li><strong>指标：</strong> 假完成率；遗漏行动率；重复副作用数；恢复到正确状态的时间；需要用户确认的歧义数量。</li>
+<li><strong>什么结果会否定这项主张：</strong> 若只依据 agent 自报日志评分，或完成事实仍可由摘要自行升级，实验不足以支持可靠性声明。</li>
+</ul>
+<h3 id="papers-h65">H8 · 槽位和类型错误下的生命周期鲁棒性</h3>
+<p><strong>假设：</strong> 在槽位含混、日期不完整和标签误判时，保留冲突证据并延迟破坏性替代，比直接按最高相似度或最新入库覆盖更能保存正确状态。</p>
+<ul>
+<li><strong>最近先例：</strong> <a href="https://arxiv.org/abs/2501.13956">R03</a>、<a href="https://arxiv.org/abs/2508.19828">R22</a>、<a href="https://arxiv.org/abs/2601.02553">R24</a>、<a href="https://arxiv.org/abs/2609.10413">R40</a>。</li>
+<li><strong>候选增量：</strong> 重点是人工验证的噪声集、语义误合并分析和保守策略代价；双时间、状态掩码与类型本体均已有先例。</li>
+<li><strong>实验：</strong> 对同一人物多地点、多宠物、多项目规则、相对时间和未来计划注入类型及槽位噪声；拆开比较通用生命周期、额外类型、冲突保留和语义判定模块。</li>
+<li><strong>指标：</strong> 误失效率；过时信息误用率；冲突解析精度；人工处理负担；对标签错误率的敏感曲线。</li>
+<li><strong>什么结果会否定这项主张：</strong> 若收益在人工正确标签下才出现，或只是以大量拒答换取低误删，需要报告代价，不能宣称精准自动判断。</li>
+</ul>
+<h2 id="papers-h66">6. 统一评测协议</h2>
+<h3 id="papers-h67">1. 基线与公平预算</h3>
+<p>至少比较全上下文／近期窗口、MD 加文件搜索、SQL 全文搜索与确定性过滤、纯向量、混合检索无辅助模型、混合检索有辅助模型。再选 Mem0、SimpleMem、MemOS／Graphiti 或可复现的论文兼容实现。锁定模型、embedding、数据版本、代码提交和硬件；有意调大预算的版本单独报告。</p>
+<h3 id="papers-h68">2. 评测层次</h3>
+<p>分开记录原文保存与抽取保真、事实和版本正确性、检索证据覆盖、答案支持、真实任务完成、授权和撤销、延迟与总成本。最终答案正确不能代替真实工具行为正确；向量召回率也不能代替任务成功率。</p>
+<h3 id="papers-h69">3. 数据组合</h3>
+<p>LoCoMo 与 LongMemEval 测长期问答和更新；LOCOMO-CONV 测隐含需要；MemoryArena 测会话间行动依赖；LongMemEval-V2 测环境经验。MemoryAgentBench 补充增量交互与选择性遗忘能力；另做中文口头约束、人工编辑、崩溃、并发、撤销与派生数据重新写回的联合场景。</p>
+<h3 id="papers-h70">4. 划分与统计</h3>
+<p>按项目、用户或工作流划分训练、开发和测试集，防止同一事件的相似表述泄漏到两侧。公开数据哈希、排除类别、失败样例和提示版本；重复运行并报告置信区间，按任务聚类估计，不把一段对话的每条查询当完全独立样本。</p>
+<h3 id="papers-h71">5. 最小必要消融</h3>
+<p>逐项去掉标签、时间、原文指针、原子提炼、重排、辅助模型、版本验证和行动前检查，观察边际收益。特别把生命周期状态的收益与语义类型标签的收益拆开，避免组合提升全部归功于其中一个构件。</p>
+<h3 id="papers-h72">6. 硬约束与在途状态</h3>
+<p>当前硬约束和权限通过确定性路径检查，不能依赖 top-k 恰好召回。撤销后已送进模型的文本无法靠删除数据库物理撤回；测重新构造上下文、停止旧运行或行动门控后可实现的实际行为保证。</p>
+<h3 id="papers-h73">7. 成本口径</h3>
+<p>统一计入原文提炼、增删改判定、嵌入、索引维护、后台合并、查询改写、重排、回答、失败重试以及人工处理；分别报告在线延迟和累计费用。不要跨论文直接比较不同模型、基准子集和计费范围的营销倍率。</p>
+<h3 id="papers-h74">8. 可审计记忆内容</h3>
+<p>保存用户原话、公开工具调用与回执、来源定位、显式结构化操作和简短决策摘要。正则只做格式检查，不把隐藏思维链当存储接口或可靠证据。</p>
+<h2 id="papers-h75">7. 研究定位与尚未完成的验证</h2>
+<p>建议暂定定位为：<strong>面向本地多 agent 项目的可审计外置记忆集成，并用联合故障场景验证时效、撤销、编辑和真实任务完成。</strong> 这是一项研究与工程方向描述，不是原创性保证。R25、R36、R37、R38、R40 尤其需要在任何对外研究主张中正面比较。</p>
+<p>目前已完成文献与机制核对；尚未运行论文复现、测量本地系统，或证明 8 个假设成立。下一阶段先做 H1、H2、H3、H7 的小型人工验证集和故障注入，再决定是否投入更昂贵的学习式记忆管理。</p>
+<ul>
+<li>没有运行论文代码、复现分数或测量本地 DSH 实现。</li>
+<li>2026 年新论文中包含预印本或进行中的工作；不把发布当作同行评审通过。</li>
+<li>公开检索范围不能证明某点无人做过；研究假设需进一步精确查新和实验。</li>
+<li>部分正文及摘要网页的数学符号或数字转换不完整，因此没有引用 VERA 等页面中转换异常的结果数字。</li>
+<li>本轮未核实的官方代码入口留空；代码仓库、预印本和已发表论文的版本可能不同。</li>
+<li>MemOS 与 MemoryOS 是两项不同工作；LongMemEval-V2 与 LOCOMO-CONV 均单独记录，避免和原始基准混用。</li>
+</ul>
+</section>
+<section class="doc" data-id="integration" data-title="DSH 接入" hidden><h1 id="integration-h0">本地代码审查与渐进集成方案</h1>
+<blockquote>
+<p>审查日期：2026-09-15。性质：只读代码审查与设计建议。范围：<code>dsh-memory-lite</code>、launcher 记忆页面与代理、core MCP 客户端、hooks 和子 agent 生命周期说明。没有读取用户记忆数据库、对话日志或凭据；没有修改既有代码或运行服务。文中的行为结论来自当前工作目录源码与 README；静态推导的风险均不等于已经运行复现的缺陷。</p>
+</blockquote>
+<h2 id="integration-h1">1. 结论</h2>
+<p>当前仓库已经拥有一个可工作的轻量记忆原型，尤其在“来源对话发生编辑后，撤回先前自动提取的记忆”“记录哪些记忆已经进入模型上下文”方面，已有可继承的实现。新方案适合建设为独立记忆服务，通过 MCP 暴露模型工具、HTTP 提供管理与宿主接口，再由 DSH 原生插件承担可信身份绑定、必需约束注入、记忆使用回执及执行前检查。</p>
+<p>现有插件不应被描述为已经具备完整的跨 agent 约束一致性：其自动提取、摘要存储与注入跳过 subagent；数据以 JSON 保存；人工编辑和删除的传播范围有限；本机 HTTP 访问防护不是逐 agent 的授权。具体证据如下。</p>
+<h2 id="integration-h2">2. 现有组件、版本和许可</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>组件</th>
+<th>当前代码中的事实</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DSH CyberWorkStation</td>
+<td>根 package 版本 <code>1.11.1</code>；仓库根许可证为 MIT，版权声明为 DSH Suite contributors</td>
+<td><a href="H:/DSH-CyberWorkStation/package.json:3">package.json</a>、<a href="H:/DSH-CyberWorkStation/LICENSE:1">LICENSE</a></td>
+</tr>
+<tr>
+<td>dsh-memory-lite</td>
+<td>package 版本 <code>0.1.0</code>，ESM，运行入口 <code>lib/index.js</code>，声明 MIT</td>
+<td><a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/package.json:2">package.json</a>、<a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/package.json:49">license 字段</a></td>
+</tr>
+<tr>
+<td>DSH core</td>
+<td>package 版本 <code>0.1.5-rc.2</code>，MIT，版权声明 DeepSeek</td>
+<td><a href="H:/DSH-CyberWorkStation/core/package.json:3">package.json</a>、<a href="H:/DSH-CyberWorkStation/core/LICENSE:1">LICENSE</a></td>
+</tr>
+<tr>
+<td>launcher</td>
+<td>已有“记忆与上下文”页面；可管理长期记忆、查看与编辑压缩摘要、测试召回；通过插件完成存取</td>
+<td><a href="H:/DSH-CyberWorkStation/launcher/README.md:19">README</a></td>
+</tr>
+<tr>
+<td>外部记忆 MCP 示例</td>
+<td>默认关闭的 Memorix、MCP Reference Memory、Engram 示例，文档内有其测试 pin；示例存在不意味着服务已安装或当前已启动</td>
+<td><a href="H:/DSH-CyberWorkStation/core/docs/user/guide/mcp-memory.md:15">指南</a></td>
+</tr>
+</tbody></table></div>
+<p>以上版本和许可只证明本地当前文件内容；不能把这些本地 pin 当成上游最新版本，也不能据此替代未来依赖选型时对具体版本、依赖和模型权重许可的核验。</p>
+<h2 id="integration-h3">3. 当前数据流</h2>
+<details class="diagram-source"><summary>查看 Mermaid 图示源文</summary><pre><code>flowchart TD
+    U[用户对话或手工输入] --&gt; S[DSH session 事件与当前可见对话]
+    S --&gt; C[compaction/summary]
+    S --&gt; E[每 N 个用户轮次抽取事实]
+    C --&gt; M[memory.json]
+    E --&gt; M
+    N[memory_note 工具] --&gt; M
+    UI[launcher 记忆页面] --&gt; P[launcher /api/memory 代理]
+    P --&gt; R[dsh-memory-lite HTTP 路由]
+    R --&gt; M
+    M --&gt; V[vectors.json 可选向量]
+    M --&gt; B[BM25 与 CJK 双字分词]
+    V --&gt; Q[范围过滤后混合召回]
+    B --&gt; Q
+    Q --&gt; I[agent/pre-step 或 memory_recall]
+    I --&gt; X[session-source-extras.json 记忆 ID 回执]
+    I --&gt; S
+    S --&gt; W[来源编辑触发失效与下一步纠正通知]
+    W --&gt; M
+</code></pre></details>
+<h3 id="integration-h4">3.1 写入与提取</h3>
+<ul>
+<li><code>compaction/summary</code> 事件会保存顶层会话摘要；同一会话未钉住的旧摘要被替换，钉住的保留。自动存储不包含 subagent。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/index.js:231">index.js</a>、<a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/store.js:270">摘要替换</a>。</li>
+<li>自动事实提取在 <code>agent/status = idle</code> 后触发，使用该会话的实际模型路由；按已完成的用户轮次和 watermark 判断是否需要提取；提取期间源对话版本变化则丢弃结果。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/index.js:258">提取过程</a>、<a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/index.js:286">版本检查</a>。</li>
+<li>提取结构目前只有 <code>{text, global}</code>，最多 8 条、每条 300 字符；包含文本截断和 bullet fallback，按 token Jaccard ≥ 0.8 去重。它尚未显式表达约束主体、条件、例外、否定、来源证据片段、生效时间、替代对象。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/extract.js:10">抽取指令与解析</a>、<a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/extract.js:53">去重</a>。</li>
+<li><code>memory_note</code> 允许模型选择 <code>workspace</code> 或 <code>global</code>，按执行会话 cwd 保存；工具描述要求用于用户请求记住的内容或长期决策，但执行层未看到独立的“是否获准写全局”策略检查。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/index.js:420">工具实现</a>。这不等于用户存在越权访问，只说明此处尚不是多租户授权层。</li>
+</ul>
+<h3 id="integration-h5">3.2 存储与持久性</h3>
+<ul>
+<li>默认数据在 <code>DSH_HOME/memory/memory.json</code>，向量在 <code>vectors.json</code>；<code>DSH_HOME</code> 可配置，默认 <code>~/.dsh</code>。它们位于应用数据目录，是否在沙盒之外取决于实际部署挂载方式，路径名称本身不能提供保证。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/index.js:41">路径定义</a>、<a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/store.js:100">文件定义</a>。</li>
+<li>主存储包含 items、watermarks、withdrawals，使用临时文件写入和 rename。<code>memory.json</code> 与 <code>vectors.json</code> 各自写入，代码没有把两者放在同一个事务中，也未看到此写入函数显式执行文件和目录的持久化同步。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/store.js:60">writeAtomic</a>、<a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/store.js:208">两个保存函数</a>。因此不能把“返回成功”扩大为对突然断电的完整保证。</li>
+<li>保存前检测磁盘修改并按 ID、<code>updatedAt</code> 合并；内存中本次尚未保存的删除用集合阻止同次合并复活。这个集合在保存后清空，并不是跨实例、长期保留的删除墓碑。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/store.js:181">合并与清理</a>。README 明确指出：在 1.5 秒轮询窗口里由外部手工删除的记录，可能被下次保存加回。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/README.md:40">README 的文件语义</a>。</li>
+<li><code>session-source-extras.json</code> 另存插件元数据，按稳定 message ID 关联，支持 fork lineage；其写入有独占锁。这与 memory 主存储的保存机制不同，不宜混为“全部已有跨进程事务锁”。见 <a href="H:/DSH-CyberWorkStation/plugins/_shared/session-read.js:120">sidecar 说明与位置</a>、<a href="H:/DSH-CyberWorkStation/plugins/_shared/session-read.js:324">记录方法</a>。</li>
+<li>向量生成使用进程内 Promise 队列；查询向量等待上限 2.5 秒，失败返回 lexical 路径。异步向量写回目前按 ID，没有 <code>content_hash + embedding_model_revision</code> 的条件提交。静态推导：在向量请求尚未完成时编辑或删除记录，需要防止旧向量回写。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/index.js:180">embedding 队列</a>。</li>
+</ul>
+<h3 id="integration-h6">3.3 召回与注入</h3>
+<ul>
+<li>范围是 <code>global</code> 或 cwd 路径精确归一匹配；路径统一小写并替换分隔符。尚无稳定 project ID、组织、任务、agent 角色等独立维度。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/recall.js:87">visibleIn</a>。迁移到 Linux 或容器路径变化时，需要重新定义项目标识和路径映射。</li>
+<li>检索为 BM25 与可选 cosine 混合，附带 pin、同工作目录和时间加分；向量与词法可以分别满足召回门槛。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/recall.js:107">rank</a>。这属于相关性排序，不是约束优先级或事实冲突消解。</li>
+<li>首轮加入钉住与相关项，后续主要加入未在该 session 注入过的相关项；注入有字符预算。通过事件/sidecar 判断内容是否实际进入会话，避免未落地的调用错误消耗“已注入”标记。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/index.js:319">pre-step</a>、<a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/index.js:399">memory_recall 回执</a>。</li>
+<li>重要约束目前仍可能因 topK、预算或仅首轮 pin 策略缺席；代码没有“当前全部适用硬约束必须被编译并装入”的独立路径。</li>
+</ul>
+<h3 id="integration-h7">3.4 编辑、撤销与删除</h3>
+<ul>
+<li>编辑来源对话会把该会话之前自动抽取/压缩的记录标记为 stale，连 pinned 项也停止自动召回；已有来源元数据支持再次提取时水位重置。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/context.js:269">invalidateSource</a>。这是有价值的现成基础，但范围是 session 级自动记录，未细化到具体证据跨度。</li>
+<li>已进入其他会话的失效记忆会在下一步收到可重放的撤回或纠正通知；即使关闭新 recall 注入，通知分支仍先执行。但插件被禁用时整个分支跳过，subagent 也跳过；sidecar 无法写入时通知保留待发，原运行继续。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/index.js:319">分支与通知</a>。因此通知是最终传播，不是执行前强一致检查。</li>
+<li><strong>普通记录的首次编辑/直接删除，不应被宣称已经全面传播。</strong> 文本编辑分支只在旧记录已 stale、已有 withdrawnRecall 或 withdrawals 时创建纠正记录；直接删除仅调用 <code>remove</code>。<code>remove</code> 删除 item 和向量并记录本轮删除 ID，不创建新的 withdrawal。静态推导：普通有效 note 已被另一个会话使用时，首次改字或直接删除，现有通知机制不必然通知该会话。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/index.js:755">编辑条件</a>、<a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/index.js:778">删除路由</a>、<a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/store.js:259">remove</a>。需在实现阶段用聚焦测试确认和修复，不属于本次已修改内容。</li>
+<li>withdrawals 保存旧文本前缀和纠正文本；旧 append-only 会话仍保留；无自动到期或清除 API。因此当前 delete 是活跃集合删除，不能称为物理清除。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/README.md:58">README 保留限制</a>。</li>
+<li>压缩摘要编辑通过 <code>agent.runMaintenance</code> 追加真实 compaction 事件，检查忙碌、活动 turn、当前 checkpoint 和 token meter，成功后 flush。不会直接重写原 session 文件。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/index.js:617">editSummary</a>。这套方式应继续保留在 DSH 适配层。</li>
+</ul>
+<h3 id="integration-h8">3.5 UI 与访问控制</h3>
+<ul>
+<li>launcher 已有搜索、pin、范围切换、编辑、删除、导入导出、清理；请求未携带记录版本。见 <a href="H:/DSH-CyberWorkStation/launcher/public/memory.js:168">UI 操作</a>。并发人工编辑适合增加版本冲突提示与差异比较。</li>
+<li>launcher 将 <code>/api/memory/*</code> 代理到插件；当前页面依赖 DSH 已运行。见 <a href="H:/DSH-CyberWorkStation/launcher/server.mjs:943">代理</a>。独立服务可以解除这个运行依赖，同时保留页面交互习惯。</li>
+<li>插件路由检查 loopback Host、Origin、fetch-site 和 JSON Content-Type，并允许其他 loopback origin。见 <a href="H:/DSH-CyberWorkStation/plugins/dsh-memory-lite/lib/index.js:714">路由防护</a>、<a href="H:/DSH-CyberWorkStation/plugins/_shared/fence.js:34">共享 fence</a>。这是本机 Web 请求防护，不校验组织身份或某 agent 可读写的项目；管理页 <code>GET items</code> 不带 cwd 时列出所有内容属于本机管理用途，不适合直接暴露为多租户数据接口。</li>
+</ul>
+<h2 id="integration-h9">4. MCP、hooks 与 subagent 的接入现实</h2>
+<h3 id="integration-h10">4.1 MCP 适合工具互通，但不会自动解决身份传播</h3>
+<p>core MCP 客户端支持 stdio 与 Streamable HTTP，只桥接 tools，尚不支持 MCP resources/prompts。HTTP 服务必须独立运行；DSH 不负责数据库初始化、迁移、供应商账号或 HTTP 服务监督。见 <a href="H:/DSH-CyberWorkStation/core/docs/user/guide/mcp-memory.md:11">指南</a>、<a href="H:/DSH-CyberWorkStation/core/packages/mcp/mcp-client/README.md:12">客户端 README</a>。</p>
+<p>当前调用代码发出 <code>tools/call</code> 的工具名与模型参数，HTTP 连接使用配置中的固定 headers；没有在这里自动附带可信 session/task/agent 标识。见 <a href="H:/DSH-CyberWorkStation/core/packages/mcp/mcp-client/src/tools.ts:81">callToolUncached</a>、<a href="H:/DSH-CyberWorkStation/core/packages/mcp/mcp-client/src/transport.ts:31">transport</a>。所以“参数里有 project_id”不能直接成为授权依据。</p>
+<p>建议接入方式：</p>
+<ol>
+<li>原型可采用单用户、单项目绑定的 MCP 连接，服务端凭连接身份限制项目；模型只能缩小搜索范围，不能扩大权限。</li>
+<li>多任务使用 DSH 原生适配器，由真实 <code>exec.agent.session</code> 和可信项目注册表确定 subject/scope，向记忆服务兑换短期任务凭证；凭证不进入模型文本。</li>
+<li>通用 MCP 客户端若需要共享同一服务，可在宿主侧提供每任务绑定的 MCP 代理；代理添加身份并过滤能力，服务端仍再次检查。不得依赖模型自行填报角色标签。</li>
+<li>配置客户端超时与故障状态提示。重连只解决连接恢复；超时的变更必须用同一幂等键查询/重试，不能把重新连上当成操作未执行。</li>
+</ol>
+<h3 id="integration-h11">4.2 hooks 适合观测和兼容，关键约束更适合原生扩展点</h3>
+<p>现有 Claude Code bridge 能在 <code>agent/pre-step</code>、<code>tools/pre-execute</code>、<code>tools/post-execute</code> 等时机增加上下文或阻止工具，但 README 明确列出兼容限制。<code>SessionStart</code> 是 detached，可能错过首个模型请求；某些错误继续运行；部分输入输出字段会被简化。Codex bridge 未支持 subagent hooks，Claude bridge 的 subagent start 只尽力投递到仍活着的进程内子任务。见 <a href="H:/DSH-CyberWorkStation/core/packages/hooks/hooks-claude-code/README.md:85">Claude hook 映射</a>、<a href="H:/DSH-CyberWorkStation/core/packages/hooks/hooks-claude-code/README.md:172">Claude 限制</a>、<a href="H:/DSH-CyberWorkStation/core/packages/hooks/hooks-codex/README.md:168">Codex 限制</a>。</p>
+<p>因此：hooks 可以实现初期事件采集与提示，不能单独作为“首请求前全部约束生效”“所有工具动作都经过授权”的保证。完整接入用 DSH 原生插件在请求构建前等待约束快照，在具体受控工具的执行器中检查权限和版本；对无法语义验证的自然语言限制，仍只能提供提示和后验检查，不能声称硬保证。</p>
+<h3 id="integration-h12">4.3 与 core 的日志和生命周期约束配合</h3>
+<p>core 要求模型可见内容可以从 session 日志重建，新输入要有 session event；扩展行为优先走插件而非修改 agent-loop。见 <a href="H:/DSH-CyberWorkStation/core/AGENTS.md:111">core 约定</a>。现有 sidecar 正是为了避免把未文档化字段塞进受版本校验的 <code>user/message.source</code>。新适配器宜使用正式定义的 <code>memory/context-attached</code>、<code>memory/context-revoked</code> 等事件或严格兼容现有 sidecar；不能随手增加 source 字段后假设旧日志迁移仍工作。</p>
+<p>子 agent 核心已有持久化 descriptor、父子相邻权限、cold resume、inbox 与停止前复查等生命周期实现。应把外部记忆租约关联这些真实身份，避免另造一套互相矛盾的 agent 名册。见 <a href="H:/DSH-CyberWorkStation/core/packages/subagent/subagent/README.md:95">continuable flow</a>、<a href="H:/DSH-CyberWorkStation/core/packages/subagent/subagent/README.md:101">ownership</a>。外部服务的租约不应替代 core 的生命周期，只管理记忆快照与授权有效期。</p>
+<h2 id="integration-h13">5. 建议的独立服务与适配接口</h2>
+<p>本节全部是拟议能力，当前仓库尚未实现。</p>
+<details class="diagram-source"><summary>查看 Mermaid 图示源文</summary><pre><code>flowchart LR
+    UI[独立管理 UI / launcher 页面] --&gt; H[HTTP 管理 API]
+    MCP[MCP 工具入口] --&gt; S[独立记忆服务]
+    H --&gt; S
+    A[DSH 原生适配器] --&gt; S
+    A --&gt; D[DSH session / tools / subagent]
+    S --&gt; SQL[SQL 权威数据与事务任务队列]
+    SQL --&gt; IDX[可重建全文/向量索引]
+    SQL --&gt; EVT[版本变更与撤销事件]
+    EVT --&gt; A
+</code></pre></details>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>接口组（建议名）</th>
+<th>调用者</th>
+<th>关键职责</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>POST /v1/events</code></td>
+<td>可信宿主适配器</td>
+<td>持久化用户消息、工具结果、人工编辑等获准采集事件；幂等 source_event_id；保存原始与规范化来源引用</td>
+</tr>
+<tr>
+<td><code>POST /v1/changes:propose</code></td>
+<td>提取器 / MCP 工具</td>
+<td>提出新增、替换、撤销、纠错；含证据、作用范围、前置版本；服务端评估写入权限</td>
+</tr>
+<tr>
+<td><code>POST /v1/changes:commit</code></td>
+<td>内部服务 / 受权管理 UI</td>
+<td>在同一 SQL 事务中写记忆版本、关系、状态、审计元数据与待更新索引/通知任务</td>
+</tr>
+<tr>
+<td><code>POST /v1/context:compile</code></td>
+<td>可信宿主适配器</td>
+<td>返回全部适用约束的紧凑表达、相关背景、来源、snapshot_id、scope_epoch 和内容版本；必需约束溢出必须明确拒绝或缩小任务，不能静默截断</td>
+</tr>
+<tr>
+<td><code>memory_search</code>、<code>memory_get</code>、<code>memory_propose_change</code></td>
+<td>MCP 模型调用</td>
+<td>小工具集合，候选检索与变更提案；角色与租户以服务端认证身份为准</td>
+</tr>
+<tr>
+<td><code>POST /v1/receipts</code></td>
+<td>宿主适配器</td>
+<td>区分已编译、已提交给模型、已在工具结果中落地、已确认刷新；回执引用 event/message ID、版本和内容哈希</td>
+</tr>
+<tr>
+<td><code>GET /v1/changes?after=cursor</code></td>
+<td>宿主适配器</td>
+<td>顺序读取撤销与更新，支持断线重放；推送只用于加速，可靠性来自持久 cursor</td>
+</tr>
+<tr>
+<td><code>POST /v1/leases</code>、续租、结束租约</td>
+<td>宿主适配器</td>
+<td>绑定真实任务、父子关系、项目权限、快照 epoch、过期时间和递增 fencing token</td>
+</tr>
+<tr>
+<td><code>POST /v1/actions:authorize</code></td>
+<td>受控工具执行器</td>
+<td>动作前检查当前约束 epoch、凭证及机器可验证政策；记录决策与对应 memory IDs</td>
+</tr>
+<tr>
+<td><code>POST /v1/purge-jobs</code></td>
+<td>受权管理 UI</td>
+<td>明确删除范围，跟踪原文、派生项、向量、缓存、历史投影和备份处理状态；返回部分完成与无法控制的副本说明</td>
+</tr>
+</tbody></table></div>
+<p>HTTP 与 MCP 应共用业务层，避免两套权限或更新规则。MCP 只负责模型能理解的工具；UI 不应迫使用户填写 chunk、embedding 或锁参数。用户看到的是“适用哪里、何时生效、谁说的、目前状态、修改影响哪些任务”。</p>
+<h2 id="integration-h14">6. 渐进集成路径</h2>
+<h3 id="integration-h15">阶段 A：独立单用户服务与可见管理</h3>
+<p>实现 SQL 记录、版本、来源、完整命题、作用范围、撤销、变更提案及简单全文搜索。先允许手工记忆和明确的“请记住”工具，不强依赖 LLM 提取。服务由自己的进程/容器运行，数据目录显式挂载到持久卷；DSH 只连接它。先用语义最简单的检索与过滤证明生命周期可靠，再增加向量。</p>
+<h3 id="integration-h16">阶段 B：现有 JSON 导入与并行评估</h3>
+<p>增加只读导入器，将旧 ID 映射为新稳定 ID，保留 source、sessionId、scope、cwd、createdAt、updatedAt、meta、withdrawals 与来源版本。对没有原始证据的旧事实标记“历史导入，证据未验证”；不能自动升级为用户明确规则。旧路径转换为 project ID 要通过项目注册表完成，不能仅按文件夹名字猜。</p>
+<p>导入后进行数量、状态、文本哈希与撤销关系校验，先做只读对照检索。导入器需有 <code>migration_id + legacy_id</code> 幂等约束；重新导入旧备份不能覆盖新的撤销或 purge 状态。向量是派生数据，允许重建；为可比性可以记录旧模型和来源，但不要把旧向量维度当成新模型可用。</p>
+<h3 id="integration-h17">阶段 C：DSH 原生适配器与 launcher 切换</h3>
+<p>保留 UI 的搜索、编辑、pin 等交互，后端代理转向独立服务；新增“撤销要求”和“彻底删除”两个明确动作，以及版本冲突、来源、影响任务、撤销进度。修改保存携带 <code>If-Match</code> 或 <code>expected_version</code>。</p>
+<p>在当前 <code>agent/pre-step</code> 集成点构建正式约束上下文和回执；在 <code>session/event</code> 收集已获准的持久事件；利用实际 <code>exec.agent.session</code> 确定身份。切换时只保留一个写入权威：旧插件可留作摘要查看/编辑宿主，但关闭与新服务重复的自动提取、长期记忆注入及同名写工具。不要长期双写两个可编辑权威库。</p>
+<h3 id="integration-h18">阶段 D：多 agent、容器恢复与执行检查</h3>
+<p>接入子 agent 创建/恢复事件、短期范围凭证、scope epoch、撤销游标与执行器检查。恢复前重新取当前权限和当前约束，不恢复旧凭证。将后台提取和向量生成放入持久任务队列，任务携带输入版本和内容哈希；旧任务结果在提交时失效。</p>
+<p>迁移回退应通过新服务导出一个经验证的兼容视图再切回旧服务，保留迁移以来的变更；简单恢复旧 JSON 会丢失新记忆并可能复活已删内容，不作为默认回退方式。</p>
+<h2 id="integration-h19">7. 可靠性红队：必须设计与验收的 12 项</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>必须具备的机制</th>
+<th>最小验收案例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1. 两个 agent 同改一条规则</td>
+<td>乐观并发版本检查；无条件覆盖不得作为更新默认值；冲突显式保留</td>
+<td>A、B 均读 v7，A 提交 v8；B 基于 v7 提交返回冲突，不能静默覆盖</td>
+</tr>
+<tr>
+<td>2. 网络超时后重复提交</td>
+<td>幂等键与 operation 状态；事务提交结果可查询</td>
+<td>服务已提交但响应丢失，客户端同键重试仍只有一条变更和同一 operation ID</td>
+</tr>
+<tr>
+<td>3. 索引更新与数据库提交之间崩溃</td>
+<td>事务 outbox/持久任务；向量按内容哈希、模型版本条件写入；读后核验活跃版本</td>
+<td>v2 提交后进程崩溃，重启能重建索引；v1 的延迟 embedding 不得覆盖 v2</td>
+</tr>
+<tr>
+<td>4. 撤销发生在检索后、工具执行前</td>
+<td>scope epoch、执行前检查、陈旧上下文刷新；关键机器政策由执行器强制检查</td>
+<td>检索得到允许上传，用户随后撤销，旧快照不能启动新的上传动作</td>
+</tr>
+<tr>
+<td>5. 已运行/离线 agent 继续使用旧记忆</td>
+<td>持久撤销 cursor、租约到期、必要动作 fail-closed、恢复重新取快照</td>
+<td>离线 10 分钟的子任务重连后先刷新；不能先完成写操作再补通知</td>
+</tr>
+<tr>
+<td>6. 旧聊天或备份重新提取使规则复活</td>
+<td>变更关系、撤销/删除屏障、导入 generation 检查；来源处理版本</td>
+<td>撤销规则后重新导入旧备份并重跑提取，默认检索仍不恢复旧规则</td>
+</tr>
+<tr>
+<td>7. purge 后派生副本残留</td>
+<td>删除任务清单、依赖图、索引/缓存/摘要/证据处理、备份保留声明</td>
+<td>删除原始消息后，相关事实/向量/摘要不再可检索；UI明确已控制与未控制副本，不伪称全网清除</td>
+</tr>
+<tr>
+<td>8. 磁盘写失败、进程被终止或突然断电</td>
+<td>明确提交/确认点、合适持久化配置、完整性检查与恢复流程</td>
+<td>在每个提交阶段注入故障；仅已确认持久化的事件承诺恢复，未确认事件可幂等重传</td>
+</tr>
+<tr>
+<td>9. 工具已产生实际副作用但结果未记录</td>
+<td>intent/started/confirmed/unknown 状态；外部幂等键与核验；不可盲目重放</td>
+<td>文件已写或支付/部署已执行后宿主崩溃，恢复先查实际状态；不能把缺少成功日志当成未执行</td>
+</tr>
+<tr>
+<td>10. 子 agent 租约过期后旧进程复活</td>
+<td>单调 fencing token，由服务/受控执行器拒绝旧 token；父子身份与真实任务绑定</td>
+<td>同一任务 generation 2 已接管，generation 1 迟到提交被拒绝，不出现双主</td>
+</tr>
+<tr>
+<td>11. 模型伪造标签、project_id 或来源权威</td>
+<td>可信身份注入、服务端行级范围检查、user/assistant/tool 证据分离；拒绝模型自行提权</td>
+<td>后端 agent 参数填写 global/admin 也不能扩大凭证范围；网页文本不能变成用户禁止规则</td>
+</tr>
+<tr>
+<td>12. 回执误记、压缩丢约束或 token 预算不足</td>
+<td>区分已检索与实际投递、稳定 ID/版本回执；约束独立于摘要重建；完整输出预算检查</td>
+<td>被取消的请求不标记已展示；压缩后重新装入活跃约束；约束过多时显式缩小任务或拒绝开始</td>
+</tr>
+</tbody></table></div>
+<p>额外说明：执行前检查无法撤销已经开始的不可逆动作；如果要求更严格，必须把受控动作与 epoch 检查尽可能放到同一个可信执行服务里，规定动作进入不可取消阶段后的语义。自然语言约束也无法全部编译为确定性规则，应按“可机器检查”和“需要模型理解”分别报告保证强度。</p>
+<h2 id="integration-h20">8. 验证边界与下一步</h2>
+<p>本审查确认了接入点、存储格式和静态代码路径，没有启动模型、调用外部服务、读取用户私有记录或复现并发故障。以上发现足以支撑独立服务的设计与分阶段原型；不足以证明现有实现的吞吐、召回质量、崩溃恢复上限或多 agent 一致性。</p>
+<p>实现阶段优先完成 12 个故障案例中的并发更新、重复提交、旧向量回写、撤销传播、purge 和副作用恢复测试，再比较完整成本与召回质量。当前方案最可继承的资产是 launcher 管理交互、来源失效机制、持久回执思路和 DSH 原生扩展点；最需要新建的是权威事务模型、可信范围授权、可撤销上下文快照与跨 agent 执行一致性。</p>
+</section>
+<section class="doc" data-id="method" data-title="方法与来源" hidden><h1 id="method-h0">调研方法 证据等级与技术来源</h1>
+<h2 id="method-h1">1 调研范围</h2>
+<p>检索截止日为 2026 年 9 月 15 日。调查围绕用户提出的外部项目记忆库，覆盖外部记忆系统、写入与演化、切块和检索、工作经验记忆、多 agent 协作与撤销、模型内部记忆对照、公共评测、接入协议和存储基座。</p>
+<p>“所有相关”在开放且持续变化的研究领域不能被一次调查证明穷尽。本包是有明确范围的定向全景调查，不是预注册的系统综述、逐仓库运行审计或法律新颖性意见。主索引逐项标明证据深度，避免将条目数量误当验证强度。</p>
+<h2 id="method-h2">2 检索与筛选流程</h2>
+<ol>
+<li>以 MemGPT/Letta、Mem0、Graphiti、A-MEM 为种子，扩展到本地记忆服务、可编辑文件记忆、记忆框架和存储组件。</li>
+<li>以 LongMemEval/LoCoMo 为评测种子，扩展到隐含查询、多会话任务、生命周期和撤销研究。</li>
+<li>以候选设计主张反向检索：temporal memory、revocation enforcement、write-back resurrection、multi-agent consistency、memory lifecycle、project scope、editable memory。</li>
+<li>优先查看论文原文、arXiv 版本元数据、官方仓库、根 LICENSE 和官方文档；对主要候选保存固定提交或当前分支证据。</li>
+<li>对同名、改名、SDK/服务端、历史实现和托管专有能力进行拆分。</li>
+<li>检查当前工作区已有实现，用源码行号说明复用范围和集成缺口。</li>
+<li>将设计判断与已有证据区分，再通过参考模型检查可确定的核心状态规则。</li>
+</ol>
+<p>代表性查询包括 agent memory temporal updates、LLM memory revocation deletion resurrection provenance、multi-agent authorization revocation、constraint lifecycle benchmark、context-driven memory retrieval、SQLite WAL network filesystem、MCP authorization。详细项目与论文索引保留每条来源链接；本次不宣称逐条搜索结果均已保留或构成完整 PRISMA 流程。</p>
+<h2 id="method-h3">3 证据等级</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>等级</th>
+<th>本包含义</th>
+<th>不能推出的结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>资料级</td>
+<td>官方 README、文档、摘要与元数据核对</td>
+<td>功能已正确实现或适合生产</td>
+</tr>
+<tr>
+<td>正文级</td>
+<td>阅读论文注明的关键章节</td>
+<td>全文逐页审计或独立复现</td>
+</tr>
+<tr>
+<td>源码级</td>
+<td>当前 DSH 指定代码路径与行号核对</td>
+<td>所有运行分支已测或真实用户数据无误</td>
+</tr>
+<tr>
+<td>参考验证级</td>
+<td>本包有限模型在记录环境中通过指定测试</td>
+<td>完整应用、模型质量、断电可靠性或云端规模已验证</td>
+</tr>
+</tbody></table></div>
+<p>未核实某项能力，不等于证明项目没有该能力。README 的能力主张在对照矩阵中用“文档描述/待实测”表达。许可分类仅覆盖指定版本根许可，不替代依赖、权重、资产和托管服务条款的完整评估。</p>
+<h2 id="method-h4">4 技术标准与基础来源</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>一手来源</th>
+<th>本方案使用的事实</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>T01</td>
+<td><a href="https://www.sqlite.org/wal.html">SQLite WAL</a></td>
+<td>本地 WAL 并发与持久化行为，单写者和跨主机限制</td>
+</tr>
+<tr>
+<td>T02</td>
+<td><a href="https://www.sqlite.org/useovernet.html">SQLite 网络使用说明</a></td>
+<td>避免多机器直接共享数据库文件，改由服务访问</td>
+</tr>
+<tr>
+<td>T03</td>
+<td><a href="https://sqlite.org/pragma.html">SQLite PRAGMA</a></td>
+<td>同步配置与存储清理选项的边界</td>
+</tr>
+<tr>
+<td>T04</td>
+<td><a href="https://www.sqlite.org/fts5.html">SQLite FTS5</a></td>
+<td>全文查询、BM25、分词和派生索引维护</td>
+</tr>
+<tr>
+<td>T05</td>
+<td><a href="https://www.sqlite.org/backup.html">SQLite Backup API</a></td>
+<td>活跃数据库的一致性备份途径</td>
+</tr>
+<tr>
+<td>T06</td>
+<td><a href="https://github.com/pgvector/pgvector">pgvector 官方仓库</a></td>
+<td>过滤与近似检索、迭代扫描及扩容候选</td>
+</tr>
+<tr>
+<td>T07</td>
+<td><a href="https://alexgarcia.xyz/sqlite-vec/">sqlite-vec 官方文档</a></td>
+<td>本地向量索引候选与版本验证入口</td>
+</tr>
+<tr>
+<td>T08</td>
+<td><a href="https://modelcontextprotocol.io/specification/2025-11-25/basic">MCP 2025-11-25 基础规范</a></td>
+<td>协议与 Schema，作为明确选定的接入版本</td>
+</tr>
+<tr>
+<td>T09</td>
+<td><a href="https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization">MCP 授权规范</a></td>
+<td>HTTP 授权与身份边界</td>
+</tr>
+<tr>
+<td>T10</td>
+<td><a href="https://modelcontextprotocol.io/docs/2025-11-25/tutorials/security/security_best_practices">MCP 安全实践</a></td>
+<td>凭据受众与连接边界，工具文本不能代替授权</td>
+</tr>
+<tr>
+<td>T11</td>
+<td><a href="https://arxiv.org/abs/2005.11401">RAG 原始论文</a></td>
+<td>区分模型参数记忆与外部非参数化记忆</td>
+</tr>
+<tr>
+<td>T12</td>
+<td><a href="https://www.jmlr.org/papers/v23/21-0998.html">Switch Transformers</a></td>
+<td>MoE 按参数专家路由，与外部数据库选择不同</td>
+</tr>
+</tbody></table></div>
+<p>T11/T12 是概念补充来源，不与主论文表重复计算数量。标准版本是设计锁定的版本，不声称其在未来仍是最新规范。数据库参数和开源项目需在真正实施时冻结版本并再次验证。</p>
+<h2 id="method-h5">5 尚未完成的验证</h2>
+<p>本次未安装全部候选项目、未测试各自全部 API、未复现论文榜单、未比较云端价格、未进行完整专利检索，也未收集真实用户隐私数据。对授权、撤销和删除的强保证只适用于将来实际接入并通过验证的服务/动作路径。</p>
+<p>后续专项检索应优先围绕最终选择的 H1–H4 主张补查参考文献和引用链。若找到更接近工作，应缩小或放弃对应原创性主张，保留可复用实现与工程收益。</p>
+</section>
+<section class="doc" data-id="validation" data-title="参考验证" hidden><h1 id="validation-h0">参考模型验证说明</h1>
+<h2 id="validation-h1">实际结果</h2>
+<p>本次有限参考模型 37 项检查通过，失败 0，错误 0。环境为 Python 3.12.14、SQLite 3.53.1。机器可读记录见 <a href="validation/results.json">results.json</a>。</p>
+<p>这些检查验证结构化命令和 SQLite 状态，不评估模型意图识别或检索质量。测试包含特定双连接交错及子进程在提交前/提交后直接退出；不包含断电测试、生产负载测试或所有可能的并发调度。</p>
+<h2 id="validation-h2">已验证的子集</h2>
+<p>新建和当前读取、双时间查询、明确 CORRECT 回溯、未来开始和区间边界、撤销不生成相反命令、重复撤销不复活、取消未来规则、作用域和租户隔离、只读身份与模型自报约束限制、幂等键冲突、旧版本写入拒绝、outbox 同事务回滚、延迟索引与删除、策略和 ACL epoch、未来时间边界、任务 fence 以及接管保留检查点。</p>
+<p>参考模型只处理单一作用域，不实现完整继承/例外解析；只接受显式结构化命令。CORRECT 是明确纠错，未来替换 REPLACE 尚未实现，不可借该结果宣称未来替换的完整产品行为已测试。</p>
+<h2 id="validation-h3">运行方式</h2>
+<p>在本目录运行 Python 3 的标准库脚本，不需要安装大模型或第三方数据库服务：</p>
+<pre><code class="language-powershell">python test_reference.py
+</code></pre>
+<p>当前工作站可使用已配置的 bundled Python 完整路径运行相同脚本。测试只在临时目录建库，不读取或改写真实用户记忆。生成的结果会更新本目录 results.json。</p>
+<p>契约文件可以通过以下脚本重新生成：</p>
+<pre><code class="language-powershell">python build_contracts.py
+</code></pre>
+<p>契约检查包括 JSON 生成、内部引用和样例基本字段；不是完整 OpenAPI 合规验证。接口文件没有启动 HTTP/MCP 服务。</p>
+<h2 id="validation-h4">尚未验证</h2>
+<ul>
+<li>LLM intent accuracy</li>
+<li>embedding recall</li>
+<li>HTTP/MCP</li>
+<li>scope inheritance and exception resolution</li>
+<li>complete context compilation and receipt authenticity</li>
+<li>future replacement</li>
+<li>real action dispatch</li>
+<li>full erasure/backups</li>
+<li>power-loss durability</li>
+<li>production concurrency/performance</li>
+<li>academic novelty</li>
+</ul>
+<p>完整验收方法见 <a href="#evaluation">创新与评测</a>，真实接入步骤见 <a href="#roadmap">实施路线</a>。</p>
+</section></main></div><footer>离线页面无需加载外部脚本或字体。外部论文、仓库与文档链接需网络访问。交付为设计与有限参考验证。</footer>
+<script>
+const sections=[...document.querySelectorAll('.doc')];const navigation=[...document.querySelectorAll('[data-go]')];
+function show(id,scroll=true){const found=sections.find(s=>s.dataset.id===id)||sections[0];for(const s of sections)s.hidden=s!==found;for(const b of navigation){if(b.dataset.go===found.dataset.id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')}document.querySelector('#current-title').textContent=found.dataset.title;document.title=found.dataset.title+' · 项目记忆服务';if(scroll)window.scrollTo({top:0,behavior:'instant'});return found;}
+function navigate(){const hash=decodeURIComponent(location.hash.slice(1));const doc=sections.find(s=>s.dataset.id===hash);if(doc){show(hash);return}const target=document.getElementById(hash);if(target){const parent=target.closest('.doc');if(parent){show(parent.dataset.id,false);target.scrollIntoView({block:'start'});return}}show('overview');}
+for(const b of navigation)b.addEventListener('click',()=>{location.hash=b.dataset.go;show(b.dataset.go)});window.addEventListener('hashchange',navigate);if(location.hash)navigate();
+const entries=[];for(const section of sections){for(const heading of section.querySelectorAll('h1,h2,h3,h4')){let parts=[heading.textContent];let e=heading.nextElementSibling;while(e&&!/^H[1-4]$/.test(e.tagName)){parts.push(e.textContent);e=e.nextElementSibling}entries.push({doc:section.dataset.title,id:heading.id,title:heading.textContent,text:parts.join(' ').replace(/\s+/g,' ')})}}
+document.querySelector('#search').addEventListener('input',event=>{const q=event.target.value.trim().toLocaleLowerCase();const host=document.querySelector('#results');host.replaceChildren();host.hidden=!q;if(!q)return;const matches=entries.filter(x=>x.text.toLocaleLowerCase().includes(q));const count=document.createElement('p');count.className='search-state';count.textContent=matches.length+' 个匹配章节'+(matches.length>30?'，显示前 30 个':'');host.append(count);for(const hit of matches.slice(0,30)){const button=document.createElement('button');button.className='result';const title=document.createElement('strong');title.textContent=hit.doc+' · '+hit.title;const snippet=document.createElement('small');const pos=hit.text.toLocaleLowerCase().indexOf(q);snippet.textContent=hit.text.slice(Math.max(0,pos-30),pos+160);button.append(title,snippet);button.addEventListener('click',()=>{location.hash=hit.id;navigate()});host.append(button)}});
+document.querySelector('#print').addEventListener('click',()=>window.print());
+</script></body></html>

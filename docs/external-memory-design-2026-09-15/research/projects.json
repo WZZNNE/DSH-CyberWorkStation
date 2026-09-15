@@ -1,0 +1,2033 @@
+[
+  {
+    "id": "P01",
+    "name": "Letta / Letta Code（MemGPT 演进项目）",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/letta-ai/letta-code",
+    "docs": "https://docs.letta.com/letta-code/memory",
+    "license": "Apache-2.0（代码）；LICENSE 明确排除品牌名称、标志、图像和 ASCII art 等资产",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/letta-ai/letta-code/5bc853fd6fd69f00c115e320316fa4c0654a3dfb/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "036e78b9d7dd33ae5b378fdda973b4aad7901c8d8371a0ae40fae1f6659a89d0",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "有状态 agent harness，记忆块、历史消息检索、跨会话身份和技能",
+      "MemFS 以 Git 跟踪上下文；支持子 agent、hooks 和本地 App Server"
+    ],
+    "relevance": "适合作为完整 agent 产品和可编辑、可版本化上下文的对照。",
+    "limitations": [
+      "旧 letta-ai/letta 主分支已转为迁移说明；V1 server 在 archive 分支，不能混用 V1 文档判断现版行为",
+      "跨电脑 Cloud 功能和本地源码范围需分别评估；未验证项目约束撤销后的所有缓存传播"
+    ],
+    "recommendation": "借鉴 MemFS、记忆可视化和固定上下文块；优先作为集成对照，避免为本项目整体替换现有 harness。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:29.2551409Z",
+    "revision": "5bc853fd6fd69f00c115e320316fa4c0654a3dfb",
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/letta-ai/letta-code/5bc853fd6fd69f00c115e320316fa4c0654a3dfb/README.md",
+      "text_sha256": "1fc7d811dee31babd998287de5e04d6fecd4dcfad81fc8bd2fa48b6c41c796a9"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-15T07:54:35Z",
+      "metadata_verified": true,
+      "notes": [
+        "活动源码已迁移至 letta-code；letta 原仓库未归档但 V1 实现已退役。"
+      ]
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/letta-ai/letta-code",
+      "https://docs.letta.com/letta-code/memory",
+      "https://raw.githubusercontent.com/letta-ai/letta-code/5bc853fd6fd69f00c115e320316fa4c0654a3dfb/README.md",
+      "https://raw.githubusercontent.com/letta-ai/letta-code/5bc853fd6fd69f00c115e320316fa4c0654a3dfb/LICENSE",
+      "https://github.com/letta-ai/letta",
+      "https://docs.letta.com/letta-code/memfs",
+      "https://api.github.com/repos/letta-ai/letta-code"
+    ]
+  },
+  {
+    "id": "P02",
+    "name": "Mem0",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/mem0ai/mem0",
+    "docs": "https://docs.mem0.ai/open-source/overview",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/mem0ai/mem0/c7ee362aff94a369af70f13f2b4f853f6793ff4c/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "0bbcbe931c353293a2fafce08326181dfeea0e568c566afd4ce8337a70f5e219",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "提取对话事实，按 user/session/agent 组织；提供库、自托管服务和托管平台",
+      "当前 README 的 2026 新流程为 ADD-only 提取、实体关联及向量/BM25/实体多信号检索"
+    ],
+    "relevance": "最重要的事实提取与检索比较基线；可避免从零写各模型/向量库适配。",
+    "limitations": [
+      "2025 论文的 ADD/UPDATE/DELETE/NOOP 与 2026 当前主分支流程必须分版本描述",
+      "README 明示榜单包含平台专有优化，不等于开源 SDK 的成绩；agent 输出等权入库并不适合直接作为用户约束权威"
+    ],
+    "recommendation": "纳入优先基线；可采用适配和提取组件，约束生效/撤销由独立规则服务裁决。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:24.3025756Z",
+    "revision": "c7ee362aff94a369af70f13f2b4f853f6793ff4c",
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/mem0ai/mem0/c7ee362aff94a369af70f13f2b4f853f6793ff4c/README.md",
+      "text_sha256": "7509347d34a767a2ef37ceb6cf6c714de9e8d84fe66ad5eea92bbae824a8fbeb"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-14T19:12:46Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/mem0ai/mem0",
+      "https://docs.mem0.ai/open-source/overview",
+      "https://raw.githubusercontent.com/mem0ai/mem0/c7ee362aff94a369af70f13f2b4f853f6793ff4c/README.md",
+      "https://raw.githubusercontent.com/mem0ai/mem0/c7ee362aff94a369af70f13f2b4f853f6793ff4c/LICENSE",
+      "https://arxiv.org/html/2504.19413v1",
+      "https://docs.mem0.ai/migration/oss-v2-to-v3",
+      "https://api.github.com/repos/mem0ai/mem0"
+    ]
+  },
+  {
+    "id": "P03",
+    "name": "Graphiti",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/getzep/graphiti",
+    "docs": "https://github.com/getzep/graphiti",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/getzep/graphiti/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "2825300b20d7b951209835a4a331f29e24725a39d65168e4b831df53aa372650",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "从原始 episodes 建立可追溯的实体和事实关系",
+      "事实有效时间及历史失效管理；语义、关键词、图遍历混合检索"
+    ],
+    "relevance": "适合判断同一事实在不同时间是否成立，以及从检索结果追溯证据。",
+    "limitations": [
+      "独立图基座与模型处理增加运行和写入成本",
+      "事实 invalidation 不等于所有原文、摘要、索引、备份的彻底删除；跨存储撤销需要额外验证"
+    ],
+    "recommendation": "作为时间语义/关系推理基线或第二阶段可选适配器；首版不必强制上图数据库。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:23.5653697Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/getzep/graphiti/main/README.md",
+      "text_sha256": "ce1628c02b3c6fd5b59e3e48dc61c958f07824033b4d0b989bb8d433932b6b3f"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-11T20:16:31Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/getzep/graphiti",
+      "https://raw.githubusercontent.com/getzep/graphiti/main/README.md",
+      "https://raw.githubusercontent.com/getzep/graphiti/main/LICENSE",
+      "https://arxiv.org/abs/2501.13956",
+      "https://help.getzep.com/zep-vs-graphiti",
+      "https://api.github.com/repos/getzep/graphiti"
+    ]
+  },
+  {
+    "id": "P04",
+    "name": "Cognee",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/topoteretes/cognee",
+    "docs": "https://docs.cognee.ai/core-concepts/architecture",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/topoteretes/cognee/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "a471e34908f50c3f120e9a56f3c30cb34e133e4ede01a9cbd5ce718fc358ecd4",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "文档、代码、会话转为实体、关系和可检索片段",
+      "remember/recall/improve/forget 接口，session 缓存与后台图记忆衔接"
+    ],
+    "relevance": "与项目知识、代码依赖、会话经验整理有关，适合多源知识整合。",
+    "limitations": [
+      "Cloud 与自托管范围不同；模型和图加工成本需计入",
+      "未实测手工修改、会话蒸馏和异步入图并发时的版本一致性"
+    ],
+    "recommendation": "作为多源图记忆基线，借鉴 ingest/recall 分离及 session 到长期记忆的审核入口。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:24.1840484Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/topoteretes/cognee/main/README.md",
+      "text_sha256": "da67c419d86109573da691852f2336be04abc5687a2ecc1004171f3ba7a216da"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-15T12:33:55Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/topoteretes/cognee",
+      "https://docs.cognee.ai/core-concepts/architecture",
+      "https://raw.githubusercontent.com/topoteretes/cognee/main/README.md",
+      "https://raw.githubusercontent.com/topoteretes/cognee/main/LICENSE",
+      "https://api.github.com/repos/topoteretes/cognee"
+    ]
+  },
+  {
+    "id": "P05",
+    "name": "MemOS（MemTensor）",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/MemTensor/MemOS",
+    "docs": "https://github.com/MemTensor/MemOS",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/MemTensor/MemOS/de8069428a9247bfa7a3d35f59a9b39fa8f231d2/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "154f9be8df2d55ceddcd4646c8d8d4206d48867ae1da2b81ce2ab86b51a5f075",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "Memory Cube 组织、隔离和组合知识库；编辑、删除、自然语言反馈",
+      "本地插件使用 SQLite、FTS5+向量、技能演化和 Memory Viewer；另有自托管/Cloud"
+    ],
+    "relevance": "直接覆盖用户的多 agent、项目隔离、可编辑记忆和当前 DSH 工作流。",
+    "limitations": [
+      "完整自托管方案与本地插件底层不同，前者要求的外部服务不能强加给后者",
+      "README 的隔离/并发宣称未做安全与一致性实测；图反馈不等于明确约束覆盖协议"
+    ],
+    "recommendation": "优先试装候选之一；对照本地插件的最小体验和 Cube 作用域管理。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:26.4002718Z",
+    "revision": "de8069428a9247bfa7a3d35f59a9b39fa8f231d2",
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/MemTensor/MemOS/de8069428a9247bfa7a3d35f59a9b39fa8f231d2/README.md",
+      "text_sha256": "9c2ec97ba97e5371088e041d04085f70195b4626a9dcb517194f90b9495b30dc"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-09T12:54:27Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/MemTensor/MemOS",
+      "https://raw.githubusercontent.com/MemTensor/MemOS/de8069428a9247bfa7a3d35f59a9b39fa8f231d2/README.md",
+      "https://raw.githubusercontent.com/MemTensor/MemOS/de8069428a9247bfa7a3d35f59a9b39fa8f231d2/LICENSE",
+      "https://memos-docs.openmem.net/",
+      "https://api.github.com/repos/MemTensor/MemOS"
+    ]
+  },
+  {
+    "id": "P06",
+    "name": "Hindsight",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/vectorize-io/hindsight",
+    "docs": "https://hindsight.vectorize.io/",
+    "license": "MIT",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/vectorize-io/hindsight/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "01fde0bedf83bdc185065d7af524a61690efe576a67f922eaff3a1280c17b63a",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "retain/recall/reflect 三类操作，按 bank 管理记忆",
+      "提供 observations、mental models、MCP、控制界面及本地/服务/Cloud 接入"
+    ],
+    "relevance": "可对照辅助模型整理、综合判断与事实检索的分工。",
+    "limitations": [
+      "一般部署需要数据库和模型配置；嵌入开发模式与生产外部 PostgreSQL 的建议不同",
+      "反思生成结论仍应标注为推断；未验证用户撤销对已派生 mental models 的完整影响"
+    ],
+    "recommendation": "优先完整产品基线；借鉴 retain 与 reflect 分离，不把反思结论提升为用户授权。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:24.7481508Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/vectorize-io/hindsight/main/README.md",
+      "text_sha256": "2c9f4ee394444ebee2afce7b2bdbcb4665249103555da3556c99546c582505a3"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-15T12:39:19Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/vectorize-io/hindsight",
+      "https://hindsight.vectorize.io/",
+      "https://raw.githubusercontent.com/vectorize-io/hindsight/main/README.md",
+      "https://raw.githubusercontent.com/vectorize-io/hindsight/main/LICENSE",
+      "https://github.com/vectorize-io/hindsight/blob/main/skills/hindsight-docs/references/developer/installation.md",
+      "https://api.github.com/repos/vectorize-io/hindsight"
+    ]
+  },
+  {
+    "id": "P07",
+    "name": "MemMachine",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/MemMachine/MemMachine",
+    "docs": "https://docs.memmachine.ai/getting_started/quickstart",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/MemMachine/MemMachine/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "05f33b1a4f2797532e331898b95db7b1cf51ee06b7cb0d24b87dfe05101e21e3",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "episodic 图记忆、SQL profile 记忆和 working memory 分层",
+      "API/SDK/MCP；org/project/group/agent/user/session 多维上下文"
+    ],
+    "relevance": "高度符合 SQL 管理结构信息、长短期分层与跨会话持久化。",
+    "limitations": [
+      "客户端示例依赖运行中的服务，不能把安装 SDK 当作已持久化",
+      "图和 SQL 双存储的一致性、权威优先级与撤销传播未实测"
+    ],
+    "recommendation": "纳入分层记忆基线；借鉴事件原文与 profile 分开。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:24.9271107Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/MemMachine/MemMachine/main/README.md",
+      "text_sha256": "ee9e89f147008e7ece5f9d8fb42587e60444fe46ff0f33543decd0acfb3e3edd"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-15T06:22:04Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/MemMachine/MemMachine",
+      "https://docs.memmachine.ai/getting_started/quickstart",
+      "https://raw.githubusercontent.com/MemMachine/MemMachine/main/README.md",
+      "https://raw.githubusercontent.com/MemMachine/MemMachine/main/LICENSE",
+      "https://api.github.com/repos/MemMachine/MemMachine"
+    ]
+  },
+  {
+    "id": "P08",
+    "name": "Memobase",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/memodb-io/memobase",
+    "docs": "https://github.com/memodb-io/memobase",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/memodb-io/memobase/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "ad79127bef564bb5b553d630958ea64212a8a29ef3960d4b407cc1ad781b56a7",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "可配置用户画像与用户事件时间线",
+      "缓冲会话批量处理，通过 API 组装用户相关上下文"
+    ],
+    "relevance": "适合用户偏好、个人事实和画像类长期记忆。",
+    "limitations": [
+      "README 明确重点为用户画像而非通用 agent 经验；后台缓冲可能引入新鲜度延迟",
+      "仓库未归档，但最后推送较早且 README 导流 Acontext；不能由未归档推断积极维护"
+    ],
+    "recommendation": "用户偏好基线；不单独承担项目规则、任务工作状态和多 agent 权限。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:25.9419386Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/memodb-io/memobase/main/readme.md",
+      "text_sha256": "165358fb6d152f03da71bb9c09a0391c29abd047841e8e530b3802f4f5af1595"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-01-11T03:51:40Z",
+      "metadata_verified": true,
+      "notes": [
+        "GitHub 记录 pushed_at 为 2026-01-11；README 宣传新项目 Acontext。此处仅记录观测，不推断弃用。"
+      ]
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/memodb-io/memobase",
+      "https://raw.githubusercontent.com/memodb-io/memobase/main/readme.md",
+      "https://raw.githubusercontent.com/memodb-io/memobase/main/LICENSE",
+      "https://api.github.com/repos/memodb-io/memobase"
+    ]
+  },
+  {
+    "id": "P09",
+    "name": "SimpleMem / Omni-SimpleMem / EvolveMem",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/aiming-lab/SimpleMem",
+    "docs": "https://github.com/aiming-lab/SimpleMem/blob/main/docs/PACKAGE_USAGE.md",
+    "license": "MIT",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/aiming-lab/SimpleMem/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "276dc8cc9eb5a8c59d1edca3283163815d2caa512b17bd0bf053050304b4cd3e",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "从对话生成结构化原子记忆，再索引和检索",
+      "当前统一 Python 包包含文本/多模态后端以及离线检索优化入口"
+    ],
+    "relevance": "直接对应语义单元切分、元数据索引、查询意图与 token 控制。",
+    "limitations": [
+      "semantic lossless 是项目表述，不能解释为信息理论上的无损或任意约束都保真",
+      "文本 MCP 与完整多模态 Python 能力不同；自动优化必须用独立开发集"
+    ],
+    "recommendation": "优先语义切块/压缩基线，保留原文证据；首版不自动演化线上检索配置。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:25.2670416Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/aiming-lab/SimpleMem/main/README.md",
+      "text_sha256": "420cdf2a5c22d74354d11e7617fdd24a1ce60eeba8e0d21b51ed4442b7149001"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-07-24T07:40:38Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/aiming-lab/SimpleMem",
+      "https://github.com/aiming-lab/SimpleMem/blob/main/docs/PACKAGE_USAGE.md",
+      "https://raw.githubusercontent.com/aiming-lab/SimpleMem/main/README.md",
+      "https://raw.githubusercontent.com/aiming-lab/SimpleMem/main/LICENSE",
+      "https://arxiv.org/abs/2601.02553",
+      "https://api.github.com/repos/aiming-lab/SimpleMem"
+    ]
+  },
+  {
+    "id": "P10",
+    "name": "EverOS（原 EverMemOS）",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/EverMind-AI/EverOS",
+    "docs": "https://docs.evermind.ai",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/EverMind-AI/EverOS/5076683ab88d714390573d8f88ff3c470e51129a/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "748007f17980117469390a385c37423c4bea2b0627cb6be00be315f9e64fc020",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "可读可编辑 Markdown 为源，SQLite 与 LanceDB 为索引",
+      "文件 watcher 级联同步；user/agent/app/project/session 检索维度；用户画像、案例、skills、wiki、离线反思"
+    ],
+    "relevance": "是与用户“可编辑文件+SQL+向量+跨任务”方案最直接重叠的候选。",
+    "limitations": [
+      "现版与旧 EverMemOS 的 MongoDB/Elasticsearch/Redis 服务栈不同，需锁定版本",
+      "直接编辑文件的并发冲突、watcher 失败、删除再派生及实时落盘保证尚未实测"
+    ],
+    "recommendation": "优先试装与架构对照；必须先验证修改/删除/崩溃恢复链路，再决定复用程度。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:26.7969446Z",
+    "revision": "5076683ab88d714390573d8f88ff3c470e51129a",
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/EverMind-AI/EverOS/5076683ab88d714390573d8f88ff3c470e51129a/README.md",
+      "text_sha256": "ce1077f9f65140aec8db2469e5e0c41932908f306641d185045b72b45d92b9ad"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-09T02:59:13Z",
+      "metadata_verified": true,
+      "notes": [
+        "官方旧仓库地址重定向 EverMind-AI/EverOS，现 README 描述本地 Markdown+SQLite+LanceDB 架构。"
+      ]
+    },
+    "aliases": [
+      "EverMind-AI/EverMemOS"
+    ],
+    "source_urls": [
+      "https://github.com/EverMind-AI/EverOS",
+      "https://docs.evermind.ai",
+      "https://raw.githubusercontent.com/EverMind-AI/EverOS/5076683ab88d714390573d8f88ff3c470e51129a/README.md",
+      "https://raw.githubusercontent.com/EverMind-AI/EverOS/5076683ab88d714390573d8f88ff3c470e51129a/LICENSE",
+      "https://api.github.com/repos/EverMind-AI/EverOS"
+    ]
+  },
+  {
+    "id": "P11",
+    "name": "MemoryBank / SiliconFriend",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/zhongwanjun/MemoryBank-SiliconFriend",
+    "docs": "https://github.com/zhongwanjun/MemoryBank-SiliconFriend",
+    "license": "MIT",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/zhongwanjun/MemoryBank-SiliconFriend/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "38a553151ada2b1518ab5ac469de7d04d35923b3510aea17b1156a2ce9ce50cf",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "按重要性与时间进行记忆遗忘/强化",
+      "回顾会话形成事件摘要与用户人格信息，附中英实验和聊天演示"
+    ],
+    "relevance": "对应用户提出的记忆退化机制。",
+    "limitations": [
+      "参考实现最后推送为 2023 年，依赖和模型样例需适配",
+      "遗忘曲线适合软偏好或检索优先级，不适合自动使禁止项/明确承诺失效；代码许可不覆盖所有基础模型权重"
+    ],
+    "recommendation": "作为历史算法基线和遗忘策略消融，首版禁止对有效硬约束应用衰减。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:28.7542458Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/zhongwanjun/MemoryBank-SiliconFriend/main/README.md",
+      "text_sha256": "aba6b177072b12e1d8be7bf175d5c8753c6d8717663c5762da923b33f53c840f"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2023-05-24T03:19:27Z",
+      "metadata_verified": true,
+      "notes": [
+        "未归档；GitHub pushed_at 为 2023-05-24，按历史研究实现处理。"
+      ]
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/zhongwanjun/MemoryBank-SiliconFriend",
+      "https://raw.githubusercontent.com/zhongwanjun/MemoryBank-SiliconFriend/main/README.md",
+      "https://raw.githubusercontent.com/zhongwanjun/MemoryBank-SiliconFriend/main/LICENSE",
+      "https://arxiv.org/abs/2305.10250",
+      "https://api.github.com/repos/zhongwanjun/MemoryBank-SiliconFriend"
+    ]
+  },
+  {
+    "id": "P12",
+    "name": "A-MEM",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/agiresearch/A-mem",
+    "docs": "https://github.com/agiresearch/A-mem",
+    "license": "MIT",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/agiresearch/A-mem/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "c8a51c83455b8afc3a11b085ce57c7b9b34c6725d6b2329ce3dd9a273f0add6d",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "生成包含标签、关键词、时间戳及上下文描述的笔记",
+      "通过语义关联建立链接，更新相关历史笔记；支持记忆 CRUD"
+    ],
+    "relevance": "是用户“辅助模型分块打标、更新关联记忆”的直接研究先例。",
+    "limitations": [
+      "系统实现与论文复现实验仓库是两个仓库",
+      "动态演化可能改动历史表达；未验证强来源权威、权限或多写者一致性"
+    ],
+    "recommendation": "结构化记忆与链接算法基线；保留不可变源事件，再评估可变派生笔记。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:25.4733257Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/agiresearch/A-mem/main/README.md",
+      "text_sha256": "6f7185bb241d8ed5f7c0b8c4716b4f5e5cf1e9a3c630c3a1a92e54c3f5fb88b0"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2025-12-12T21:15:29Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/agiresearch/A-mem",
+      "https://raw.githubusercontent.com/agiresearch/A-mem/main/README.md",
+      "https://raw.githubusercontent.com/agiresearch/A-mem/main/LICENSE",
+      "https://github.com/WujiangXu/AgenticMemory",
+      "https://arxiv.org/abs/2502.12110",
+      "https://api.github.com/repos/agiresearch/A-mem"
+    ]
+  },
+  {
+    "id": "P13",
+    "name": "MemoryOS（BAI-LAB）",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/BAI-LAB/MemoryOS",
+    "docs": "https://bai-lab.github.io/MemoryOS/docs",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/BAI-LAB/MemoryOS/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "68c3ba87a6d623bd47ea90449ca54e7bf5e247cee799eb54e8bd094fb9878c29",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "短期、中期、长期个人记忆分层",
+      "存储、更新、检索、生成模块；MCP、Playground 和 Chroma 变体"
+    ],
+    "relevance": "适合研究长期偏好留存与短期会话迁移。",
+    "limitations": [
+      "与 MemTensor/MemOS 无关，名字相似不能互换文档",
+      "多个实现入口的状态和支持可能不同；未验证项目粒度权限及删除语义"
+    ],
+    "recommendation": "分层/晋升策略研究基线；避免直接把个人记忆流程当团队规则服务。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:26.0701608Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/BAI-LAB/MemoryOS/main/README.md",
+      "text_sha256": "1580d664129c9804fa59b1327952ec11bd504ec85672b214b76dc2a8fe1df151"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-07-07T12:32:18Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/BAI-LAB/MemoryOS",
+      "https://bai-lab.github.io/MemoryOS/docs",
+      "https://raw.githubusercontent.com/BAI-LAB/MemoryOS/main/README.md",
+      "https://raw.githubusercontent.com/BAI-LAB/MemoryOS/main/LICENSE",
+      "https://arxiv.org/abs/2506.06326",
+      "https://api.github.com/repos/BAI-LAB/MemoryOS"
+    ]
+  },
+  {
+    "id": "P14",
+    "name": "memU",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/NevaMind-AI/memU",
+    "docs": "https://github.com/NevaMind-AI/memU",
+    "license": "Apache-2.0 声明；LICENSE.txt 为改写文本，标准许可一致性未核实（GitHub NOASSERTION）",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/NevaMind-AI/memU/08e1ed4cdf4c0cb1fe5387e4a532ea588a8cbe46/LICENSE.txt",
+      "read_original_text": true,
+      "text_sha256": "0e2bcb97222f1ba09e333c70ecef4845470e16fdea953a1d0882d5ef2213d25a",
+      "scope_note": "已读 LICENSE.txt 并与标准 Apache 文本对照；版权授权、定义及第9节措辞不同，不能仅凭 README badge 当作标准 Apache-2.0 完全核实。"
+    },
+    "capabilities": [
+      "主 agent 从会话历史准备并提交可读 memory/skill Markdown；服务负责存储、embedding 和检索",
+      "多个编码助手 host adapter；本地 SQLite/PostgreSQL 与 Cloud 模式"
+    ],
+    "relevance": "高度对应跨 agent 的个人 wiki、可复用技能和外部统一存储。",
+    "limitations": [
+      "README 宣称 Apache-2.0，但 LICENSE.txt 有改写且 GitHub 标为 NOASSERTION，标准许可证一致性未核实",
+      "依赖日志桥接与 host 指令注入，支持范围随宿主变化；不代表任何网页聊天均可接入"
+    ],
+    "recommendation": "借鉴 prepare→agent→commit 与渐进取回；正式直接复用前先澄清 LICENSE.txt 的许可标识。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:27.8019351Z",
+    "revision": "08e1ed4cdf4c0cb1fe5387e4a532ea588a8cbe46",
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/NevaMind-AI/memU/08e1ed4cdf4c0cb1fe5387e4a532ea588a8cbe46/README.md",
+      "text_sha256": "214ae0762a962f4540c1a3ff72e458ef612fd235ff9ede15f8d5cd27a17a6cea"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-14T08:30:50Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/NevaMind-AI/memU",
+      "https://raw.githubusercontent.com/NevaMind-AI/memU/08e1ed4cdf4c0cb1fe5387e4a532ea588a8cbe46/README.md",
+      "https://raw.githubusercontent.com/NevaMind-AI/memU/08e1ed4cdf4c0cb1fe5387e4a532ea588a8cbe46/LICENSE.txt",
+      "https://github.com/NevaMind-AI/dsh-personal-memory",
+      "https://api.github.com/repos/NevaMind-AI/memU"
+    ]
+  },
+  {
+    "id": "P15",
+    "name": "OpenViking",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/volcengine/OpenViking",
+    "docs": "https://docs.openviking.ai/en/concepts/01-architecture",
+    "license": "AGPL-3.0（当前根 LICENSE，未进一步推断 only/or-later）",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/volcengine/OpenViking/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "1bd87fa6d9a5c79daf0c2af042b6725c9773bf095cc3d1bdf3656e66d1c3e5b1",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "viking:// 虚拟文件系统统一 resources、memories、skills",
+      "L0摘要/L1概览/L2原文逐级加载；目录内检索与会话提交后后台记忆提取"
+    ],
+    "relevance": "直接对应“先读简介再读完整上下文”和可浏览记忆组织。",
+    "limitations": [
+      "当前根 LICENSE 为 AGPLv3，旧资料可能列出其他许可，采用时需按具体版本核对",
+      "提交会话后的后台提取不保证当前回合已经完成索引；虚拟路径本身不等于权限验证"
+    ],
+    "recommendation": "优先对照渐进加载/可浏览目录方案；需要闭源分发集成时先核对具体许可要求。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:26.2216652Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/volcengine/OpenViking/main/README.md",
+      "text_sha256": "123b7076dbebe3222ec7e06e9949fdedbbd517ca424bc2d865cdbbb5ceaee0c8"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-15T12:36:59Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/volcengine/OpenViking",
+      "https://docs.openviking.ai/en/concepts/01-architecture",
+      "https://raw.githubusercontent.com/volcengine/OpenViking/main/README.md",
+      "https://raw.githubusercontent.com/volcengine/OpenViking/main/LICENSE",
+      "https://api.github.com/repos/volcengine/OpenViking"
+    ]
+  },
+  {
+    "id": "P16",
+    "name": "Memento",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/Memento-Teams/Memento",
+    "docs": "https://github.com/Memento-Teams/Memento",
+    "license": "MIT",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/Memento-Teams/Memento/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "9bd5390b7c1aefeec541cf2190b762ee3982ab770eb4883a02b788f833de7036",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "planner/executor 与 Case Bank；复用成功及失败经验",
+      "非参数/参数化案例选择策略，MCP 工具执行；不更新主 LLM 权重"
+    ],
+    "relevance": "对应从多 agent 任务轨迹中复用方法和避坑经验。",
+    "limitations": [
+      "重点是任务经验而非用户事实与约束生命周期",
+      "完整执行环境及实验依赖较多；部分参数化案例选择需要额外训练/推理配置"
+    ],
+    "recommendation": "案例/技能层研究基线，首版借鉴 task→action→outcome 记录结构。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:27.5150999Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/Memento-Teams/Memento/main/README.md",
+      "text_sha256": "2b3497cb9e1fa32ccbb256f48069254d434725a25d18c9d46c0478d6b7c6b067"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2025-10-05T14:34:18Z",
+      "metadata_verified": true,
+      "notes": [
+        "旧组织地址重定向 Memento-Teams/Memento；最后推送 2025-10-05，研究实现按锁定版本复现。"
+      ]
+    },
+    "aliases": [
+      "Agent-on-the-Fly/Memento"
+    ],
+    "source_urls": [
+      "https://github.com/Memento-Teams/Memento",
+      "https://raw.githubusercontent.com/Memento-Teams/Memento/main/README.md",
+      "https://raw.githubusercontent.com/Memento-Teams/Memento/main/LICENSE",
+      "https://api.github.com/repos/Memento-Teams/Memento"
+    ]
+  },
+  {
+    "id": "P17",
+    "name": "claude-mem（当前 README 品牌为 Grok Mem）",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/thedotmack/claude-mem",
+    "docs": "https://docs.claude-mem.ai/",
+    "license": "Apache-2.0（当前根 LICENSE）；托管 observer/CMEM Pro 不由该文件授予服务端源码权利",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/thedotmack/claude-mem/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "宿主 hooks 或日志观察收集工作记录；渐进检索和上下文注入",
+      "本地 worker、SQLite/FTS5、Web Viewer 和观察记录引用；可选择托管 observer"
+    ],
+    "relevance": "适合可视化记忆、编码助手接入和渐进披露体验。",
+    "limitations": [
+      "宿主是否有 hooks 影响实时性；捕获记录并非隐含的内部思考状态",
+      "当前品牌、安装默认及许可已变化；root Apache-2.0 不自动覆盖托管 observer/CMEM Pro 服务"
+    ],
+    "recommendation": "UX 与接入基线；本地/托管模式明确区分，首版优先借鉴可见引用与预览→详情检索。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:26.4945705Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/thedotmack/claude-mem/main/README.md",
+      "text_sha256": "e945d7197ed8965e1c5cc0ed9eddbf74aedc1cf3dececf4fc435e39a5cee4044"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-13T09:42:20Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/thedotmack/claude-mem",
+      "https://docs.claude-mem.ai/",
+      "https://raw.githubusercontent.com/thedotmack/claude-mem/main/README.md",
+      "https://raw.githubusercontent.com/thedotmack/claude-mem/main/LICENSE",
+      "https://docs.claude-mem.ai/architecture/database",
+      "https://api.github.com/repos/thedotmack/claude-mem"
+    ]
+  },
+  {
+    "id": "P18",
+    "name": "Engram（Gentleman-Programming，agent 记忆）",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/Gentleman-Programming/engram",
+    "docs": "https://github.com/Gentleman-Programming/engram/blob/main/DOCS.md",
+    "license": "MIT",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/Gentleman-Programming/engram/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "09608597ddda4e5f9033ac407a0d401986d96376c47f6d46789ca38db672dc15",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "Go 单二进制、SQLite+FTS5，CLI/HTTP/MCP/TUI",
+      "稳定 topic_key 更新主题，按 search→timeline→完整 observation 渐进取回，保存 session handoff"
+    ],
+    "relevance": "非常适合做用户想要的本地、直观、低依赖 MVP 对照。",
+    "limitations": [
+      "不是 DeepSeek Engram 模型模块",
+      "保存质量依赖宿主按协议写入；全文搜索不能单独保证同义中文意图召回或复杂时态推理"
+    ],
+    "recommendation": "优先轻量可用性基线；借鉴稳定主题键、项目确认、检索预览与完整证据分离。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:27.3373109Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/Gentleman-Programming/engram/main/README.md",
+      "text_sha256": "7ee7bdc19916d1a23cb40d9549fd998ab5116cc9efcea6c91193d910973d73ca"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-15T09:31:09Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/Gentleman-Programming/engram",
+      "https://github.com/Gentleman-Programming/engram/blob/main/DOCS.md",
+      "https://raw.githubusercontent.com/Gentleman-Programming/engram/main/README.md",
+      "https://raw.githubusercontent.com/Gentleman-Programming/engram/main/LICENSE",
+      "https://api.github.com/repos/Gentleman-Programming/engram"
+    ]
+  },
+  {
+    "id": "P19",
+    "name": "LongMemory（原 CaviraOSS/OpenMemory）",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/CaviraOSS/LongMemory",
+    "docs": "https://github.com/CaviraOSS/LongMemory",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/CaviraOSS/LongMemory/4da4986d0069dbaa59d9209a84e2267749a67b3f/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "f34bece2de63bf21dfea3bf034231beda315c10631f2174b539225746719420c",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "本地 SQLite 持久化，不可变内容、来源和时态事实",
+      "可解释证据选择、token 上限、project governance，API/MCP/dashboard/VS Code 多入口"
+    ],
+    "relevance": "与用户当前构想在存储、来源、范围及可解释检索上高度重叠。",
+    "limitations": [
+      "旧 OpenMemory SDK/文档不能默认与现 LongMemory API 兼容",
+      "README 明示的治理能力需要故障注入/越权/撤销实测；Python 包只是 HTTP 客户端，主引擎在 TypeScript 服务"
+    ],
+    "recommendation": "优先治理类对照；检验其已满足哪些需求后，才决定自建哪些控制功能。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:25.6572699Z",
+    "revision": "4da4986d0069dbaa59d9209a84e2267749a67b3f",
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/CaviraOSS/LongMemory/4da4986d0069dbaa59d9209a84e2267749a67b3f/README.md",
+      "text_sha256": "6d96c8c2fbb9f148948c8fd56cc4d1ab9b988eb8932e8180ab7a774cf021b297"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-14T12:02:21Z",
+      "metadata_verified": true,
+      "notes": [
+        "原仓库重定向 LongMemory；已核对现版 README 和 Apache LICENSE。"
+      ]
+    },
+    "aliases": [
+      "CaviraOSS/OpenMemory"
+    ],
+    "source_urls": [
+      "https://github.com/CaviraOSS/LongMemory",
+      "https://raw.githubusercontent.com/CaviraOSS/LongMemory/4da4986d0069dbaa59d9209a84e2267749a67b3f/README.md",
+      "https://raw.githubusercontent.com/CaviraOSS/LongMemory/4da4986d0069dbaa59d9209a84e2267749a67b3f/LICENSE",
+      "https://api.github.com/repos/CaviraOSS/LongMemory"
+    ]
+  },
+  {
+    "id": "P20",
+    "name": "Supermemory",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/supermemoryai/supermemory",
+    "docs": "https://supermemory.ai/docs/self-hosting/overview",
+    "license": "MIT（已核实公开仓库代码）；本地引擎完整对应源码/发布件许可范围未完成核实",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/supermemoryai/supermemory/2415a5c796d62c7ea9d709bc9337a6e1b6f6d837/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "9ce388a89cce6a2dc109579d044f7f16e1397d8ee6fdb1f3bd3b980d365a07ae",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "官方文档提供本地二进制、用户 profile、时态事实与混合检索",
+      "公开仓库含 Web/MCP/集成代码；本地及平台具有 API 兼容入口"
+    ],
+    "relevance": "适合作为零配置体验、用户画像和统一检索 API 的产品基线。",
+    "limitations": [
+      "已核实公开仓库 MIT；本地完整引擎对应源码/发布件许可范围尚未闭环核实，不将官方 open source 宣传等价为已验证可从源码重建全部服务",
+      "本地单组织单 API key；连接器、组织权限及专有提取模型属平台/Enterprise，不能套用平台分数推断本地效果"
+    ],
+    "recommendation": "可以保留产品/API对照；在本地引擎源码与许可范围核清前，不作为“全部可审计开源”的唯一核心依赖。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:25.6392339Z",
+    "revision": "2415a5c796d62c7ea9d709bc9337a6e1b6f6d837",
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/supermemoryai/supermemory/2415a5c796d62c7ea9d709bc9337a6e1b6f6d837/README.md",
+      "text_sha256": "63504f912489c374f99c114aade36dd233549c526a43170d336d4148caaa4df3"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-14T18:02:22Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/supermemoryai/supermemory",
+      "https://supermemory.ai/docs/self-hosting/overview",
+      "https://raw.githubusercontent.com/supermemoryai/supermemory/2415a5c796d62c7ea9d709bc9337a6e1b6f6d837/README.md",
+      "https://raw.githubusercontent.com/supermemoryai/supermemory/2415a5c796d62c7ea9d709bc9337a6e1b6f6d837/LICENSE",
+      "https://supermemory.ai/docs/self-hosting/local-vs-enterprise",
+      "https://api.github.com/repos/supermemoryai/supermemory/git/trees/main?recursive=1",
+      "https://api.github.com/repos/supermemoryai/supermemory"
+    ]
+  },
+  {
+    "id": "P21",
+    "name": "OpenMemory（mem0ai 新独立仓库，会话迁移）",
+    "category": "框架和协议",
+    "repository": "https://github.com/mem0ai/openmemory",
+    "docs": "https://github.com/mem0ai/openmemory",
+    "license": "MIT",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/mem0ai/openmemory/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "a8636e4e0448215694411ba0a5f1ae5e532d433b095c0951c292ac61fed6da44",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "TUI/CLI 发现、预览、选择并导入导出编码助手会话",
+      "当前 Beta 涵盖 Claude Code、Codex、OpenCode"
+    ],
+    "relevance": "对跨宿主迁移会话和用户能看见正在迁移什么有用。",
+    "limitations": [
+      "这是会话迁移工具，不是旧 OpenMemory MCP 记忆服务",
+      "README 把实时 autosync、Skills/MCP/AGENTS.md 迁移列为 roadmap，不能当成已提供"
+    ],
+    "recommendation": "借鉴迁移预览与宿主会话适配；不承担记忆语义处理或实时跨 agent 一致性。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:28.298057Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/mem0ai/openmemory/main/README.md",
+      "text_sha256": "2907e250b047f8f66f74729993e2aff2d58b42874761fc6e253ef7d33a574ee2"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-07-29T09:40:39Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/mem0ai/openmemory",
+      "https://raw.githubusercontent.com/mem0ai/openmemory/main/README.md",
+      "https://raw.githubusercontent.com/mem0ai/openmemory/main/LICENSE",
+      "https://api.github.com/repos/mem0ai/openmemory"
+    ]
+  },
+  {
+    "id": "P22",
+    "name": "OpenMemory MCP（mem0 旧子目录，已 sunset）",
+    "category": "核心记忆系统（历史）",
+    "repository": "https://github.com/mem0ai/mem0/tree/553e2751126b240632967339723260fa30421615/openmemory",
+    "docs": "https://github.com/mem0ai/mem0/blob/553e2751126b240632967339723260fa30421615/openmemory/README.md",
+    "license": "Apache-2.0（对应历史提交根 LICENSE，子目录范围未做逐文件审计）",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/mem0ai/mem0/553e2751126b240632967339723260fa30421615/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "0bbcbe931c353293a2fafce08326181dfeea0e568c566afd4ce8337a70f5e219",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "历史版本提供本地记忆 API、MCP 和可视化 UI",
+      "README 提供不同 LLM/embedding 服务配置"
+    ],
+    "relevance": "能解释用户可能看到的 OpenMemory 旧教程，以及本地多客户端共享记忆设计。",
+    "limitations": [
+      "历史 README 明确 Sunsetting，建议改用 Mem0 self-hosted server",
+      "2026-07-29 从主仓库删除；旧 main/openmemory 安装路径失效，不应给用户作为当前快速开始"
+    ],
+    "recommendation": "只作历史参照；新部署使用现版 Mem0 自托管或其他候选。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文核对；归档元数据未核实；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:51:31.5302315Z",
+    "revision": "553e2751126b240632967339723260fa30421615",
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/mem0ai/mem0/553e2751126b240632967339723260fa30421615/openmemory/README.md",
+      "text_sha256": "cbef52d5e7514bd226ae210e424ed45fa9c2f5255ce09d563c9579e5e9dd4278"
+    },
+    "maintenance": {
+      "archived": null,
+      "disabled": null,
+      "pushed_at": null,
+      "metadata_verified": false,
+      "notes": [
+        "历史提交 README 已声明 sunset；2026-07-29 删除主分支 openmemory 子目录。"
+      ]
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/mem0ai/mem0/tree/553e2751126b240632967339723260fa30421615/openmemory",
+      "https://github.com/mem0ai/mem0/blob/553e2751126b240632967339723260fa30421615/openmemory/README.md",
+      "https://raw.githubusercontent.com/mem0ai/mem0/553e2751126b240632967339723260fa30421615/openmemory/README.md",
+      "https://raw.githubusercontent.com/mem0ai/mem0/553e2751126b240632967339723260fa30421615/LICENSE",
+      "https://github.com/mem0ai/mem0/commit/ea2ee0758635a9230bd60855c3fe339170f6cd18"
+    ]
+  },
+  {
+    "id": "P23",
+    "name": "Zep SDK / examples（区分托管 Zep 与 Graphiti）",
+    "category": "框架和协议",
+    "repository": "https://github.com/getzep/zep-python",
+    "docs": "https://help.getzep.com/sdks",
+    "license": "Apache-2.0（SDK/示例代码）；不覆盖 Zep Cloud 服务端",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/getzep/zep-python/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "公开 Python 客户端与集成入口，访问 Zep Cloud/历史 CE 接口",
+      "getzep/zep 现为示例、框架集成与工具集合"
+    ],
+    "relevance": "便于接入托管基线及理解 managed service 与开源引擎差别。",
+    "limitations": [
+      "SDK 开源不代表 Zep Cloud 后端开源",
+      "getzep/zep README 明示其不是产品服务源码；legacy Community Edition 已不再支持，SDK README 的旧 CE 指南需谨慎"
+    ],
+    "recommendation": "只作托管适配/评测入口；如要完全自托管的时序图引擎，评估 Graphiti。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:23.5814546Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/getzep/zep-python/main/README.md",
+      "text_sha256": "f4f7c039013d3f1a116a8753fab13c9783712b94267c830632f860ec42eb083c"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-11T15:35:28Z",
+      "metadata_verified": true,
+      "notes": [
+        "SDK 仓库未归档；Zep CE 的不再支持声明来自 getzep/zep 当前 README，不等于 SDK 仓库归档。"
+      ]
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/getzep/zep-python",
+      "https://help.getzep.com/sdks",
+      "https://raw.githubusercontent.com/getzep/zep-python/main/README.md",
+      "https://raw.githubusercontent.com/getzep/zep-python/main/LICENSE",
+      "https://github.com/getzep/zep",
+      "https://help.getzep.com/zep-vs-graphiti",
+      "https://api.github.com/repos/getzep/zep-python"
+    ]
+  },
+  {
+    "id": "P24",
+    "name": "LangGraph",
+    "category": "框架和协议",
+    "repository": "https://github.com/langchain-ai/langgraph",
+    "docs": "https://docs.langchain.com/oss/python/langgraph/overview",
+    "license": "MIT",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/langchain-ai/langgraph/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "d9bb52f2e3540d60ff50d8f0f5b6ba649b7fd346948c4c3d086c8afb120763c7",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "持久执行、checkpoint、暂停恢复和人工干预",
+      "区分 thread 工作状态与跨会话 store；支持长期运行/多步骤 agent"
+    ],
+    "relevance": "适合在模型容器故障后恢复流程，承载幂等写入与任务状态机。",
+    "limitations": [
+      "框架不会替用户定义事实权威、约束优先级、撤销规则",
+      "持久化必须配置后端；云部署/LangSmith 与开源库范围不同"
+    ],
+    "recommendation": "需要复杂 agent 工作流时采用；首版简单服务可不引入，用其持久执行思想设计恢复协议。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:24.1239508Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md",
+      "text_sha256": "3a13e257af1216962d53d72414a7f44ac1fc5cea34d994bdff60ea2a3b045933"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-14T19:45:22Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/langchain-ai/langgraph",
+      "https://docs.langchain.com/oss/python/langgraph/overview",
+      "https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md",
+      "https://raw.githubusercontent.com/langchain-ai/langgraph/main/LICENSE",
+      "https://docs.langchain.com/oss/python/langgraph/durable-execution",
+      "https://docs.langchain.com/oss/python/langgraph/memory",
+      "https://api.github.com/repos/langchain-ai/langgraph"
+    ]
+  },
+  {
+    "id": "P25",
+    "name": "LangMem",
+    "category": "框架和协议",
+    "repository": "https://github.com/langchain-ai/langmem",
+    "docs": "https://langchain-ai.github.io/langmem/",
+    "license": "MIT",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/langchain-ai/langmem/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "98af1351ea856e008c835bc89a312905960a318072f950732bf346c741027c7d",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "结构化记忆提取、管理和搜索工具",
+      "热路径/后台整合及提示更新原语；可接任意存储，也可接 LangGraph Store"
+    ],
+    "relevance": "适合作为可插拔抽取器/记忆工作流组件而非重造所有基础能力。",
+    "limitations": [
+      "README 的 InMemoryStore 示例重启会丢失；持久服务应选数据库 Store",
+      "提示自动优化和语义合并不应直接修改已批准项目规则"
+    ],
+    "recommendation": "优先抽取管线基线；将输出作为候选变更，由独立验证器提交。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:24.6723689Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/langchain-ai/langmem/main/README.md",
+      "text_sha256": "e1edd000d263bfea842c34273add82421340c2caf2d7b87edd285daf02156ca3"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-09T06:44:43Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/langchain-ai/langmem",
+      "https://langchain-ai.github.io/langmem/",
+      "https://raw.githubusercontent.com/langchain-ai/langmem/main/README.md",
+      "https://raw.githubusercontent.com/langchain-ai/langmem/main/LICENSE",
+      "https://api.github.com/repos/langchain-ai/langmem"
+    ]
+  },
+  {
+    "id": "P26",
+    "name": "MCP Knowledge Graph Memory 参考服务",
+    "category": "框架和协议",
+    "repository": "https://github.com/modelcontextprotocol/servers",
+    "docs": "https://github.com/modelcontextprotocol/servers/blob/main/src/memory/README.md",
+    "license": "Apache-2.0 / MIT 按贡献来源过渡；文档 CC-BY-4.0（根 LICENSE 明示）",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "0382b0057770ca05e9c350a50aa3b1c1fea84da0bc81d723bf00b9aa841be58a",
+      "scope_note": "新代码/规范及已同意重许可的贡献为 Apache-2.0；未同意重许可的原 MIT 贡献仍为 MIT；不能粗写全仓库纯MIT或纯Apache。"
+    },
+    "capabilities": [
+      "以实体、关系、原子 observations 保存本地知识图谱",
+      "提供创建、删除、search_nodes、open_nodes 与可读资源，接入 MCP 客户端"
+    ],
+    "relevance": "是最小可互操作外部记忆工具面和基本 CRUD 基线。",
+    "limitations": [
+      "参考实现不是完整语义记忆平台；未验证服务器端租户权限/时态约束策略",
+      "MCP 只规定工具通信，不提供全局记忆真实性与一致性；当前 LICENSE 处于过渡"
+    ],
+    "recommendation": "采用 MCP 作为接入协议，参考原子 observation 和工具 schema；不直接把参考服务器当生产治理层。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:51:31.7845179Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/src/memory/README.md",
+      "text_sha256": "57c75e83ba1d5095d56f91d7b37fa3538e5485ac31fea0b8b72d434642dcc08b"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-03T01:42:26Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/modelcontextprotocol/servers",
+      "https://github.com/modelcontextprotocol/servers/blob/main/src/memory/README.md",
+      "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/src/memory/README.md",
+      "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/LICENSE",
+      "https://api.github.com/repos/modelcontextprotocol/servers"
+    ]
+  },
+  {
+    "id": "P27",
+    "name": "LlamaIndex OSS",
+    "category": "框架和协议",
+    "repository": "https://github.com/run-llama/llama_index",
+    "docs": "https://developers.llamaindex.ai/python/framework/",
+    "license": "MIT",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/run-llama/llama_index/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "24f40b5190fdacabc24ddbb5f76364d15e4f030925220ea300d8a2dd4993c8cb",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "文档摄取、分块、索引、检索与 agent 编排组件",
+      "core 与独立集成包可组合模型、embedding 和向量存储"
+    ],
+    "relevance": "适合处理文档格式、检索流程和 parent/child 内容组织。",
+    "limitations": [
+      "OSS 框架与 LlamaParse/LlamaCloud 付费服务不同",
+      "README 明示公司重心转向文档解析；开源框架仍提供，不应误写成已归档"
+    ],
+    "recommendation": "按需采用文档接入/检索组件；用户规则数据模型和事务控制自行维护。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:27.8956281Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/run-llama/llama_index/main/README.md",
+      "text_sha256": "5d4158f19bf7eb1f11c5d50e14f60dccec6f4467b196f0104ab9ad02038c9b1d"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-15T01:48:43Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/run-llama/llama_index",
+      "https://developers.llamaindex.ai/python/framework/",
+      "https://raw.githubusercontent.com/run-llama/llama_index/main/README.md",
+      "https://raw.githubusercontent.com/run-llama/llama_index/main/LICENSE",
+      "https://api.github.com/repos/run-llama/llama_index"
+    ]
+  },
+  {
+    "id": "P28",
+    "name": "Microsoft GraphRAG",
+    "category": "框架和协议",
+    "repository": "https://github.com/microsoft/graphrag",
+    "docs": "https://microsoft.github.io/graphrag",
+    "license": "MIT",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/microsoft/graphrag/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "从语料提取图结构、组织社区和相关上下文用于问答",
+      "提供图驱动语料检索/摘要的研究管线"
+    ],
+    "relevance": "适用于跨文档全局主题和关系问答，对普通对话规则只属中等相关。",
+    "limitations": [
+      "当前 README 明确 maintenance mode，不再接受新功能PR，仍做适当修复/依赖更新",
+      "官方明确索引可能昂贵，且为研究演示而非正式支持产品；不是实时约束服务"
+    ],
+    "recommendation": "保留全局知识问答研究基线；首版不作为核心在线记忆引擎。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:27.0610307Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/microsoft/graphrag/main/README.md",
+      "text_sha256": "36df9326f1e83343fd46373a2a059093590e4c2ad2256d3ed5de5c5e6e492709"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-14T07:35:41Z",
+      "metadata_verified": true,
+      "notes": [
+        "GitHub 未归档，但 README 明示 maintenance mode、无新功能；不能仅依据近期推送称积极扩展。"
+      ]
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/microsoft/graphrag",
+      "https://microsoft.github.io/graphrag",
+      "https://raw.githubusercontent.com/microsoft/graphrag/main/README.md",
+      "https://raw.githubusercontent.com/microsoft/graphrag/main/LICENSE",
+      "https://api.github.com/repos/microsoft/graphrag"
+    ]
+  },
+  {
+    "id": "P29",
+    "name": "SQLite（含 FTS5/关系元数据基座）",
+    "category": "检索与存储基座",
+    "repository": "https://sqlite.org/src",
+    "docs": "https://sqlite.org/docs.html",
+    "license": "Public domain（交付的 SQLite 代码与文档；部分构建脚本另有许可证）",
+    "license_evidence": {
+      "url": "https://sqlite.org/copyright.html",
+      "read_original_text": true,
+      "text_sha256": "44ca9f793055c8e32fc65f65a4f5bcf813a33f5bdaaa084067dd617a4ed3cc70",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "本地单文件事务型数据库，适合事件、版本、标签和当前有效状态",
+      "可用全文索引做关键词召回，服务层把多个查询组合成小型上下文包"
+    ],
+    "relevance": "最适合本地易用首版的权威状态存储。",
+    "limitations": [
+      "同一数据库同时只有一个写者；不应让多容器直接在网络文件系统共写数据库文件",
+      "数据库持久化不等于向量/文件投影同步；备份需使用一致性备份方法并正确处理 WAL"
+    ],
+    "recommendation": "首版采用：单记忆服务持有SQLite写入口；规模/写并发增长后迁移PostgreSQL。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文核对；归档元数据未核实；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:54:46.9263249Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://sqlite.org/fts5.html",
+      "text_sha256": "aa965064eb7d3f5c2040edfba900e7d96ce88412fdb672176f4b3dcc8d89089c"
+    },
+    "maintenance": {
+      "archived": null,
+      "disabled": null,
+      "pushed_at": null,
+      "metadata_verified": false,
+      "notes": [
+        "官方仍维护；本条未取 Fossil 提交 SHA，不据此提供版本支持承诺。"
+      ]
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://sqlite.org/src",
+      "https://sqlite.org/docs.html",
+      "https://sqlite.org/copyright.html",
+      "https://sqlite.org/whentouse.html",
+      "https://sqlite.org/wal.html",
+      "https://sqlite.org/fts5.html"
+    ]
+  },
+  {
+    "id": "P30",
+    "name": "PostgreSQL + pgvector",
+    "category": "检索与存储基座",
+    "repository": "https://github.com/pgvector/pgvector",
+    "docs": "https://github.com/pgvector/pgvector",
+    "license": "PostgreSQL License（pgvector 根 LICENSE 原文；GitHub 自动识别 NOASSERTION）",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/pgvector/pgvector/master/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "6bba9ebeb73e27477463b05e5ef1bf303bccbddb3db9bbc95905d351604d6a87",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "在 PostgreSQL 行中存向量，支持精确/近似邻近查询",
+      "可与SQL过滤、JOIN、事务、备份和数据库权限结合"
+    ],
+    "relevance": "可把内容、状态、标签和embedding放在同一事务域，降低多库指针失配复杂度。",
+    "limitations": [
+      "近似索引有召回/速度取舍，过滤后的候选量仍需测试",
+      "不负责语义切块或规则冲突；选 PostgreSQL 不会自动产生正确行级权限策略"
+    ],
+    "recommendation": "团队/多写者阶段优先采用；把向量字段视作可重建投影。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:27.3657333Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/pgvector/pgvector/master/README.md",
+      "text_sha256": "54cb3a5f4344308476cb2378469ac77d10fbff415d1b5be66608bb386ce8f527"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-10T13:49:14Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/pgvector/pgvector",
+      "https://raw.githubusercontent.com/pgvector/pgvector/master/README.md",
+      "https://raw.githubusercontent.com/pgvector/pgvector/master/LICENSE",
+      "https://api.github.com/repos/pgvector/pgvector"
+    ]
+  },
+  {
+    "id": "P31",
+    "name": "Qdrant",
+    "category": "检索与存储基座",
+    "repository": "https://github.com/qdrant/qdrant",
+    "docs": "https://qdrant.tech/documentation/",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/qdrant/qdrant/master/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "210b508429e913d9de5301f90508bc2cbf5b2281de5b45e607c04d58f0f3bd8f",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "向量 points 与 metadata payload，过滤检索和 API",
+      "可自托管服务；另有 Cloud 与 Edge 形态"
+    ],
+    "relevance": "适用于需要独立向量服务、标签预过滤和较大规模召回。",
+    "limitations": [
+      "根仓库许可不自动覆盖所有云/Edge商业形态",
+      "SQL权威状态与外部向量库双写时，需 outbox、版本过滤、删除确认和重建机制"
+    ],
+    "recommendation": "当单库向量方案不够时选用；仅存检索投影，不以向量库决定有效约束。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:27.9735844Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/qdrant/qdrant/master/README.md",
+      "text_sha256": "f1455d12252bf40235ad0128d8e98b2cd6d42583e441ac832b01f4daf08df2e4"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-15T12:03:10Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/qdrant/qdrant",
+      "https://qdrant.tech/documentation/",
+      "https://raw.githubusercontent.com/qdrant/qdrant/master/README.md",
+      "https://raw.githubusercontent.com/qdrant/qdrant/master/LICENSE",
+      "https://api.github.com/repos/qdrant/qdrant"
+    ]
+  },
+  {
+    "id": "P32",
+    "name": "Chroma",
+    "category": "检索与存储基座",
+    "repository": "https://github.com/chroma-core/chroma",
+    "docs": "https://docs.trychroma.com",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/chroma-core/chroma/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "文档、metadata 和 embedding 的 collection API",
+      "提供增删改、相似检索、metadata/文档内容过滤及本地/服务形态"
+    ],
+    "relevance": "接入容易，适合向量召回原型与 A-MEM 类基线。",
+    "limitations": [
+      "README 最小 Client 示例是内存形态，持久化需配置",
+      "Cloud 的无服务器混合检索表述不直接证明本地版本同功能；没有用户约束治理语义"
+    ],
+    "recommendation": "作为轻量向量适配/基线；生产持久、访问控制与索引删除单独验证。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:27.6754634Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/chroma-core/chroma/main/README.md",
+      "text_sha256": "a71f91e5fadfb03772be1f76b0bab7116eea1bfc6cc9bc4fb190ce95dd275264"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-15T07:28:54Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/chroma-core/chroma",
+      "https://docs.trychroma.com",
+      "https://raw.githubusercontent.com/chroma-core/chroma/main/README.md",
+      "https://raw.githubusercontent.com/chroma-core/chroma/main/LICENSE",
+      "https://api.github.com/repos/chroma-core/chroma"
+    ]
+  },
+  {
+    "id": "P33",
+    "name": "LanceDB",
+    "category": "检索与存储基座",
+    "repository": "https://github.com/lancedb/lancedb",
+    "docs": "https://docs.lancedb.com",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/lancedb/lancedb/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "基于 Lance 列式格式的本地/云向量与多模态存储",
+      "支持向量、全文、SQL和metadata过滤，数据版本管理"
+    ],
+    "relevance": "适合本地大文件/多模态及可重建检索索引，与 EverOS 选型相关。",
+    "limitations": [
+      "表版本管理并不自动等价于用户规则版本/撤销语义",
+      "外部SQL权威记录与LanceDB投影一致性需要应用协议；Cloud/Enterprise能力需分开"
+    ],
+    "recommendation": "本地向量后端候选，先与 SQLite FTS 和 pgvector 对照成本及删除恢复行为。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:28.0517204Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/lancedb/lancedb/main/README.md",
+      "text_sha256": "c4dd477c2183dc83c57a74f75915397dadd5993e4ce2f55c237d34188a0ec1ca"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-09-15T12:40:48Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/lancedb/lancedb",
+      "https://docs.lancedb.com",
+      "https://raw.githubusercontent.com/lancedb/lancedb/main/README.md",
+      "https://raw.githubusercontent.com/lancedb/lancedb/main/LICENSE",
+      "https://api.github.com/repos/lancedb/lancedb"
+    ]
+  },
+  {
+    "id": "P34",
+    "name": "Engram（DeepSeek，模型条件记忆）",
+    "category": "边界澄清：模型架构",
+    "repository": "https://github.com/deepseek-ai/Engram",
+    "docs": "https://github.com/deepseek-ai/Engram",
+    "license": "Apache-2.0（当前仓库 LICENSE；演示代码，未核实完整模型权重发布）",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/deepseek-ai/Engram/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "9debfe045c2a2755a52d0ae1087605d15770fe6636798c09efd93c1dc732ef28",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "通过静态 N-gram 记忆查表与动态隐状态融合，为模型提供条件记忆",
+      "官方仓库提供核心数据流演示；与 MoE 条件计算作对照"
+    ],
+    "relevance": "只用于澄清用户 MoE 类比，与外部用户可编辑数据库不是同一层。",
+    "limitations": [
+      "官方明确演示代码模拟 Attention/MoE/mHC 等标准组件，不能当完整可部署模型",
+      "不提供项目级 CRUD、标签权限、来源撤销或跨任务事件存储"
+    ],
+    "recommendation": "不作为此项目依赖或记忆服务基线；在术语章节区分参数/架构内记忆与外部状态服务。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文、GitHub 元数据核对；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:28.6066444Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/deepseek-ai/Engram/main/README.md",
+      "text_sha256": "add722a04bae899360017a6e12a8fac3e93135857e20325e464a2b586dbefda8"
+    },
+    "maintenance": {
+      "archived": false,
+      "disabled": false,
+      "pushed_at": "2026-01-14T01:13:02Z",
+      "metadata_verified": true,
+      "notes": []
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/deepseek-ai/Engram",
+      "https://raw.githubusercontent.com/deepseek-ai/Engram/main/README.md",
+      "https://raw.githubusercontent.com/deepseek-ai/Engram/main/LICENSE",
+      "https://api.github.com/repos/deepseek-ai/Engram"
+    ]
+  },
+  {
+    "id": "P35",
+    "name": "MELT（Memory Evaluation for Lifecycle Testing）",
+    "category": "生命周期评测",
+    "repository": "https://github.com/shisa-ai/MELT",
+    "docs": "https://github.com/shisa-ai/MELT",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/shisa-ai/MELT/47c819f417b0d81a57f781ec54d8a5cf84e0c833/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "243571c16bed298e6fb2aa016d70f2058b820d7c307ec6d271b6555a03564430",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "评测写入、纠正、矛盾、时态、项目隔离、来源、衰减、撤销和拒答",
+      "SUT 适配协议；冻结 suite/scorer/比较键，支持 checkpoint 和严格报告元数据"
+    ],
+    "relevance": "直接覆盖用户真正关心的记忆生命周期，优先于只测问答回忆率。",
+    "limitations": [
+      "官方称 early release，语料及适配器仍在发展",
+      "不同 suite/scorer/比较键不可混作同榜；能力不支持应标 not_supported，不应由适配器代做后虚报"
+    ],
+    "recommendation": "作为首要生命周期评测框架，增加本产品特有的并发编辑、容器崩溃和撤销传播测试。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文核对；归档元数据未核实；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:29.6198169Z",
+    "revision": "47c819f417b0d81a57f781ec54d8a5cf84e0c833",
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/shisa-ai/MELT/47c819f417b0d81a57f781ec54d8a5cf84e0c833/README.md",
+      "text_sha256": "49ae8cf9399c7ec713897d2e68c558a9e04f82f7e22804287e448f3fc73d61a0"
+    },
+    "maintenance": {
+      "archived": null,
+      "disabled": null,
+      "pushed_at": null,
+      "metadata_verified": false,
+      "notes": [
+        "官方页面未见归档提示；GitHub API 配额耗尽，未核对机器可读归档字段/最后推送日期"
+      ]
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/shisa-ai/MELT",
+      "https://raw.githubusercontent.com/shisa-ai/MELT/47c819f417b0d81a57f781ec54d8a5cf84e0c833/README.md",
+      "https://raw.githubusercontent.com/shisa-ai/MELT/47c819f417b0d81a57f781ec54d8a5cf84e0c833/LICENSE",
+      "https://github.com/shisa-ai/MELT/blob/main/docs/adapters.md"
+    ]
+  },
+  {
+    "id": "P36",
+    "name": "MemoryStackBench",
+    "category": "生命周期评测",
+    "repository": "https://github.com/aetna000/MemoryStackBench",
+    "docs": "https://github.com/aetna000/MemoryStackBench",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/aetna000/MemoryStackBench/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "plant→interfere→probe 多会话场景与统一 adapter",
+      "记录转录、记忆快照、检索证据、删除行为和独立可审计性矩阵"
+    ],
+    "relevance": "可检查记忆污染、删除残留、原始来源和适配器对结果的影响。",
+    "limitations": [
+      "当前 seven_sins_v0_1 为少量场景/断言，不能把通过率推广为一般安全保证",
+      "官方明确部分分数来自带显式写入/更新/删除策略的 store harness，不是各产品所有自动抽取路径"
+    ],
+    "recommendation": "作为第二生命周期/审计评测；同时报告原生系统与加控制层后的结果，透明记录适配器代做哪些工作。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文核对；归档元数据未核实；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:28.3967133Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/aetna000/MemoryStackBench/main/README.md",
+      "text_sha256": "c0a1061fe2c3f8de2dd87d201972d5226babb8f0038c1c1cfe4fc237d4163169"
+    },
+    "maintenance": {
+      "archived": null,
+      "disabled": null,
+      "pushed_at": null,
+      "metadata_verified": false,
+      "notes": [
+        "官方页面未见归档提示；GitHub API 配额耗尽，未核对机器可读归档字段/最后推送日期"
+      ]
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/aetna000/MemoryStackBench",
+      "https://raw.githubusercontent.com/aetna000/MemoryStackBench/main/README.md",
+      "https://raw.githubusercontent.com/aetna000/MemoryStackBench/main/LICENSE"
+    ]
+  },
+  {
+    "id": "P37",
+    "name": "Redis Agent Memory Server（V0 研究实现）",
+    "category": "核心记忆系统（历史/研究）",
+    "repository": "https://github.com/redis/agent-memory-server",
+    "docs": "https://github.com/redis/agent-memory-server/tree/main/V0",
+    "license": "Apache-2.0（本参考实现）；Redis 数据库版本/托管 Iris 的许可和服务条款另核",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/redis/agent-memory-server/main/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "51a26a5dd6cbd17c8887485753b9af0cc7d9c02917d0b49f15990fce7a548295",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "V0 提供 REST/MCP、working/long-term memory 和可配置提取策略",
+      "Redis 支持语义检索；现产品 Iris 提供托管记忆路径"
+    ],
+    "relevance": "适合作为短期状态、后台记忆晋升与 TTL 策略的参考。",
+    "limitations": [
+      "当前 README 明示 V0 是研究基础而非当前受支持生产路径",
+      "仓库 Apache-2.0 不等于依赖 Redis 各版本或托管 Iris 许可；TTL 不能直接抹去有效硬约束"
+    ],
+    "recommendation": "只列研究基线或已有Redis团队的对照；本项目首版避免新增不必要服务依赖。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文核对；归档元数据未核实；未安装、未运行、未完成源码审计",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T12:46:28.4884815Z",
+    "revision": null,
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/redis/agent-memory-server/main/README.md",
+      "text_sha256": "b70a44408341066f8f5977463e514a77a29320a1b1d4dc7165eb119ea1d08da2"
+    },
+    "maintenance": {
+      "archived": null,
+      "disabled": null,
+      "pushed_at": null,
+      "metadata_verified": false,
+      "notes": [
+        "当前主README将受支持路径指向托管Iris，原开源实现移至V0；未据此推断整个仓库归档。",
+        "官方页面未见归档提示；GitHub API 配额耗尽，未核对机器可读归档字段/最后推送日期"
+      ]
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/redis/agent-memory-server",
+      "https://github.com/redis/agent-memory-server/tree/main/V0",
+      "https://raw.githubusercontent.com/redis/agent-memory-server/main/README.md",
+      "https://raw.githubusercontent.com/redis/agent-memory-server/main/LICENSE"
+    ]
+  },
+  {
+    "id": "P38",
+    "name": "ReMe（AgentScope）",
+    "category": "核心记忆系统",
+    "repository": "https://github.com/agentscope-ai/ReMe",
+    "docs": "https://reme.agentscope.io",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/agentscope-ai/ReMe/16269c9a76a094c8b58cb0523ed73504e33fe79f/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "cc54d679aaced751c096f120b666355c106d9394d28f93f6df353973f6cd7dbe",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "Markdown、frontmatter、wikilink 为可编辑长期源；session/resource→daily→digest 分层，索引可重建",
+      "BM25、可选向量与链接扩展；独立 CLI/HTTP/MCP/Python 服务及 DSH/OpenClaw 等宿主插件"
+    ],
+    "relevance": "与用户的外置、可编辑、跨 agent 共享和后台整合构想高度相关，也贴近当前 DSH 工作站。",
+    "limitations": [
+      "默认关闭 embeddings，基础文件/BM25/链接功能不需要 LLM；自动抽取、Auto Dream 等需要模型配置，不能混算成本",
+      "reindex 从已摄取 chunks 重建索引，不重新扫描文件；文件 watcher、异步抽取和派生 digest 的删除一致性仍需故障实测",
+      "DSH 插件默认每 5 个完成回合异步批量提交，rootAgentsOnly=true，关闭仅有限 drain；聊天完成不等于记忆已持久化，不能据此承诺逐事件防丢失"
+    ],
+    "recommendation": "加入首轮直接基线，优先检查 DSH 接入、手工编辑同步和 auto_memory/auto_dream 的来源与撤销语义。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文核对；未安装、未运行、未完成源码审计；机器可读归档元数据未核实",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T13:03:36.3755871Z",
+    "revision": "16269c9a76a094c8b58cb0523ed73504e33fe79f",
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/agentscope-ai/ReMe/16269c9a76a094c8b58cb0523ed73504e33fe79f/README.md",
+      "text_sha256": "ea3640528ff21717f25e4a40e1d4b18efc42e04ce62ad7cb097c550084fa2087"
+    },
+    "maintenance": {
+      "archived": null,
+      "disabled": null,
+      "pushed_at": null,
+      "metadata_verified": false,
+      "notes": [
+        "已取得当前远程 HEAD；GitHub API 配额限制，未核对机器可读归档字段与最后推送日期。"
+      ]
+    },
+    "aliases": [
+      "MemoryScope（历史分支）"
+    ],
+    "source_urls": [
+      "https://github.com/agentscope-ai/ReMe",
+      "https://reme.agentscope.io",
+      "https://raw.githubusercontent.com/agentscope-ai/ReMe/16269c9a76a094c8b58cb0523ed73504e33fe79f/README.md",
+      "https://raw.githubusercontent.com/agentscope-ai/ReMe/16269c9a76a094c8b58cb0523ed73504e33fe79f/LICENSE",
+      "https://raw.githubusercontent.com/agentscope-ai/ReMe/16269c9a76a094c8b58cb0523ed73504e33fe79f/docs/en/memory_search.md",
+      "https://raw.githubusercontent.com/agentscope-ai/ReMe/16269c9a76a094c8b58cb0523ed73504e33fe79f/integrations/dsh/README.md"
+    ]
+  },
+  {
+    "id": "P39",
+    "name": "Memvid（v2 单文件记忆）",
+    "category": "检索与存储基座",
+    "repository": "https://github.com/memvid/memvid",
+    "docs": "https://docs.memvid.com",
+    "license": "Apache-2.0",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/memvid/memvid/e6bd9f7b9c38cd8d5370fa0fc936ac1dcd751813/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "fd64d7380c9889373ec5e3d99ee0e154c8f1707c036054090dc2437eb765cb98",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "将内容、metadata、全文/向量/时间索引组织在 .mv2 文件中；immutable Smart Frames 与内嵌 WAL",
+      "Rust core、CLI、Python/Node SDK；可选本地 ONNX embedding、BM25、多模态及历史状态查询"
+    ],
+    "relevance": "可移植、断网使用与崩溃恢复的存储对照，也适合研究可携带的记忆快照。",
+    "limitations": [
+      "v1 的 QR/视频存储路线已弃用，不能以旧宣传描述 v2；崩溃安全和历史回溯只是本次文档观察",
+      "单文件及 append-only 不自动保证多写者、权限或派生内容彻底删除；README 性能及准确率宣称未复现"
+    ],
+    "recommendation": "作为便携存储对照；首版不替换事务权威层，先验证提交恢复、增删改及并发访问。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文核对；未安装、未运行、未完成源码审计；机器可读归档元数据未核实",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T13:03:36.3755913Z",
+    "revision": "e6bd9f7b9c38cd8d5370fa0fc936ac1dcd751813",
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/memvid/memvid/e6bd9f7b9c38cd8d5370fa0fc936ac1dcd751813/README.md",
+      "text_sha256": "3a2f6a0fea87ed03b4b5a21de90a166ed005627c897a26807c33cd2fd854ce77"
+    },
+    "maintenance": {
+      "archived": null,
+      "disabled": null,
+      "pushed_at": null,
+      "metadata_verified": false,
+      "notes": [
+        "已取得当前远程 HEAD；GitHub API 配额限制，未核对机器可读归档字段与最后推送日期。"
+      ]
+    },
+    "aliases": [
+      "Memvid v1（已弃用的 QR 方案）"
+    ],
+    "source_urls": [
+      "https://github.com/memvid/memvid",
+      "https://docs.memvid.com",
+      "https://raw.githubusercontent.com/memvid/memvid/e6bd9f7b9c38cd8d5370fa0fc936ac1dcd751813/README.md",
+      "https://raw.githubusercontent.com/memvid/memvid/e6bd9f7b9c38cd8d5370fa0fc936ac1dcd751813/LICENSE",
+      "https://github.com/memvid/memvid/blob/e6bd9f7b9c38cd8d5370fa0fc936ac1dcd751813/MV2_SPEC.md"
+    ]
+  },
+  {
+    "id": "P40",
+    "name": "QMD（Query Markup Documents）",
+    "category": "检索与存储基座",
+    "repository": "https://github.com/tobi/qmd",
+    "docs": "https://github.com/tobi/qmd#sdk--library-usage",
+    "license": "MIT（根 LICENSE；另有第三方 notices）",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/tobi/qmd/04e4dbd8245c527a88f1a8f0bda547aef9ca81fb/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "73571b25326281d369087f469842c02444fe39faaecebda4d82ed21ff3a1c29d",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "本地 Markdown/代码集合搜索，BM25+向量+查询扩展+RRF+本地 LLM 重排",
+      "SQLite 索引、上下文目录、metadata 过滤、CLI/SDK/MCP；按结果预览到指定行原文渐进取回"
+    ],
+    "relevance": "直接检验“标签筛选+混合检索+少量原文”是否足够，能作为较小的本地检索组件。",
+    "limitations": [
+      "collection/metadata 过滤不等于访问控制；README 明确 HTTP 端点没有身份认证，远程使用需独立控制",
+      "索引 update 与 embedding 分步；本地模型仍有下载/内存/推理成本，中文意图与时间约束正确性未测"
+    ],
+    "recommendation": "加入轻量检索基线；借鉴上下文目录和 preview→get，权限、规则生效和撤销由外部服务负责。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文核对；未安装、未运行、未完成源码审计；机器可读归档元数据未核实",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T13:03:06.8671274Z",
+    "revision": "04e4dbd8245c527a88f1a8f0bda547aef9ca81fb",
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/tobi/qmd/04e4dbd8245c527a88f1a8f0bda547aef9ca81fb/README.md",
+      "text_sha256": "c594e29266562db197f8dff4f7cdebc56df08ef4ba8e46bb3130f75457dbe39b"
+    },
+    "maintenance": {
+      "archived": null,
+      "disabled": null,
+      "pushed_at": null,
+      "metadata_verified": false,
+      "notes": [
+        "已取得当前远程 HEAD；GitHub API 配额限制，未核对机器可读归档字段与最后推送日期。"
+      ]
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/tobi/qmd",
+      "https://github.com/tobi/qmd#sdk--library-usage",
+      "https://raw.githubusercontent.com/tobi/qmd/04e4dbd8245c527a88f1a8f0bda547aef9ca81fb/README.md",
+      "https://raw.githubusercontent.com/tobi/qmd/04e4dbd8245c527a88f1a8f0bda547aef9ca81fb/LICENSE"
+    ]
+  },
+  {
+    "id": "P41",
+    "name": "OpenClaw memory（harness 机制参照）",
+    "category": "框架和协议",
+    "repository": "https://github.com/openclaw/openclaw",
+    "docs": "https://docs.openclaw.ai/concepts/memory",
+    "license": "MIT（根 LICENSE；另有第三方 notices）",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/openclaw/openclaw/e00500a654295dac85d6a461f9e46c67e6bf5197/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "73571b25326281d369087f469842c02444fe39faaecebda4d82ed21ff3a1c29d",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "USER.md/MEMORY.md/每日笔记分层；默认 SQLite 混合检索，压缩前 flush、dreaming、可插拔 memory engine",
+      "官方来源/删除机制记录 session lineage、admission、forget 与派生追踪，清理索引及缓存并在发布前重查来源"
+    ],
+    "relevance": "作为完整宿主如何捕获、注入、压缩、回顾、删除记忆的现实对照；不是独立通用数据库产品。",
+    "limitations": [
+      "memory 文档明确记忆能保留许可上下文但不会强制执行政策；真实控制来自宿主工具权限等机制",
+      "forget 不覆盖原始转录、无来源旧笔记、自由手改与外部副本；跨 agent/备份删除和延迟写入处理必须依各自边界验证"
+    ],
+    "recommendation": "用其 memory-provenance、action-sensitive memory 和宿主生命周期做设计及测试对照，不为记忆需求整体替换当前宿主。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文核对；未安装、未运行、未完成源码审计；机器可读归档元数据未核实",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T13:03:37.2036531Z",
+    "revision": "e00500a654295dac85d6a461f9e46c67e6bf5197",
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/openclaw/openclaw/e00500a654295dac85d6a461f9e46c67e6bf5197/README.md",
+      "text_sha256": "c594e29266562db197f8dff4f7cdebc56df08ef4ba8e46bb3130f75457dbe39b"
+    },
+    "maintenance": {
+      "archived": null,
+      "disabled": null,
+      "pushed_at": null,
+      "metadata_verified": false,
+      "notes": [
+        "已取得当前远程 HEAD；GitHub API 配额限制，未核对机器可读归档字段与最后推送日期。"
+      ]
+    },
+    "aliases": [],
+    "source_urls": [
+      "https://github.com/openclaw/openclaw",
+      "https://docs.openclaw.ai/concepts/memory",
+      "https://raw.githubusercontent.com/openclaw/openclaw/e00500a654295dac85d6a461f9e46c67e6bf5197/README.md",
+      "https://raw.githubusercontent.com/openclaw/openclaw/e00500a654295dac85d6a461f9e46c67e6bf5197/LICENSE",
+      "https://raw.githubusercontent.com/openclaw/openclaw/e00500a654295dac85d6a461f9e46c67e6bf5197/docs/concepts/memory.md",
+      "https://raw.githubusercontent.com/openclaw/openclaw/e00500a654295dac85d6a461f9e46c67e6bf5197/docs/concepts/memory-provenance.md"
+    ]
+  },
+  {
+    "id": "P42",
+    "name": "LightRAG（HKUDS）",
+    "category": "框架和协议",
+    "repository": "https://github.com/HKUDS/LightRAG",
+    "docs": "https://github.com/HKUDS/LightRAG",
+    "license": "MIT",
+    "license_evidence": {
+      "url": "https://raw.githubusercontent.com/HKUDS/LightRAG/0edad35089f42f40ed72000f65592512fc7ab27a/LICENSE",
+      "read_original_text": true,
+      "text_sha256": "0c16924564059e493c86854574660a47ed1dcc2a476ba7b5f949d3f2f73a1984",
+      "scope_note": "仅核对所链接仓库/版本的根许可文本；不等于逐文件、第三方依赖、模型权重和托管服务许可审计。"
+    },
+    "capabilities": [
+      "图结构与向量结合的文档检索，实体/关系抽取、引用、检索上下文返回和 WebUI/API",
+      "多种文本分块、可替换存储后端、多模态接入；文档删除可触发知识图谱重建"
+    ],
+    "relevance": "文档/代码知识层、语义分块、图检索和删除后索引修复的组件及实验基线。",
+    "limitations": [
+      "文档知识 RAG 不等于用户约束或 agent 工作状态；删除引起图重建不等于已验证跨缓存撤销",
+      "多模型角色与存储后端增加部署/提取成本；未经配置的默认网络服务不提供本项目所需租户策略"
+    ],
+    "recommendation": "按需采用文档接入或图检索组件；在线规则服务仍保留独立的数据模型与事务控制。",
+    "verified_level": "V1：官方 README/文档与 LICENSE 原文核对；未安装、未运行、未完成源码审计；机器可读归档元数据未核实",
+    "checked_at": "2026-09-15",
+    "retrieved_at_utc": "2026-09-15T13:03:06.8742094Z",
+    "revision": "0edad35089f42f40ed72000f65592512fc7ab27a",
+    "readme_evidence": {
+      "url": "https://raw.githubusercontent.com/HKUDS/LightRAG/0edad35089f42f40ed72000f65592512fc7ab27a/README.md",
+      "text_sha256": "7379e08503125db014b414a0ca855e38eece3d8509ce05af928ad4a4220f1833"
+    },
+    "maintenance": {
+      "archived": null,
+      "disabled": null,
+      "pushed_at": null,
+      "metadata_verified": false,
+      "notes": [
+        "已取得当前远程 HEAD；GitHub API 配额限制，未核对机器可读归档字段与最后推送日期。"
+      ]
+    },
+    "aliases": [
+      "PyPI 包名 lightrag-hku"
+    ],
+    "source_urls": [
+      "https://github.com/HKUDS/LightRAG",
+      "https://raw.githubusercontent.com/HKUDS/LightRAG/0edad35089f42f40ed72000f65592512fc7ab27a/README.md",
+      "https://raw.githubusercontent.com/HKUDS/LightRAG/0edad35089f42f40ed72000f65592512fc7ab27a/LICENSE",
+      "https://arxiv.org/abs/2410.05779"
+    ]
+  }
+]

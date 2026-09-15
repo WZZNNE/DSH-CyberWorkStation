@@ -1,0 +1,1447 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "External Project Memory Service",
+    "version": "0.1.0-design",
+    "description": "Design contract only. Not an installed server. Local authenticated HTTP bearer credentials are issued by a trusted host. Remote MCP authorization is implemented separately according to the selected MCP specification."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:9873",
+      "description": "Proposed local development address; no service is started by this document."
+    }
+  ],
+  "security": [
+    {
+      "HostCredential": []
+    }
+  ],
+  "paths": {
+    "/v1/events": {
+      "post": {
+        "operationId": "ingestEvent",
+        "summary": "持久化可信来源事件",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventReceipt"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/proposals": {
+      "post": {
+        "operationId": "proposeMemory",
+        "summary": "提交记忆变更提案",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalReceipt"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposalRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/mutations": {
+      "post": {
+        "operationId": "commitMutation",
+        "summary": "提交授权记忆变更",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationReceipt"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MutationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/context": {
+      "post": {
+        "operationId": "getContext",
+        "summary": "组装当前约束和背景",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextBundle"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/memories/{id}": {
+      "get": {
+        "operationId": "getMemory",
+        "summary": "读取有权限的记忆版本",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Memory"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "revision",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "as_of_valid",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "as_of_system_seq",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ]
+      }
+    },
+    "/v1/action-checks": {
+      "post": {
+        "operationId": "checkAction",
+        "summary": "动作网关预检查构件",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionCheckResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionCheckRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/erasures": {
+      "post": {
+        "operationId": "eraseMemory",
+        "summary": "屏蔽内容并启动清除作业",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErasureJob"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErasureRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/erasures/{id}": {
+      "get": {
+        "operationId": "getErasure",
+        "summary": "查看清除进度",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErasureJob"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ]
+      }
+    },
+    "/v1/changes": {
+      "get": {
+        "operationId": "listChanges",
+        "summary": "读取可见增量变更",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangePage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ]
+      }
+    },
+    "/v1/checkpoints/{task_id}": {
+      "put": {
+        "operationId": "saveCheckpoint",
+        "summary": "按任务租约保存检查点",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckpointReceipt"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckpointRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "非敏感服务状态",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "HostCredential": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Host-issued credential. Actor and allowed scopes are server-side bindings, not model arguments."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message",
+          "retryable"
+        ]
+      },
+      "EvidenceRef": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "quote": {
+            "type": "string",
+            "maxLength": 4000
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "event_id"
+        ]
+      },
+      "Epoch": {
+        "type": "object",
+        "properties": {
+          "scope_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "policy_epoch": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "data_epoch": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "acl_epoch": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "scope_id",
+          "policy_epoch",
+          "data_epoch",
+          "acl_epoch"
+        ]
+      },
+      "VersionRef": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "memory_id",
+          "revision"
+        ]
+      },
+      "SourceRef": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_type": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "event_id",
+          "source_type"
+        ]
+      },
+      "RelationRef": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "replaces",
+              "exception_to",
+              "derived_from",
+              "depends_on"
+            ]
+          },
+          "target_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "target_revision": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "target_id",
+          "target_revision"
+        ]
+      },
+      "Memory": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "scope_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "constraint",
+              "goal",
+              "preference",
+              "fact",
+              "decision",
+              "procedure",
+              "work_state",
+              "hypothesis"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1
+          },
+          "predicate": {
+            "type": "string",
+            "minLength": 1
+          },
+          "assertion_status": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "pending",
+              "disputed"
+            ]
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "valid_to": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "conditions": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRef"
+            }
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceRef"
+          },
+          "relations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelationRef"
+            }
+          },
+          "enforcement": {
+            "type": "string",
+            "enum": [
+              "context_only",
+              "tool_guarded",
+              "unresolved"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "memory_id",
+          "revision",
+          "scope_id",
+          "kind",
+          "content",
+          "assertion_status",
+          "valid_from",
+          "valid_to",
+          "evidence_refs",
+          "enforcement"
+        ]
+      },
+      "EventRequest": {
+        "type": "object",
+        "properties": {
+          "scope_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "user_message",
+              "user_edit",
+              "tool_observation",
+              "agent_proposal",
+              "import"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 262144
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "scope_id",
+          "source_ref",
+          "source_type",
+          "text"
+        ],
+        "description": "Trusted host endpoint; source_type is checked against the authenticated principal and host evidence."
+      },
+      "EventReceipt": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "committed_seq": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "extraction_state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "completed",
+              "failed"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "event_id",
+          "committed_seq",
+          "extraction_state"
+        ]
+      },
+      "MutationRequest": {
+        "type": "object",
+        "properties": {
+          "scope_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operation": {
+            "type": "string",
+            "enum": [
+              "ASSERT",
+              "AMEND",
+              "REPLACE",
+              "REVOKE",
+              "EXCEPT",
+              "CORRECT",
+              "ARCHIVE",
+              "ERASE"
+            ]
+          },
+          "memory_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "source_event_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "constraint",
+              "goal",
+              "preference",
+              "fact",
+              "decision",
+              "procedure",
+              "work_state",
+              "hypothesis"
+            ]
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 32000
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1
+          },
+          "predicate": {
+            "type": "string",
+            "minLength": 1
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "valid_to": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "conditions": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "target_memory_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "target_expected_revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "scope_id",
+          "operation",
+          "memory_id",
+          "source_event_id"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "operation": {
+                  "enum": [
+                    "AMEND",
+                    "REVOKE",
+                    "CORRECT",
+                    "ARCHIVE",
+                    "ERASE"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "expected_revision"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "operation": {
+                  "enum": [
+                    "ASSERT",
+                    "REPLACE",
+                    "EXCEPT"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "kind",
+                "content"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "operation": {
+                  "enum": [
+                    "REPLACE",
+                    "EXCEPT"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "target_memory_id",
+                "target_expected_revision"
+              ]
+            }
+          }
+        ]
+      },
+      "MutationReceipt": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "commit_seq": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "epochs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Epoch"
+            }
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "memory_id",
+          "revision",
+          "commit_seq",
+          "epochs"
+        ]
+      },
+      "ProposalRequest": {
+        "type": "object",
+        "properties": {
+          "scope_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_event_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "proposal": {
+            "$ref": "#/components/schemas/MutationRequest"
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRef"
+            }
+          },
+          "interpretation": {
+            "type": "string",
+            "enum": [
+              "explicit",
+              "inferred",
+              "ambiguous"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "scope_id",
+          "source_event_id",
+          "proposal",
+          "evidence_refs",
+          "interpretation"
+        ]
+      },
+      "ProposalReceipt": {
+        "type": "object",
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "pending",
+              "rejected"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "proposal_id",
+          "state"
+        ]
+      },
+      "ContextRequest": {
+        "type": "object",
+        "properties": {
+          "scope_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "task_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "query": {
+            "type": "string",
+            "maxLength": 16000
+          },
+          "action_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "max_background_tokens": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12000,
+            "default": 3000
+          },
+          "as_of_valid": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "as_of_system_seq": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "scope_id",
+          "task_id",
+          "query"
+        ]
+      },
+      "ContextReceipt": {
+        "type": "object",
+        "properties": {
+          "receipt_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "actor_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "task_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "snapshot_seq": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "scope_epochs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Epoch"
+            }
+          },
+          "memory_versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VersionRef"
+            }
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "receipt_id",
+          "actor_id",
+          "task_id",
+          "snapshot_seq",
+          "scope_epochs",
+          "memory_versions",
+          "expires_at"
+        ]
+      },
+      "ContextBundle": {
+        "type": "object",
+        "properties": {
+          "constraints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Memory"
+            }
+          },
+          "background": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Memory"
+            }
+          },
+          "unresolved": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/ContextReceipt"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "constraints",
+          "background",
+          "unresolved",
+          "receipt"
+        ]
+      },
+      "ActionCheckRequest": {
+        "type": "object",
+        "properties": {
+          "receipt_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "task_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "action_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "resource": {
+            "type": "string",
+            "minLength": 1
+          },
+          "task_fence": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "receipt_id",
+          "task_id",
+          "action_type",
+          "resource"
+        ]
+      },
+      "ActionCheckResult": {
+        "type": "object",
+        "properties": {
+          "allowed": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "epochs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Epoch"
+            }
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "allowed",
+          "reason",
+          "epochs"
+        ],
+        "description": "Precheck only. Strong enforcement requires a controlled gateway to serialize validation with action acceptance; this response alone cannot authorize delayed external execution."
+      },
+      "ErasureRequest": {
+        "type": "object",
+        "properties": {
+          "scope_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "memory_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "maxItems": 100
+          },
+          "expected_revisions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VersionRef"
+            }
+          },
+          "include_source_content": {
+            "type": "boolean",
+            "default": true
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "scope_id",
+          "memory_ids",
+          "expected_revisions"
+        ]
+      },
+      "ErasureJob": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "online_hidden",
+              "purging",
+              "backup_pending",
+              "completed",
+              "failed"
+            ]
+          },
+          "online_hidden_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "backup_deadline": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "controlled_targets": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "uncontrolled_targets": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "job_id",
+          "state",
+          "online_hidden_at",
+          "controlled_targets",
+          "uncontrolled_targets"
+        ]
+      },
+      "ChangePage": {
+        "type": "object",
+        "properties": {
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "commit_seq": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "scope_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "operation": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "memory_id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "commit_seq",
+                "scope_id",
+                "operation"
+              ]
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "changes",
+          "next_cursor"
+        ]
+      },
+      "CheckpointRequest": {
+        "type": "object",
+        "properties": {
+          "scope_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "task_fence": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "state": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "scope_id",
+          "task_fence",
+          "expected_revision",
+          "state"
+        ]
+      },
+      "CheckpointReceipt": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "commit_seq": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "revision",
+          "commit_seq"
+        ]
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degraded",
+              "unavailable"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "status"
+        ]
+      }
+    }
+  }
+}

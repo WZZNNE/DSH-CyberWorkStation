@@ -8,10 +8,11 @@ const markedUrl = pathToFileURL(path.join(REPO, 'core/node_modules/.pnpm/marked@
 const { marked } = await import(markedUrl);
 marked.use({ gfm: true, breaks: false });
 
+const plain = (s) => String(s).replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/`/g, '');
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const md = (s) => marked.parse((s || '').trim()).replace(/<table>/g, '<div class="tw"><table>').replace(/<\/table>/g, '</table></div>');
 const ORIGIN_LABEL = { original: '原创', fork: '二改', adopted: '照搬', core: '上游' };
-const SHORT = { overview: '概览', launcher: '启动器', dsh: '本体界面', 'model-launcher': '模型启动器', beyond: '图外能力', memory: '记忆与上下文', roster: '插件清单', skills: 'Skill', skins: '皮肤', principles: '许可与致谢' };
+const SHORT = { overview: '概览', launcher: '启动器', dsh: '本体界面', 'model-launcher': '模型启动器', beyond: '图外能力', memory: '记忆与上下文', roster: '插件清单', skills: 'Skill', skins: '皮肤', principles: '许可与致谢', license: '许可与致谢' };
 
 function imgSrc(name, meta, opts) {
   if (opts.inline) {
@@ -85,7 +86,7 @@ export function renderHtml(doc, opts) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(meta.title)} — ${esc(meta.subtitle)}</title>
-<meta name="description" content="${esc(meta.tagline)}">
+<meta name="description" content="${esc(plain(meta.tagline))}">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='4' width='24' height='24' rx='5' fill='%23d9a441'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -101,7 +102,7 @@ export function renderHtml(doc, opts) {
   <div class="wrap">
     <h1>DSH <span>CyberWorkStation</span></h1>
     <p class="sub">${esc(meta.subtitle)}</p>
-    <p class="tagline">${esc(meta.tagline)}</p>
+    <div class="tagline">${md(meta.tagline)}</div>
     <div class="facts">${facts}</div>
     <div class="shot"><a href="${heroImg}" data-lightbox data-fig="01" data-title="仪表盘" data-sub=""><img src="${heroImg}" alt="DSH 启动器仪表盘" decoding="async"></a><div class="cap">DSH 启动器 · 仪表盘 · night-city-holo 皮肤 · 截图 ${esc(meta.shotDate)}</div></div>
   </div>

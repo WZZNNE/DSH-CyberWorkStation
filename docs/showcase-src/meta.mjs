@@ -1,8 +1,8 @@
 // Document-level metadata shared by both renderers.
 export default {
   title: 'DSH CyberWorkStation',
-  subtitle: 'DeepSeek Harness 的启动器与插件集',
-  tagline: '给 DeepSeek Harness（dsh）配的一个桌面启动器和 22 个插件。本体原样内置在 `core/` 里，没有改过，可以随时整体升级。',
+  subtitle: 'DeepSeek Harness 的桌面启动器与插件套件',
+  tagline: 'DSH CyberWorkStation 是给 [DeepSeek Harness（dsh）](https://github.com/deepseek-ai/deepseek-harness) 配的一个桌面启动器和 22 个插件，面向想把 dsh 当日常工具而不是命令行实验品来用的人：双击启动，所有设置和密钥集中在一处，随时看得到模型在做什么、花了多少钱，新功能装上就能用，不用打开配置文件。上游本体原样放在 `core/` 里，所以这一切在本体升级之后都还在。',
   repo: 'https://github.com/WZZNNE/DSH-CyberWorkStation',
   coreVersion: '0.1.5-rc.2',
   coreTag: 'dsh-v0.1.5-rc.2',

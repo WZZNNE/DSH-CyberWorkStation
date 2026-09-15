@@ -1,0 +1,12 @@
+{
+  "kind": "delivery_structure_check",
+  "projects": 42,
+  "papers": 45,
+  "focused_paper_sections": 16,
+  "local_links_checked": 79,
+  "broken_local_links": [],
+  "reference_tests_passed": 37,
+  "reader_chapters_checked": 11,
+  "json_parsing": "passed",
+  "passed": true
+}

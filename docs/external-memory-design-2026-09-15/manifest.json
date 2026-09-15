@@ -1,0 +1,146 @@
+{
+  "format_version": 1,
+  "checked_at": "2026-09-15",
+  "files": [
+    {
+      "path": "01-产品与架构设计.md",
+      "bytes": 24727,
+      "sha256": "6716e1572a441f51c86da248dd8cf040adf247fd4d5e3eb71ddf7fb69c90a111"
+    },
+    {
+      "path": "02-数据与接口协议.md",
+      "bytes": 12452,
+      "sha256": "933e182c82159e49b714c165349da5a139b4289113fd631eb3526ad700a1093a"
+    },
+    {
+      "path": "03-使用与运维说明.md",
+      "bytes": 16989,
+      "sha256": "3708c2f5e65a6c4eab954cfb3b5d23e339be4f08be34fe8b474468a0fa676638"
+    },
+    {
+      "path": "04-创新定位与评测方案.md",
+      "bytes": 13380,
+      "sha256": "2680bed894f850a96490b8a6852fffec96275f6a185150241977853007b1b87e"
+    },
+    {
+      "path": "05-实施路线与决策记录.md",
+      "bytes": 19391,
+      "sha256": "7bec33e053600cc6fe71301f1edc0ad5e981d2db32734553bfa1d70c6603515b"
+    },
+    {
+      "path": "assets/architecture.svg",
+      "bytes": 3259,
+      "sha256": "9c84ce6daaf26f2ba7158871b936896e64f06ddeb2a2b41aaa0c0fc446ab0e7f"
+    },
+    {
+      "path": "assets/revocation.svg",
+      "bytes": 2501,
+      "sha256": "13f72a5c6134479fc3cb4f258d6f4ff4f0085ed6c0628788bafe99eb6e349ac1"
+    },
+    {
+      "path": "index.html",
+      "bytes": 321613,
+      "sha256": "6a18c7b978fefebad499b07d427c80aac6b220f03fad5e0f2077ca4901c85966"
+    },
+    {
+      "path": "README.md",
+      "bytes": 4159,
+      "sha256": "c409d39bc08f77a4722a46599e300e4ee74bc7cb4534676edcb0f67cf2847120"
+    },
+    {
+      "path": "research/local-integration.md",
+      "bytes": 25175,
+      "sha256": "c25acfa75bf72275e37a4ef68b6173cc7f9c095e860b6ec9f15cc4bf00574f3e"
+    },
+    {
+      "path": "research/papers.json",
+      "bytes": 77634,
+      "sha256": "33189095b1876d811ec374cabad60f5bc8d50a2332e316fdbf6775a51e8767fe"
+    },
+    {
+      "path": "research/papers.md",
+      "bytes": 65666,
+      "sha256": "1e5eb381e7733a16c7db085f271d34f1ac74e5c41f652e8695cd69637815d707"
+    },
+    {
+      "path": "research/projects.json",
+      "bytes": 105936,
+      "sha256": "eab674cc1b50bec78e07cbcfaf5ad424e00af065dfc471303ca0aea0af2c6647"
+    },
+    {
+      "path": "research/projects.md",
+      "bytes": 75656,
+      "sha256": "b175985ebb609500414ca1340e1215619b18519f733af6931237943e0fdde56e"
+    },
+    {
+      "path": "research/方法与技术来源.md",
+      "bytes": 5193,
+      "sha256": "d78a5172aa42f928ce830bf37d7fc7c6fb3c5cfd929e7cad0ae9275a5ecba62e"
+    },
+    {
+      "path": "spec/examples.json",
+      "bytes": 1636,
+      "sha256": "ff61eea5331ec746cc0c2e513683bd9e141577e467ed143a51581a6ebcde8b45"
+    },
+    {
+      "path": "spec/openapi.json",
+      "bytes": 36492,
+      "sha256": "a12d244692d657a234b1dbe0459374bdce60981c2f721b05f563e8a191d5901a"
+    },
+    {
+      "path": "spec/schema.sql",
+      "bytes": 7772,
+      "sha256": "b234f8a07635be4e7cc29015deceb2f83fb8013d3c6e615f77438a5ec1c4ea03"
+    },
+    {
+      "path": "validation/build_contracts.py",
+      "bytes": 13421,
+      "sha256": "c78fe0a9248c824a9168ae49963004d4d2c72a5f20d7d2a9091f23b266337174"
+    },
+    {
+      "path": "validation/build_reader.mjs",
+      "bytes": 22405,
+      "sha256": "f5b65c548faaa916f35eabc5bdf239ec4eddfcfc94cbb7a26b62ec7a675288ec"
+    },
+    {
+      "path": "validation/check_package.py",
+      "bytes": 3474,
+      "sha256": "593eb185c365ca83e30d1d6f05736be394480211371d52bff19061dd87652dce"
+    },
+    {
+      "path": "validation/check_reader.mjs",
+      "bytes": 3658,
+      "sha256": "4ed200e9f52a94d5a5d769badb5c5fcd4344105e86406807d1af2e6bc5f8a6e1"
+    },
+    {
+      "path": "validation/package-results.json",
+      "bytes": 287,
+      "sha256": "eabfac253850e28c3d7d6869bb07191bc043a036453a49c01769fc4a76314460"
+    },
+    {
+      "path": "validation/reader-results.json",
+      "bytes": 240,
+      "sha256": "ab3bec81ca88f4ddea401302252db0c32d2619ba85329ee83e73aaea5c306ba4"
+    },
+    {
+      "path": "validation/README.md",
+      "bytes": 2250,
+      "sha256": "6970f1b94a2ce2b8953b25959f296996ba31a9c54e77667bb402f5051fd602d8"
+    },
+    {
+      "path": "validation/reference_model.py",
+      "bytes": 14350,
+      "sha256": "fdae5a7e60430dd180154a52ce95ad9cac3ade7783c231eb992048991cf3484a"
+    },
+    {
+      "path": "validation/results.json",
+      "bytes": 815,
+      "sha256": "3e4a51b9183df1e88fcc434019db12a89cb5d7fda5504b876de611f9b5ebb599"
+    },
+    {
+      "path": "validation/test_reference.py",
+      "bytes": 17151,
+      "sha256": "8a4ea844198674343e9021bcb77a334c05592ba23b49190f8664aa8d0cba8f12"
+    }
+  ]
+}

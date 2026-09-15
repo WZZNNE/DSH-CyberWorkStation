@@ -1,0 +1,11 @@
+{
+  "kind": "offline_reader_check",
+  "chapters_checked": 11,
+  "search_results": 30,
+  "headings": 274,
+  "browser_errors": [],
+  "external_network_requests": [],
+  "desktop_overflow": false,
+  "mobile_overflow": false,
+  "passed": true
+}

@@ -1,0 +1,58 @@
+{
+  "description": "Synthetic schema examples, not records from the user's conversations.",
+  "event": {
+    "scope_id": "project_alpha",
+    "source_ref": "message_41",
+    "source_type": "user_message",
+    "text": "本项目禁止使用付费 API",
+    "occurred_at": "2026-09-15T00:00:00Z"
+  },
+  "assert": {
+    "scope_id": "project_alpha",
+    "operation": "ASSERT",
+    "memory_id": "mem_api_budget",
+    "source_event_id": "evt_41",
+    "kind": "constraint",
+    "content": "本项目禁止使用付费 API",
+    "valid_from": "2026-09-15T00:00:00Z"
+  },
+  "future_replace": {
+    "scope_id": "project_alpha",
+    "operation": "REPLACE",
+    "memory_id": "mem_api_budget_v2",
+    "target_memory_id": "mem_api_budget",
+    "target_expected_revision": 1,
+    "source_event_id": "evt_42",
+    "kind": "constraint",
+    "content": "允许使用已批准预算内的付费 API",
+    "valid_from": "2026-10-01T00:00:00Z"
+  },
+  "revoke": {
+    "scope_id": "project_alpha",
+    "operation": "REVOKE",
+    "memory_id": "mem_api_budget",
+    "expected_revision": 1,
+    "source_event_id": "evt_43",
+    "reason": "用户解除要求"
+  },
+  "context": {
+    "scope_id": "project_alpha",
+    "task_id": "backend_1",
+    "query": "接入外部搜索接口",
+    "action_type": "external_api",
+    "max_background_tokens": 3000
+  },
+  "erase": {
+    "scope_id": "project_alpha",
+    "memory_ids": [
+      "mem_api_budget"
+    ],
+    "expected_revisions": [
+      {
+        "memory_id": "mem_api_budget",
+        "revision": 1
+      }
+    ],
+    "include_source_content": true
+  }
+}
