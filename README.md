@@ -68,17 +68,67 @@ flowchart LR
   L -- "edit config, live within 1.5 s" --> D1
 ```
 
-### Quick start
+### Quick start (step by step)
 
-You need Windows 10 or 11, Git, Node.js `^22.19 || >=24` (24 LTS is the comfortable choice) and Edge or Chrome.
+**What you need**: Windows 10 / 11, Edge or Chrome, and one API key (OpenRouter or DeepSeek official — either is enough). Using an API needs no GPU; an ordinary PC is fine. A GPU only matters if you run models locally.
+
+**Step 1: install two free programs**
+
+1. **Git**: open https://git-scm.com/download/win , download "64-bit Git for Windows Setup", and click Next through the defaults. The setup script checks for it, and the launcher's one-click update relies on it.
+2. **Node.js**: open https://nodejs.org , download the build marked **LTS** (24.x; 22.19 or later also works, avoid 23.x), and click Next through the defaults.
+
+Then open a **new** terminal to verify (an old window cannot see freshly installed programs): press Win + R, type `cmd`, press Enter, and run:
 
 ```bat
+git --version
+node -v
+```
+
+Both lines should print a version (for example `git version 2.51.0` and `v24.19.0`). "Not recognized as an internal or external command" means the install did not finish or the window was not reopened.
+
+**Step 2: download the project**
+
+In the same terminal, type each line and press Enter (replace `D:` with the drive you prefer; the folder name is up to you):
+
+```bat
+D:
+mkdir AI
+cd AI
 git clone https://github.com/WZZNNE/DSH-CyberWorkStation.git
 cd DSH-CyberWorkStation
+```
+
+`git clone` downloads the whole project into `D:\AI\DSH-CyberWorkStation`; on a slow connection, wait for it to finish before typing the next line.
+
+Without git: on the GitHub page click the green "Code" button, then "Download ZIP", extract it into `D:\AI`, and run `cd /d D:\AI\DSH-CyberWorkStation-main` in the terminal. Git still has to be installed (the setup script checks for it); the only difference is that the Updates page cannot update the core in one click for a ZIP install — you download a new ZIP instead.
+
+**Step 3: install with one command**
+
+```bat
 setup.cmd
 ```
 
-`setup.cmd` installs dependencies, builds the core (5 to 10 minutes the first time), registers the suite plugins and skills, and opens the launcher. From then on, the launcher is the entry point: double-click `launcher/DSH启动器.exe`, press Start, and open the web UI from the dashboard. API keys are entered on the launcher's Credentials page or in dsh Settings under Credentials Center, where each key is also bound to the features that use it.
+It checks the Git and Node versions, installs dependencies, builds the core (5 to 10 minutes the first time; long scrolling output is normal), registers every plugin and skill, and opens the launcher window. If it stops with an error, read the last few lines: a Node version complaint means installing the LTS build; a network timeout means running `setup.cmd` again — it continues where it left off.
+
+**Step 4: enter a key and start**
+
+1. In the launcher, open "Credentials" in the left column, click "Set / replace" on the `OPENROUTER_API_KEY` or `DEEPSEEK_API_KEY` row and paste your key (get one at https://openrouter.ai/keys or https://platform.deepseek.com ). The key is stored only in dsh's credential store, never in a config file.
+2. Lower on the same page, under "dsh default model", pick the route (`openrouter` or `deepseek-official`), then a model, and click "Set as default".
+3. Back on the Dashboard, click "LAUNCH"; once the state shows RUNNING, click "Open WEB UI" and start chatting.
+
+**Every time after that**: double-click `launcher\DSH启动器.exe`. The EXE is only a bootstrap shell whose source is right there in `launcher/launcher-shell.cs`; all it does is run `node server.mjs` and open the browser window. If you would rather not run it, double-click `launcher\start-launcher.cmd` instead (it keeps a console window open; closing that window stops the launcher), or compile the shell yourself with the compiler that ships with Windows:
+
+```bat
+cd launcher
+C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /target:winexe /r:System.Windows.Forms.dll /r:System.Web.Extensions.dll /win32icon:dsh.ico /out:DSH启动器.exe launcher-shell.cs
+```
+
+**Common problems**
+
+- `setup.cmd` says Git or Node is missing: reopen the terminal after installing, then run it again.
+- Nothing happens when double-clicking the EXE: run `start-launcher.cmd` first and read the error in its console window; if port 3090 is taken by another program, set the environment variable `DSH_LAUNCHER_PORT` to a different port.
+- Corporate network or proxy: run `git config --global http.proxy http://127.0.0.1:7890` (with your own proxy address and port) before cloning.
+- To keep the configuration somewhere other than `C:\Users\<you>\.dsh`: set the environment variable `DSH_HOME` to another directory before running `setup.cmd`.
 
 ---
 

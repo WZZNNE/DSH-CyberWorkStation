@@ -47,17 +47,68 @@ flowchart LR
 \`\`\`
 `},
     { type: 'md', md: `
-### 快速开始
+### 快速开始（零基础版）
 
-前置：Windows 10/11、Git、Node.js \`^22.19 || >=24\`（推荐 24 LTS）、Edge 或 Chrome。
+**需要什么**：Windows 10 / 11，Edge 或 Chrome 浏览器，一个 API Key（OpenRouter 或 DeepSeek 官方，二选一）。走 API 的话普通电脑就够，不需要显卡；只有在本机跑模型才需要显卡。
+
+**第一步：装两个免费软件**
+
+1. **Git**：打开 https://git-scm.com/download/win ，点「64-bit Git for Windows Setup」下载，安装时一路「Next」用默认选项即可。安装脚本会检查它，启动器的一键更新也靠它。
+2. **Node.js**：打开 https://nodejs.org ，下载标着 **LTS** 的那个（24.x；22.19 以上也可以，不要装 23.x），同样一路「Next」。
+
+装完后**重新打开**一个终端验证（旧窗口读不到刚装好的程序）：按 Win + R，输入 \`cmd\`，回车，然后逐行输入：
 
 \`\`\`bat
+git --version
+node -v
+\`\`\`
+
+两行都打印出版本号（例如 \`git version 2.51.0\`、\`v24.19.0\`）就可以继续；提示「不是内部或外部命令」说明没装好，或者没有重开窗口。
+
+**第二步：把项目下载到电脑上**
+
+还是在这个终端里，逐行输入、每行回车（\`D:\` 换成你想放的盘，文件夹名随意）：
+
+\`\`\`bat
+D:
+mkdir AI
+cd AI
 git clone https://github.com/WZZNNE/DSH-CyberWorkStation.git
 cd DSH-CyberWorkStation
+\`\`\`
+
+\`git clone\` 会把整个项目下载到 \`D:\\AI\\DSH-CyberWorkStation\`，网络慢时等它跑完再输下一行。
+
+不想用 git 也行：在 GitHub 页面点绿色的「Code」→「Download ZIP」，解压到 \`D:\\AI\`，然后在终端里输入 \`cd /d D:\\AI\\DSH-CyberWorkStation-main\`。Git 仍然需要安装（安装脚本会检查），区别只是 ZIP 方式不能用「更新推送」页的一键更新，想升级得重新下载 ZIP 覆盖。
+
+**第三步：一键安装**
+
+\`\`\`bat
 setup.cmd
 \`\`\`
 
-\`setup.cmd\` 会安装依赖、构建本体（首次约 5–10 分钟）、注册全部套件插件和 Skill，然后打开启动器。之后启动器就是入口：双击 \`launcher/DSH启动器.exe\`，按「一键启动」，再从仪表盘打开网页界面。API Key 在启动器「凭据中心」页或 dsh 设置的「凭据中心」分区里填，填的时候顺手绑定到用它的功能上。
+它会依次：检查 Git 和 Node 版本 → 安装依赖 → 构建本体（首次 5–10 分钟，屏幕上大段滚动是正常的）→ 注册全部插件和 Skill → 自动打开启动器窗口。中途报错时看最后几行：提示 Node 版本不对就去装 LTS 版；网络超时就再运行一次 \`setup.cmd\`，它会接着做，不会重复安装。
+
+**第四步：填 Key，启动**
+
+1. 启动器左栏点「凭据中心」，在 \`OPENROUTER_API_KEY\` 或 \`DEEPSEEK_API_KEY\` 那一行点「设置 / 替换」，粘贴你的 Key（申请地址：https://openrouter.ai/keys 或 https://platform.deepseek.com ）。Key 只存在 dsh 的凭据库里，不写进任何配置文件。
+2. 同一页下方「dsh 默认模型」：先选路由（\`openrouter\` 或 \`deepseek-official\`），再选模型，点「设为 dsh 默认」。
+3. 回到「仪表盘」，点「一键启动」；状态变成 RUNNING 后点「打开 WEB UI」，就可以开始对话了。
+
+**以后每次用**：双击 \`launcher\\DSH启动器.exe\`。这个 exe 只是一个引导壳，源码就在仓库的 \`launcher/launcher-shell.cs\`，它做的事只有两件——启动 \`node server.mjs\`、打开浏览器窗口。不放心可以不用它：双击 \`launcher\\start-launcher.cmd\` 效果一样（会留一个黑色窗口，关掉即停止启动器）；或者用 Windows 自带的编译器自己编一份：
+
+\`\`\`bat
+cd launcher
+C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe /target:winexe /r:System.Windows.Forms.dll /r:System.Web.Extensions.dll /win32icon:dsh.ico /out:DSH启动器.exe launcher-shell.cs
+\`\`\`
+
+**常见问题**
+
+- \`setup.cmd\` 说缺少 Git 或 Node：装完要重新打开终端再运行。
+- 双击 exe 没反应：先双击 \`start-launcher.cmd\` 看黑窗口里的报错；3090 端口被别的程序占用时，设置环境变量 \`DSH_LAUNCHER_PORT\` 换一个端口。
+- 公司网络或需要代理：先执行 \`git config --global http.proxy http://127.0.0.1:7890\`（换成你自己的代理地址和端口）再 clone。
+- 不想把配置放在 \`C:\\Users\\你\\.dsh\`：设置环境变量 \`DSH_HOME\` 指向别的目录，再运行 \`setup.cmd\`。
+
 `},
   ],
 };
