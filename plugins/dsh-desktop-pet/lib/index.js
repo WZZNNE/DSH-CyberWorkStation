@@ -1528,8 +1528,10 @@ export function apply(ctx) {
         // A library preview: same exposure as /ui and /sprite — artwork, nothing personal.
         const name = uiSetName(url.searchParams.get('name'))
         const part = String(url.searchParams.get('part') ?? '')
-        const file = name && Object.prototype.hasOwnProperty.call(UI_PARTS, part) ? join(uiSetDir(name), part + '.png') : ''
-        if (!file || !existsSync(file)) { res.writeHead(404); return res.end() }
+        if (!name || !Object.prototype.hasOwnProperty.call(UI_PARTS, part)) { res.writeHead(404); return res.end() }
+        // An incomplete set simply lacks the drawing: "nothing here", not an error for the console.
+        const file = join(uiSetDir(name), part + '.png')
+        if (!existsSync(file)) { res.writeHead(204, { 'cache-control': 'no-store' }); return res.end() }
         res.writeHead(200, { 'content-type': 'image/png', 'x-content-type-options': 'nosniff', 'cache-control': 'no-store' })
         return res.end(readFileSync(file))
       }
@@ -1538,8 +1540,11 @@ export function apply(ctx) {
         // draw the pet, so this is readable wherever /sprite is.
         const pet = petById(url.searchParams.get('pet'))
         const part = String(url.searchParams.get('part') ?? '')
-        const file = Object.prototype.hasOwnProperty.call(UI_PARTS, part) ? spriteFile(pet, UI_FILE(part)) : null
-        if (!file) { res.writeHead(404); return res.end() }
+        if (!Object.prototype.hasOwnProperty.call(UI_PARTS, part)) { res.writeHead(404); return res.end() }
+        // A pet without its own drawing for this part is the normal case (it wears a library set or
+        // the plain look), so answer "nothing here" rather than an error the browser console reports.
+        const file = spriteFile(pet, UI_FILE(part))
+        if (!file) { res.writeHead(204, { 'cache-control': 'no-store' }); return res.end() }
         res.writeHead(200, { 'content-type': 'image/png', 'x-content-type-options': 'nosniff', 'cache-control': 'no-store' })
         return res.end(readFileSync(file))
       }

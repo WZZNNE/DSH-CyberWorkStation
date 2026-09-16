@@ -14,7 +14,7 @@ set "SUITE=%~dp0"
 rem The bundle ships core\ (the dsh source tree); without it, clone the upstream tag this
 rem suite was verified against into deepseek-harness\ (keep CORE_TAG in step with CHANGELOG.md).
 set "CORE=%SUITE%core"
-set "CORE_TAG=dsh-v0.1.1-rc.2"
+set "CORE_TAG=dsh-v0.1.5-rc.2"
 if not exist "%CORE%\package.json" set "CORE=%SUITE%deepseek-harness"
 
 echo [1/6] 检查环境...

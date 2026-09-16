@@ -7,7 +7,7 @@
  * tsbuildinfo so the following `pnpm install && build:lib && build:web` is
  * incremental. The launcher's "upgrade to tag" job runs this script first.
  *
- * Usage: node launcher/vendor-core.mjs <tag>   (e.g. dsh-v0.1.1-rc.2)
+ * Usage: node launcher/vendor-core.mjs <tag>   (e.g. dsh-v0.1.5-rc.2)
  * Env:   DSH_REPO overrides the core directory (default ../core).
  */
 import { execFileSync, spawnSync } from 'node:child_process'

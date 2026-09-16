@@ -2,6 +2,12 @@
 
 All notable changes to DSH CyberWorkStation. The vendored core (`core/`) tracks the upstream [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) release named in each entry.
 
+## Unreleased
+
+- Desktop pet: the settings panel previews the three custom UI drawings; for a pet that has none (the normal case) the route answered 404 and the browser console logged three errors each time the section opened. The two preview routes (`/ui` and `/ui-skin/part`) now answer 204 No Content for a missing drawing; an unknown part name is still 404.
+- setup.cmd: the fallback clone tag, used only when `core/` is absent, names the vendored core (dsh-v0.1.5-rc.2); it still said 0.1.1-rc.2.
+- READMEs and the launcher README: the core start time is stated as about 5 s, which is what the full plugin set measures, instead of 1.5 s.
+
 ## v1.11.1 — 2026-09-15
 
 Repository engineering pass and plainer READMEs. Format and usability work on the suite itself; no plugin behaviour changed except where noted.

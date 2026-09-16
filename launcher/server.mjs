@@ -41,7 +41,7 @@ const LEDGER = process.env.DSH_LAUNCHER_LEDGER ?? path.join(DSH_HOME, 'storages/
 const FRONTEND_SKIN_TARGET = path.join(DSH_HOME, 'frontend-skin.css')
 const { launcher: PORT, dsh: DSH_PORT } = serverPorts()
 const DSH_URL = `http://127.0.0.1:${DSH_PORT}`
-// Built CLI entry: launching it under plain Node boots dsh in ~1.5 s; the
+// Built CLI entry: launching it under plain Node boots dsh in ~5 s with the full plugin set; the
 // source launch through corepack + pnpm + tsx takes ~20 s on the same machine.
 const BUILT_CLI = path.join(REPO, 'apps/cli/lib/bin.js')
 

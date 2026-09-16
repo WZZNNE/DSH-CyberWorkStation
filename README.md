@@ -43,7 +43,7 @@ A few properties shape how the whole thing feels in use. Every feature is a plug
 
 | Part | Count | Notes |
 |---|---|---|
-| DSH Launcher | 13 pages · zh / en · 3 skins | `launcher/`, double-click `DSH启动器.exe`; the core starts in about 1.5 s |
+| DSH Launcher | 13 pages · zh / en · 3 skins | `launcher/`, double-click `DSH启动器.exe`; the core is up in about 5 s |
 | Suite plugins | 22 (19 original · 3 forks) | `plugins/`, registered automatically at setup |
 | Community plugins | 8 + 1 MCP memory server | installed from the launcher's plugin market, not in the repo |
 | Optional in-tree core capabilities | 10 upstream packages | persistent terminal, scheduling, LSP, MCP client, Claude Code / Codex hook bridges |
@@ -94,7 +94,7 @@ The screenshots in this section and the next were taken on an earlier core relea
 
 The dashboard is the page you land on, and it answers two questions before you read anything else: is dsh running, and where do I go next. The banner at the top shows the state, OFFLINE or RUNNING. Under it, four cards give the core version, the Node version, the current default model with a link to change it on the Credentials page, and an "Open WEB UI" button that takes you into dsh. The Folders row creates a new workspace from an absolute path, and four shortcut cards open the core repository, the `~/.dsh` home, the plugins folder and the session logs in Explorer. The console in the middle streams the core's output as it starts and runs. Start and Exit sit at the bottom right.
 
-Start takes about 1.5 seconds when the core has been built and falls back to a source launch when it has not; clicking it twice does not start a second copy. Exit stops dsh's own process and nothing else. A workspace typed into the Folders row exists as soon as you press the button, and a refresh of the dsh page makes it selectable. dsh's own "+" button cannot create a workspace for ungrouped sessions, so this row is where a new workspace comes from.
+Start brings the core up in about five seconds when it has been built and falls back to a source launch when it has not; clicking it twice does not start a second copy. Exit stops dsh's own process and nothing else. A workspace typed into the Folders row exists as soon as you press the button, and a refresh of the dsh page makes it selectable. dsh's own "+" button cannot create a workspace for ungrouped sessions, so this row is where a new workspace comes from.
 
 With the `cyberpunk-2077` skin active, Start carries an electric-current effect and the RUNNING state flips into place. Any page can also be opened directly by a deep link such as `#deck`.
 
