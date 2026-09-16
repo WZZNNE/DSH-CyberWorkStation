@@ -74,7 +74,7 @@ export default {
       did: `
 模型多出四个工具：\`generate_image\`、\`generate_video\`、\`text_to_speech\`、\`transcribe_audio\`，结果直接出现在对话里。支持九种供应商（OpenAI 兼容、OpenRouter、Gemini、Veo、Replicate、fal、ElevenLabs、Fish Audio、MiniMax）加自定义 HTTP 接口；「共享全局 API」直接借用模型页保存的路由，同一把密钥不用填第二次。图生视频、参考图引导生图、TTS 音色预设、旧文件自动清理都在内。生图、生视频、语音合成、语音识别四栏各用各自所选供应商的密钥，不互相借用；供应商返回的内网地址会被拒绝。
 `},
-    { type: 'figure', img: '23-dsh-settings-desktop-pet', fig: '23', title: '设置 → 桌宠', sub: 'dsh-desktop-pet · 原创',
+    { type: 'figure', img: '23-dsh-settings-desktop-pet', fig: '23', title: '设置 → 桌宠', sub: 'dsh-desktop-pet-cws · 原创',
       what: `
 页面顶部管当前桌宠（新建、删除）和启用、显示两个开关，接着是人格设定（名称、人格与说话方式、外观描述、开场白、作用范围）和对话模型（跟随 dsh、共享 DSH 供应商，或自己的接口与密钥）。再往下是设定集（世界书）、表情动作与序列帧、主人画像、权限、主动搭话频率、语音、提醒、外观、桌面窗口。
 `,

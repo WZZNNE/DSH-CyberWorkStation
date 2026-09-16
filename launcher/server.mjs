@@ -385,7 +385,8 @@ function suiteRoster() {
   try {
     const names = []
     for (const dir of fs.readdirSync(PLUGINS_DIR, { withFileTypes: true })) {
-      if (!dir.isDirectory() || dir.name.startsWith('.') || dir.name === 'node_modules') continue
+      // `_`-prefixed directories are shared packages (the kit), linked next to the plugins, never registered.
+      if (!dir.isDirectory() || dir.name.startsWith('.') || dir.name.startsWith('_') || dir.name === 'node_modules') continue
       const pkg = readJson(path.join(PLUGINS_DIR, dir.name, 'package.json'), null)
       if (!pkg || typeof pkg.name !== 'string') continue
       // Every suite plugin is named dsh-*; the patch-layer ones (keyring, lan-fence) carry no bundle patch.

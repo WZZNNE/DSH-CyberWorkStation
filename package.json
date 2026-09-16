@@ -1,6 +1,6 @@
 {
   "name": "dsh-cyberworkstation",
-  "version": "1.11.1",
+  "version": "1.12.0",
   "private": true,
   "description": "DSH CyberWorkStation: a launcher, 22 plugins and a vendored deepseek-harness core. This file only carries the maintainer scripts; plugins install into the dsh profile by link, the core builds with its own toolchain.",
   "type": "module",
@@ -10,11 +10,13 @@
   "scripts": {
     "pretest": "node launcher/peer-links.mjs",
     "test": "node -e \"if(!require('fs').existsSync('.local/tests')){console.error('The maintainer suite lives outside the repository (.local/tests); nothing to run here.');process.exit(1)}\" && node --test \".local/tests/*/*.test.mjs\"",
-    "lint": "eslint launcher plugins docs/showcase-src",
+    "lint": "eslint launcher plugins docs/showcase-src scripts",
     "peer-links": "node launcher/peer-links.mjs",
     "readme:zh": "node docs/showcase-src/build.mjs",
     "repair:preview": "node launcher/repair-session-sources.mjs --dry-run",
-    "repair": "node launcher/repair-session-sources.mjs"
+    "repair": "node launcher/repair-session-sources.mjs",
+    "publish:npm": "node scripts/publish-npm.mjs",
+    "publish:npm:dry": "node scripts/publish-npm.mjs --dry-run"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

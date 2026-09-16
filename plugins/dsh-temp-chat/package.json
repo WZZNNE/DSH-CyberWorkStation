@@ -1,5 +1,5 @@
 {
-  "name": "dsh-temp-chat",
+  "name": "dsh-temp-chat-cws",
   "version": "0.1.1",
   "description": "Temporary DeepSeek Harness conversations that belong to no project: a scratch directory under $DSH_HOME/scratch, its own workspace, and a shipped chat-only agent preset with no file, shell, job, subagent or workflow tools.",
   "type": "module",
@@ -29,8 +29,7 @@
   },
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/dsh-home-paths": "*",
-    "@dsh-suite/kit": "*"
+    "@deepseek-ai/dsh-home-paths": "*"
   },
   "repository": {
     "type": "git",
@@ -49,5 +48,8 @@
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "dsh-cyberworkstation-kit": "^1.0.0"
   }
 }

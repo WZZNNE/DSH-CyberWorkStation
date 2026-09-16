@@ -21,8 +21,8 @@
  */
 import { lstatSync, mkdirSync, realpathSync, statSync, writeFileSync } from 'node:fs'
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from 'node:path'
-import { listStoredSessions } from '@dsh-suite/kit/session-read'
-import { rejectCrossSite, json } from '@dsh-suite/kit/fence'
+import { listStoredSessions } from 'dsh-cyberworkstation-kit/session-read'
+import { rejectCrossSite, json } from 'dsh-cyberworkstation-kit/fence'
 
 export const name = 'drop-files'
 export const inject = ['webServer', 'sessions']

@@ -180,7 +180,7 @@ export function loadSidecar(file, { dryRun = false, stamp = 'now' } = {}) {
   if (!dryRun) fs.renameSync(file, setAside)
   return { doc: { version: 1, sessions: {} }, setAside }
 }
-/** The same lock protocol as the kit's session-read.js (@dsh-suite/kit): `wx` file, a lock older than 5 s is a dead process's. */
+/** The same lock protocol as the kit's session-read.js (dsh-cyberworkstation-kit): `wx` file, a lock older than 5 s is a dead process's. */
 function acquireSidecarLock() {
   for (let attempt = 0; attempt < 200; attempt++) {
     try { fs.writeFileSync(LOCK, `${process.pid} ${Date.now()}\n`, { flag: 'wx' }); return true } catch (error) {

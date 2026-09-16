@@ -8,8 +8,8 @@
  * tsconfig path map; plain Node does not. This module creates
  * `plugins/node_modules/@deepseek-ai/<name>` junctions pointing at the core's
  * workspace packages for every `@deepseek-ai/*` peer/dependency a suite plugin
- * declares, and `plugins/node_modules/@dsh-suite/<name>` junctions for the suite's own shared
- * packages under `plugins/` (`@dsh-suite/kit` = `plugins/_shared`). Junctions resolve to the same realpath the core itself loads, so
+ * declares, and `plugins/node_modules/<name>` junctions for the suite's own shared
+ * packages under `plugins/` (`dsh-cyberworkstation-kit` = `plugins/_shared`). Junctions resolve to the same realpath the core itself loads, so
  * Node keeps a single module instance per package.
  *
  * Usage: `node launcher/peer-links.mjs` (setup.cmd) or `ensurePeerLinks()` from
@@ -53,34 +53,38 @@ function samePath(a, b) {
   return process.platform === 'win32' ? x.toLowerCase() === y.toLowerCase() : x === y
 }
 
-/** Map `@dsh-suite/<name>` -> package dir for the shared packages that live under plugins/ (not plugins themselves). */
+/**
+ * Map package name -> dir for the suite's shared packages: the `_`-prefixed directories under plugins/
+ * (`_shared` is `dsh-cyberworkstation-kit`). They are not plugins and never enter a profile; plugins
+ * reach them through the links made here.
+ */
 function indexSuitePackages(pluginsDir) {
   const map = new Map()
   let dirs = []
   try { dirs = fs.readdirSync(pluginsDir, { withFileTypes: true }) } catch { return map }
   for (const d of dirs) {
-    if (!d.isDirectory() || d.name === 'node_modules') continue
+    if (!d.isDirectory() || !d.name.startsWith('_')) continue
     try {
       const pkg = JSON.parse(fs.readFileSync(path.join(pluginsDir, d.name, 'package.json'), 'utf8'))
-      if (typeof pkg.name === 'string' && pkg.name.startsWith('@dsh-suite/')) map.set(pkg.name, path.join(pluginsDir, d.name))
+      if (typeof pkg.name === 'string') map.set(pkg.name, path.join(pluginsDir, d.name))
     } catch { /* not a package dir */ }
   }
   return map
 }
 
-const LINKED_SCOPES = ['@deepseek-ai/', '@dsh-suite/']
+const CORE_SCOPE = '@deepseek-ai/'
 
-/** Collect every `@deepseek-ai/*` / `@dsh-suite/*` name the suite plugins declare as peer or regular dependency. */
-function wantedNames(pluginsDir) {
+/** Collect every `@deepseek-ai/*` name and every shared-package name the suite plugins declare as peer or regular dependency. */
+function wantedNames(pluginsDir, suite) {
   const names = new Set()
   let dirs = []
   try { dirs = fs.readdirSync(pluginsDir, { withFileTypes: true }) } catch { return names }
   for (const d of dirs) {
-    if (!d.isDirectory() || d.name === 'node_modules') continue
+    if (!d.isDirectory() || d.name === 'node_modules' || d.name.startsWith('_')) continue
     try {
       const pkg = JSON.parse(fs.readFileSync(path.join(pluginsDir, d.name, 'package.json'), 'utf8'))
       for (const field of ['peerDependencies', 'dependencies']) {
-        for (const name of Object.keys(pkg[field] ?? {})) if (LINKED_SCOPES.some(scope => name.startsWith(scope))) names.add(name)
+        for (const name of Object.keys(pkg[field] ?? {})) if (name.startsWith(CORE_SCOPE) || suite.has(name)) names.add(name)
       }
     } catch { /* plugin without manifest */ }
   }
@@ -88,22 +92,23 @@ function wantedNames(pluginsDir) {
 }
 
 /**
- * Ensure `plugins/node_modules/@deepseek-ai/<name>` links exist for every
- * declared core peer, and `plugins/node_modules/@dsh-suite/<name>` for the
- * suite's shared packages. Returns a summary; never throws for a single bad link.
+ * Ensure `plugins/node_modules/@deepseek-ai/<name>` links exist for every declared core peer, and
+ * `plugins/node_modules/<name>` for the suite's shared packages (installed from npm they are regular
+ * dependencies; as `link:` plugins they resolve through these junctions). Returns a summary; never
+ * throws for a single bad link.
  * @param {{ repo: string, pluginsDir: string }} opts
  */
 export function ensurePeerLinks({ repo, pluginsDir }) {
   const core = indexCorePackages(repo)
   const suite = indexSuitePackages(pluginsDir)
   const result = { linked: [], kept: [], missing: [], failed: [] }
-  const wanted = wantedNames(pluginsDir)
+  const wanted = wantedNames(pluginsDir, suite)
   if (wanted.size === 0) return result
   for (const name of wanted) {
     const target = core.get(name) ?? suite.get(name)
     const slash = name.indexOf('/')
-    const scope = path.join(pluginsDir, 'node_modules', name.slice(0, slash))
-    const linkPath = path.join(scope, name.slice(slash + 1))
+    const scope = slash < 0 ? path.join(pluginsDir, 'node_modules') : path.join(pluginsDir, 'node_modules', name.slice(0, slash))
+    const linkPath = slash < 0 ? path.join(scope, name) : path.join(scope, name.slice(slash + 1))
     if (target === undefined) { result.missing.push(name); continue }
     try { fs.mkdirSync(scope, { recursive: true }) } catch { /* reported by the link attempt */ }
     try {

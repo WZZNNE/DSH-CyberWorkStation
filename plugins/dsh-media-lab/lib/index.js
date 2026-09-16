@@ -21,7 +21,7 @@ import { defineTool } from '@deepseek-ai/dsh-tools'
 import { IMAGE_RESOLUTION_TIERS, KINDS, adapterFor, extFor, runTask } from './adapters.js'
 import { DEFAULT_CONFIG, KEY_ENVS, describeProviders, keyEnvFor, normalizeConfig, validateConfig } from './config.js'
 import { scoutModels } from './model-scout.js'
-import { rejectCrossSite, json, readBody as kitReadBody } from '@dsh-suite/kit/fence'
+import { rejectCrossSite, json, readBody as kitReadBody } from 'dsh-cyberworkstation-kit/fence'
 
 export const name = 'media-lab'
 export const inject = ['tools', 'systemPrompt', 'webServer']

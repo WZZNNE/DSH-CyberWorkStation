@@ -1,4 +1,4 @@
-# dsh-temp-chat bundle patch: one host row (the browser half rides the package's dsh.client entry).
+# dsh-temp-chat-cws bundle patch: one host row (the browser half rides the package's dsh.client entry).
 - insert:
     - id: temp-chat
-      name: dsh-temp-chat
+      name: dsh-temp-chat-cws

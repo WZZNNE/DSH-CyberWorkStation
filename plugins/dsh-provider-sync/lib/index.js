@@ -39,7 +39,7 @@
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { rejectCrossSite, json } from '@dsh-suite/kit/fence'
+import { rejectCrossSite, json } from 'dsh-cyberworkstation-kit/fence'
 
 export const name = 'provider-sync'
 export const inject = ['webServer']

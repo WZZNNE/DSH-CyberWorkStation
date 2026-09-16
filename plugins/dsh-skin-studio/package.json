@@ -1,5 +1,5 @@
 {
-  "name": "dsh-skin-studio",
+  "name": "dsh-skin-studio-cws",
   "version": "0.1.0",
   "description": "Skin Studio for DeepSeek Harness: a model-facing skin_studio tool that lets the agent design and one-click install launcher or frontend skins on user request — with a guided flow (ask requirements first; request an image from the user when the model cannot generate one, or call an image-generation tool when it can), local image inlining as data URIs, and instant apply through the DSH Launcher API.",
   "type": "module",

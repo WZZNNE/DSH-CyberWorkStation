@@ -1,4 +1,4 @@
-// dsh-desktop-pet desktop host (variant A: WinForms sprite; variant B: an Edge app window).
+// dsh-desktop-pet-cws desktop host (variant A: WinForms sprite; variant B: an Edge app window).
 //
 // Compiled on demand by the plugin with the .NET Framework compiler that ships with Windows
 // (C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe), so the suite needs no SDK and no

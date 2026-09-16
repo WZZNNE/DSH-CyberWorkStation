@@ -20,7 +20,7 @@
  * browser half is `lib/client.js`.
  */
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
-import { adoptSourceExtras, inboxHasPending, liveEventAt, liveEvents, readStoredSession, recordSourceExtras, statStoredSession } from '@dsh-suite/kit/session-read'
+import { adoptSourceExtras, inboxHasPending, liveEventAt, liveEvents, readStoredSession, recordSourceExtras, statStoredSession } from 'dsh-cyberworkstation-kit/session-read'
 import { readFileSync, writeFileSync, mkdirSync, renameSync, unlinkSync, watchFile, unwatchFile } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { randomUUID } from 'node:crypto'
@@ -28,7 +28,7 @@ import * as V from './view.js'
 import { normalizeDoc, setOverride, clearOverrides, overridesFor } from './overrides.js'
 import { editState, editableMessages, effectiveOverrides, resolveEditTarget, activeTurnRange } from './edit-state.js'
 import { reanchorOverrides } from './overrides.js'
-import { rejectCrossSite, json, readBody as kitReadBody } from '@dsh-suite/kit/fence'
+import { rejectCrossSite, json, readBody as kitReadBody } from 'dsh-cyberworkstation-kit/fence'
 
 export const name = 'chat-editor'
 export const inject = ['sessions', 'agents']

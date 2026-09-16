@@ -22,7 +22,7 @@ SillyTavern; none of its code is used.
 | `GET /dsh-control-deck/status` | Loaded preset, counts, load errors, skipped work |
 | `GET /dsh-control-deck/display-regex.json` | The display-only regex rules the browser half applies |
 
-Reads are GET-only and refuse a foreign `Host` (DNS rebinding) through `@dsh-suite/kit/fence`.
+Reads are GET-only and refuse a foreign `Host` (DNS rebinding) through `dsh-cyberworkstation-kit/fence`.
 
 ## Files
 

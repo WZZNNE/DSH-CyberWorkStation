@@ -12,12 +12,12 @@
  * of sessions the user selects, and the launcher lists them.
  */
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
-import { inboxHasPending } from '@dsh-suite/kit/session-read'
+import { inboxHasPending } from 'dsh-cyberworkstation-kit/session-read'
 import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
-import { rejectCrossSite, json, readBody as kitReadBody } from '@dsh-suite/kit/fence'
+import { rejectCrossSite, json, readBody as kitReadBody } from 'dsh-cyberworkstation-kit/fence'
 
 export const name = 'temp-chat'
 export const inject = ['sessions', 'agents', 'workspaceRegistry']

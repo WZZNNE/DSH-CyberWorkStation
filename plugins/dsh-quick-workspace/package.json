@@ -20,9 +20,6 @@
     }
   },
   "license": "MIT",
-  "peerDependencies": {
-    "@dsh-suite/kit": "*"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/WZZNNE/DSH-CyberWorkStation.git",
@@ -40,5 +37,8 @@
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "dsh-cyberworkstation-kit": "^1.0.0"
   }
 }

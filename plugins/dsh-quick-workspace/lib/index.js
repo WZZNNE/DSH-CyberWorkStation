@@ -13,7 +13,7 @@
  * GET  /dsh-quick-workspace/list
  */
 import { existsSync, mkdirSync, statSync } from 'node:fs'
-import { rejectCrossSite, json, readBody as kitReadBody } from '@dsh-suite/kit/fence'
+import { rejectCrossSite, json, readBody as kitReadBody } from 'dsh-cyberworkstation-kit/fence'
 
 export const name = 'quick-workspace'
 export const inject = ['webServer', 'workspaceRegistry']

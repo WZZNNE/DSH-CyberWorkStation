@@ -1,5 +1,5 @@
 /**
- * dsh-skin-studio host plugin — the model-facing one-click skin studio.
+ * dsh-skin-studio-cws host plugin — the model-facing one-click skin studio.
  *
  * Registers the skin_studio tool: once the agent has written the CSS for the
  * requested skin it calls the tool, which inlines local images as data URIs

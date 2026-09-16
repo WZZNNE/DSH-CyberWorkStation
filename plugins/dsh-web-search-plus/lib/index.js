@@ -29,7 +29,7 @@ import { normalizeConfig, validateConfig, decideTrigger, formatResults, formatTo
 import { createRegexMatcher } from './regex-guard.js'
 import { fetchPageText, boundedSignal } from './page.js'
 import { fetchPinned } from './fetch.js'
-import { rejectCrossSite, json, readBody as kitReadBody } from '@dsh-suite/kit/fence'
+import { rejectCrossSite, json, readBody as kitReadBody } from 'dsh-cyberworkstation-kit/fence'
 
 export const name = 'web-search-plus'
 export const inject = ['web', 'tools', 'systemPrompt', 'webServer']

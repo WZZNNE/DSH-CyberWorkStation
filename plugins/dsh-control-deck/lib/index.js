@@ -35,8 +35,8 @@ import { join, basename } from 'node:path'
 import { normalizeDeck, compileRules, brokenRules, expandMacros, neutralizeBraces, displayRules, requiredHistoryDepth } from './deck.js'
 import { createDeckRunner } from './deck-runner.js'
 import { visibleConversationHistory } from './history.js'
-import { liveEvents } from '@dsh-suite/kit/session-read'
-import { isLoopbackRequest, refuse, json } from '@dsh-suite/kit/fence'
+import { liveEvents } from 'dsh-cyberworkstation-kit/session-read'
+import { isLoopbackRequest, refuse, json } from 'dsh-cyberworkstation-kit/fence'
 
 export const name = 'control-deck'
 // webServer is NOT required: a headless profile has none, and the deck's prompts/tools still apply there.

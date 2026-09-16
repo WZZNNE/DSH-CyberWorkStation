@@ -25,7 +25,7 @@ A video request may also carry a **first frame** — `{"kind":"video","image":"<
 URL | https: URL>"}` — for image-to-video. A local path is read through the same filesystem seam as
 everything else and sent as a `data:` URL, because the provider cannot see this disk; it reaches
 OpenRouter as `frame_images` with `frame_type: "first_frame"`, and a provider that has no such
-field ignores it. This is how `dsh-desktop-pet` turns one drawing into a frame animation.
+field ignores it. This is how `dsh-desktop-pet-cws` turns one drawing into a frame animation.
 
 A local server (`127.0.0.1`) may be used without an API key.
 

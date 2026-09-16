@@ -23,7 +23,7 @@
  *              Cold sessions are resumed, edited, flushed and disposed again.
  */
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
-import { inboxHasPending, listStoredSessions, liveEvents, readStoredSession, recordSourceExtras, statStoredSession } from '@dsh-suite/kit/session-read'
+import { inboxHasPending, listStoredSessions, liveEvents, readStoredSession, recordSourceExtras, statStoredSession } from 'dsh-cyberworkstation-kit/session-read'
 import { readFileSync, writeFileSync, mkdirSync, watchFile, unwatchFile } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { randomUUID } from 'node:crypto'
@@ -33,7 +33,7 @@ import { rank, visibleIn, buildIndex } from './recall.js'
 import { EXTRACTION_INSTRUCTION, parseFacts, dedupeFacts } from './extract.js'
 import { embedTexts } from './embeddings.js'
 import * as C from './context.js'
-import { rejectCrossSite, json, readBody as kitReadBody } from '@dsh-suite/kit/fence'
+import { rejectCrossSite, json, readBody as kitReadBody } from 'dsh-cyberworkstation-kit/fence'
 
 export const name = 'memory-lite'
 export const inject = ['sessions', 'agents', 'llm', 'tools', 'systemPrompt']

@@ -1,5 +1,5 @@
 /**
- * dsh-desktop-pet host plugin — a desktop companion that lives next to the harness.
+ * dsh-desktop-pet-cws host plugin — a desktop companion that lives next to the harness.
  *
  * What it owns:
  *  - pets (`$DSH_HOME/pets/<id>/pet.json`, lorebook, assets, conversations) and the active one;
@@ -19,7 +19,7 @@
  * this file executes only after checking the permission level. See `pet.js`.
  */
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
-import { listStoredSessions, liveEvents, readStoredSession } from '@dsh-suite/kit/session-read'
+import { listStoredSessions, liveEvents, readStoredSession } from 'dsh-cyberworkstation-kit/session-read'
 import { execFile, spawn } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, unlinkSync, watchFile, unwatchFile, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -28,7 +28,7 @@ import { randomBytes } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { chat } from './chat.js'
 import { buildDigest, orderSessions, profileMessages, titleOf } from './history.js'
-import { rejectCrossSite, json, readBody as kitReadBody } from '@dsh-suite/kit/fence'
+import { rejectCrossSite, json, readBody as kitReadBody } from 'dsh-cyberworkstation-kit/fence'
 import {
   CONTROL_TAGS, FREQUENCIES, MAX_LORE, MAX_PETS, MAX_MESSAGES, activateLore, applyInputBudget, buildSystemPrompt, dueSchedules, normalizeConfig,
   frameName, normalizeLoreEntry, normalizePet, parseIntents, parsePoint, parseSchedule, pickInterval, proactiveSeed, readReply, splitVoiceTags, trimMessages,

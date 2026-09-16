@@ -1,5 +1,5 @@
 /**
- * dsh-desktop-pet pure core: the pet document, the prompt it speaks with, expression selection,
+ * dsh-desktop-pet-cws pure core: the pet document, the prompt it speaks with, expression selection,
  * proactive pacing and reminder parsing. No I/O — the host module and the tests both import this.
  */
 

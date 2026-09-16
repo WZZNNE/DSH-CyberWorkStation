@@ -1,5 +1,5 @@
 /**
- * dsh-desktop-pet browser half:
+ * dsh-desktop-pet-cws browser half:
  *   1. a floating pet inside dsh itself (drag it anywhere; no desktop window needed),
  *   2. a sidebar button that shows/hides it,
  *   3. a Settings section with everything the pet has: persona, its own multimodal API, lorebook,
@@ -11,7 +11,7 @@
  * the owner set the level to "full access".
  */
 window.__ModuleLoader__.load({
-  id: 'dsh-desktop-pet',
+  id: 'dsh-desktop-pet-cws',
   factory: (require) => {
     var module = { exports: {} }
     var exports = module.exports

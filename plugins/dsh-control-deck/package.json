@@ -28,8 +28,7 @@
   "license": "MIT",
   "peerDependencies": {
     "@deepseek-ai/dsh-llm": "*",
-    "@deepseek-ai/dsh-home-paths": "*",
-    "@dsh-suite/kit": "*"
+    "@deepseek-ai/dsh-home-paths": "*"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-llm": {
@@ -53,5 +52,8 @@
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "dsh-cyberworkstation-kit": "^1.0.0"
   }
 }

@@ -1,4 +1,4 @@
-# dsh-desktop-pet bundle patch: one host row (the browser half rides the package's dsh.client entry).
+# dsh-desktop-pet-cws bundle patch: one host row (the browser half rides the package's dsh.client entry).
 - insert:
     - id: desktop-pet
-      name: dsh-desktop-pet
+      name: dsh-desktop-pet-cws

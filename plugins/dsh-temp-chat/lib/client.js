@@ -1,10 +1,10 @@
 /**
- * dsh-temp-chat browser half: a "＋ temp chat" button in the sidebar footer that creates a
+ * dsh-temp-chat-cws browser half: a "＋ temp chat" button in the sidebar footer that creates a
  * project-free conversation (scratch directory + chat-only preset) and opens it. The host
  * plugin owns the session; this only asks for one and switches to it.
  */
 window.__ModuleLoader__.load({
-  id: 'dsh-temp-chat',
+  id: 'dsh-temp-chat-cws',
   factory: (require) => {
     var module = { exports: {} }
     var exports = module.exports

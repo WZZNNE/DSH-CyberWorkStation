@@ -296,7 +296,7 @@ The model gains four tools, `generate_image`, `generate_video`, `text_to_speech`
 
 ### Fig. 23: Settings → Desktop pet
 
-*dsh-desktop-pet · original*
+*dsh-desktop-pet-cws · original*
 
 ![Settings → Desktop pet](docs/screenshots/2026-09/23-dsh-settings-desktop-pet.webp)
 
@@ -362,11 +362,11 @@ Local only. Every launcher request carries a token, and every suite endpoint tha
 
 ### Conversation
 
-Temporary chats (`dsh-temp-chat`, original). One sidebar button opens a chat that belongs to no project, in a shared "Temporary chats" workspace, running a chat-only preset with no files and no terminal. Nothing is deleted automatically; a clean-up button removes the folder when you want.
+Temporary chats (`dsh-temp-chat-cws`, original). One sidebar button opens a chat that belongs to no project, in a shared "Temporary chats" workspace, running a chat-only preset with no files and no terminal. Nothing is deleted automatically; a clean-up button removes the folder when you want.
 
 File drops (`dsh-drop-files`, original). Drop any non-image file onto the chat and it is saved into the current workspace's `.dsh-uploads/`, with `@.dsh-uploads/<name>` inserted into the composer for the model to read with its file tools; the limit is 25 MB per file. PDF, Office and archive files are stored but the model cannot read them, and the drop says so.
 
-Skin Studio (`dsh-skin-studio` plus the `skin-studio` skill, original). Ask the model in chat to make a skin for the launcher or for dsh. It asks about style, primary colour, light or dark and a background image first, then writes the CSS and applies it. With no image and no image model it asks you for one rather than inventing one.
+Skin Studio (`dsh-skin-studio-cws` plus the `skin-studio` skill, original). Ask the model in chat to make a skin for the launcher or for dsh. It asks about style, primary colour, light or dark and a background image first, then writes the CSS and applies it. With no image and no image model it asks you for one rather than inventing one.
 
 ### Smaller pieces
 
@@ -479,14 +479,14 @@ Standalone program, not a dsh plugin.
 | `dsh-skin-loader` | 0.1.0 | original | Skins the dsh web page. | launcher → Skins |
 | `dsh-price-hint` | 0.1.0 | original | Hover prices in the model picker. | dsh model picker |
 | `dsh-quick-workspace` | 0.1.0 | original | Create a workspace from a path. | launcher dashboard |
-| `dsh-skin-studio` | 0.1.0 | original | Let the model make skins in chat (`skin_studio` tool). | chat |
+| `dsh-skin-studio-cws` | 0.1.0 | original | Let the model make skins in chat (`skin_studio` tool). | chat |
 | `dsh-local-reasoning` | 0.1.1 | original | Context window, max output and thinking levels for any model; local models probed and taught; OpenRouter `:online` variants. | launcher → Model parameters |
 | `dsh-web-search-plus` | 0.5.0 | original | Four web-search modes, six sources, the `web_fetch` page reader, automatic page text. Trigger semantics follow SillyTavern's WebSearch extension without its code. | dsh Settings → Web search (global), Control Deck |
 | `dsh-memory-lite` | 0.1.0 | original | Editable compaction summaries, compact now; long-term memory (summaries, facts, notes) with automatic injection and the `memory_recall` / `memory_note` tools. | launcher → Memory & context |
 | `dsh-chat-editor` | 0.1.0 | original | Edit, delete or fold any message, fork from any turn. | session header ✎ |
-| `dsh-temp-chat` | 0.1.1 | original | Temporary chats that belong to no project. | sidebar button |
+| `dsh-temp-chat-cws` | 0.1.1 | original | Temporary chats that belong to no project. | sidebar button |
 | `dsh-media-lab` | 0.1.1 | original | Image, video, TTS and STT with nine providers plus custom endpoints; results play in the chat. | dsh Settings → Media APIs |
-| `dsh-desktop-pet` | 0.2.2 | original | Desktop pet: persona, lorebook, own API, proactive talk, reminders, voice, frame animation, screen and control permissions, three windows. | dsh Settings → Desktop pet, sidebar |
+| `dsh-desktop-pet-cws` | 0.2.2 | original | Desktop pet: persona, lorebook, own API, proactive talk, reminders, voice, frame animation, screen and control permissions, three windows. | dsh Settings → Desktop pet, sidebar |
 | `dsh-lan-fence` | 0.1.0 | original | Fences `/api` from unpaired LAN devices during mobile remote. | (no panel) |
 | `dsh-provider-sync` | 0.2.0 | original | Automatic OpenRouter model-list sync with thinking levels for reasoning models. | dsh Settings → Model-list sync |
 | `dsh-drop-files` | 0.1.1 | original | Drop any file onto the chat. | chat drag and drop |
@@ -584,7 +584,7 @@ The core ships 12 development-process skills (code review, documentation standar
 
 ## For contributors
 
-The suite plugins are the `plugins/dsh-*` folders: plain ES-module packages with no build step. `plugins/_shared` is the shared kit `@dsh-suite/kit`, which holds the stored-session reader and the loopback write fence that the suite's routers use; `launcher/peer-links.mjs` links it next to the core's packages so that plugins can import it. The launcher itself is `launcher/`, with `server.mjs` on top and the pieces under `lib/`. The vendored core under `core/` is never edited by hand.
+The suite plugins are the `plugins/dsh-*` folders: plain ES-module packages with no build step. `plugins/_shared` is the shared kit `dsh-cyberworkstation-kit`, which holds the stored-session reader and the loopback write fence that the suite's routers use; `launcher/peer-links.mjs` links it next to the core's packages so that plugins can import it. The launcher itself is `launcher/`, with `server.mjs` on top and the pieces under `lib/`. The vendored core under `core/` is never edited by hand.
 
 Useful commands from the repository root: `npm run lint` (ESLint, flat config), `npm run peer-links` (recreate the plugin links), `npm run readme:zh` (README.zh.md is generated from `docs/showcase-src/content`), and `npm run repair:preview` / `npm run repair` (the session-log repair script; dsh must be stopped).
 

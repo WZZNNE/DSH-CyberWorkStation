@@ -1,4 +1,4 @@
-# dsh-temp-chat
+# dsh-temp-chat-cws
 
 Temporary conversations that belong to no project.
 

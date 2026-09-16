@@ -43,7 +43,7 @@ import { readFileSync, writeFileSync, mkdirSync, watchFile, unwatchFile } from '
 import { join, dirname } from 'node:path'
 import { classifyModel, recommend, recommendContext, toggleSuffix, parseEffortSpec, assertServiceableEfforts, LEVELS } from './families.js'
 import { isLocalBaseUrl, originOf, probeOrigin } from './detect.js'
-import { rejectCrossSite, json, readBody as kitReadBody } from '@dsh-suite/kit/fence'
+import { rejectCrossSite, json, readBody as kitReadBody } from 'dsh-cyberworkstation-kit/fence'
 
 export const name = 'local-reasoning'
 export const inject = ['settings', 'webServer', 'llm']

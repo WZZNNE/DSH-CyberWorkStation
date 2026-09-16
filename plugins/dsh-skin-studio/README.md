@@ -1,4 +1,4 @@
-# dsh-skin-studio
+# dsh-skin-studio-cws
 
 Lets a model design and install a launcher or frontend skin from inside a conversation, on the user's
 request, through the model-facing `skin_studio` tool.

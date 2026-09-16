@@ -9,7 +9,7 @@
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { isLoopbackRequest, refuse } from '@dsh-suite/kit/fence'
+import { isLoopbackRequest, refuse } from 'dsh-cyberworkstation-kit/fence'
 
 export const name = 'skin-loader'
 export const inject = ['webServer']

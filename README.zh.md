@@ -302,7 +302,7 @@ dsh 运行时，这一页列出每一个 API 凭据引用（如 `OPENROUTER_API_
 
 ### 图 23：设置 → 桌宠
 
-*dsh-desktop-pet · 原创*
+*dsh-desktop-pet-cws · 原创*
 
 ![设置 → 桌宠](docs/screenshots/2026-09/23-dsh-settings-desktop-pet.webp)
 
@@ -372,11 +372,11 @@ VS Code 式右侧工作台（文件、编辑器、终端、Git、浏览器、后
 
 ### 对话
 
-临时对话（`dsh-temp-chat`，原创）。侧栏一个按钮开一个不属于任何项目的对话，放在共用的「临时对话」工作区里，用纯聊天预设，没有文件也没有终端。不会自动删除，想清理时用清理按钮删掉目录。
+临时对话（`dsh-temp-chat-cws`，原创）。侧栏一个按钮开一个不属于任何项目的对话，放在共用的「临时对话」工作区里，用纯聊天预设，没有文件也没有终端。不会自动删除，想清理时用清理按钮删掉目录。
 
 拖文件（`dsh-drop-files`，原创）。把任意非图片文件拖进对话区，它会存进当前工作区的 `.dsh-uploads/`，输入框里自动写入 `@.dsh-uploads/<名>`，模型用文件工具读；单个文件最多 25 MB。PDF、Office、压缩包会存下来，但模型读不出内容，拖入时会提示。
 
-皮肤工坊（`dsh-skin-studio` + Skill `skin-studio`，原创）。在对话里让模型给启动器或 dsh 做皮肤。它会先问风格、主色、明暗和背景图，然后写好 CSS 直接启用。没有图而模型又不能生图时，它会向你要一张，而不是自己编一张。
+皮肤工坊（`dsh-skin-studio-cws` + Skill `skin-studio`，原创）。在对话里让模型给启动器或 dsh 做皮肤。它会先问风格、主色、明暗和背景图，然后写好 CSS 直接启用。没有图而模型又不能生图时，它会向你要一张，而不是自己编一张。
 
 ### 更小的部件
 
@@ -489,14 +489,14 @@ flowchart TB
 | `dsh-skin-loader` | 0.1.0 | 原创 | 给 dsh 网页套皮肤。 | 启动器「外观皮肤」 |
 | `dsh-price-hint` | 0.1.0 | 原创 | 模型选择器悬停显示价格。 | dsh 模型选择器 |
 | `dsh-quick-workspace` | 0.1.0 | 原创 | 输入路径新建工作区。 | 启动器仪表盘 |
-| `dsh-skin-studio` | 0.1.0 | 原创 | 在对话里让模型做皮肤（`skin_studio` 工具）。 | 对话 |
+| `dsh-skin-studio-cws` | 0.1.0 | 原创 | 在对话里让模型做皮肤（`skin_studio` 工具）。 | 对话 |
 | `dsh-local-reasoning` | 0.1.1 | 原创 | 任意模型的上下文上限 / 最大输出 / 思考档位；本地模型自动探测并写入档位；OpenRouter `:online` 变体。 | 启动器「模型参数」 |
 | `dsh-web-search-plus` | 0.5.0 | 原创 | 联网搜索四种方式、六种来源、`web_fetch` 网页读取、自动打开正文。触发词用法对齐 SillyTavern 的 WebSearch 扩展，未引用其代码。 | dsh 设置「联网搜索（全局）」、控制甲板 |
 | `dsh-memory-lite` | 0.1.0 | 原创 | 可编辑的压缩摘要、立即压缩；长期记忆（摘要 / 事实 / 笔记）自动注入与 `memory_recall` / `memory_note` 工具。 | 启动器「记忆与上下文」 |
 | `dsh-chat-editor` | 0.1.0 | 原创 | 改 / 删 / 折叠任意消息，从任意轮次分叉。 | 会话头 ✎ |
-| `dsh-temp-chat` | 0.1.1 | 原创 | 不属于任何项目的临时对话。 | 侧栏按钮 |
+| `dsh-temp-chat-cws` | 0.1.1 | 原创 | 不属于任何项目的临时对话。 | 侧栏按钮 |
 | `dsh-media-lab` | 0.1.1 | 原创 | 生图 / 生视频 / 语音合成 / 语音识别，九种供应商 + 自定义接口，结果在对话里播放。 | dsh 设置「多媒体 API」 |
-| `dsh-desktop-pet` | 0.2.2 | 原创 | 桌宠：人格、设定集、独立 API、主动搭话、提醒、语音、序列帧动画、看屏 / 操作电脑权限、三种窗口。 | dsh 设置「桌宠」、侧栏 |
+| `dsh-desktop-pet-cws` | 0.2.2 | 原创 | 桌宠：人格、设定集、独立 API、主动搭话、提醒、语音、序列帧动画、看屏 / 操作电脑权限、三种窗口。 | dsh 设置「桌宠」、侧栏 |
 | `dsh-lan-fence` | 0.1.0 | 原创 | 手机远程时封住未配对设备的 `/api`。 | （无面板） |
 | `dsh-provider-sync` | 0.2.0 | 原创 | OpenRouter 模型清单自动同步，可推理模型写好思考档位。 | dsh 设置「模型清单同步」 |
 | `dsh-drop-files` | 0.1.1 | 原创 | 把任意文件拖进对话。 | 对话拖放 |
@@ -594,7 +594,7 @@ Skill 分两类。工程 Skill 给 Claude Code 用，放在 `skills/`，复制�
 
 ## 给贡献者
 
-套件插件就是 `plugins/dsh-*` 这些目录，纯 ES 模块包，没有构建步骤。`plugins/_shared` 是共享包 `@dsh-suite/kit`，里面是套件各接口共用的会话读取和只允许本机写入的围栏；`launcher/peer-links.mjs` 把它和本体的包一起链接到插件旁边，插件才能直接 import。启动器在 `launcher/`，`server.mjs` 在最上层，各部分在 `lib/` 下。`core/` 里原样内置的本体从不手改。
+套件插件就是 `plugins/dsh-*` 这些目录，纯 ES 模块包，没有构建步骤。`plugins/_shared` 是共享包 `dsh-cyberworkstation-kit`，里面是套件各接口共用的会话读取和只允许本机写入的围栏；`launcher/peer-links.mjs` 把它和本体的包一起链接到插件旁边，插件才能直接 import。启动器在 `launcher/`，`server.mjs` 在最上层，各部分在 `lib/` 下。`core/` 里原样内置的本体从不手改。
 
 仓库根目录下的常用命令：`npm run lint`（ESLint，flat config）、`npm run peer-links`（重建插件链接）、`npm run readme:zh`（本文由 `docs/showcase-src/content` 生成）、`npm run repair:preview` / `npm run repair`（修复旧会话日志的脚本，需要先停 dsh）。
 

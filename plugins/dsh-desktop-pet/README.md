@@ -1,4 +1,4 @@
-# dsh-desktop-pet
+# dsh-desktop-pet-cws
 
 A desktop companion for DeepSeek Harness. It has its own persona, its own (multimodal) API, its own
 lorebook and its own conversations; it knows what the harness is working on, can talk first, can

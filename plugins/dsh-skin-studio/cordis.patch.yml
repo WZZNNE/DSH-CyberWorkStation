@@ -1,4 +1,4 @@
-# dsh-skin-studio bundle patch: one host row.
+# dsh-skin-studio-cws bundle patch: one host row.
 - insert:
     - id: skin-studio
-      name: dsh-skin-studio
+      name: dsh-skin-studio-cws

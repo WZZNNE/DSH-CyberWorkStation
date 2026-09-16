@@ -58,6 +58,9 @@ rem `dsh plugin` forwards to a bare `pnpm` on PATH; when corepack enable could n
 rem (unelevated shell) use the source launch, where pnpm puts itself on PATH.
 set "DSHCLI=node apps\cli\lib\bin.js"
 where pnpm >nul 2>nul || set "DSHCLI=corepack pnpm dsh"
+rem The npm names dsh-desktop-pet / dsh-temp-chat / dsh-skin-studio belong to other projects; the suite packages are
+rem dsh-desktop-pet-cws / dsh-temp-chat-cws / dsh-skin-studio-cws (same directories). Drop registrations made under the old names.
+for %%P in (dsh-desktop-pet dsh-temp-chat dsh-skin-studio) do call %DSHCLI% plugin --profile web remove %%P >nul 2>nul
 for %%P in (dsh-safe-guard dsh-cost-meter-plus dsh-skin-loader dsh-control-deck dsh-price-hint dsh-quick-workspace dsh-skin-studio dsh-local-reasoning dsh-web-search-plus dsh-memory-lite dsh-chat-editor dsh-temp-chat dsh-media-lab dsh-desktop-pet dsh-lan-fence dsh-credentials-keyring dsh-provider-sync dsh-vision-bridge-zh dsh-drop-files dsh-credentials-center dsh-import-note) do (
   echo   + %%P
   call %DSHCLI% plugin --profile web add "link:%%SUITE%%plugins\%%P"
@@ -80,7 +83,7 @@ popd
 
 echo [5/6] 链接插件所需的本体包(peer links)...
 set "DSH_REPO=%CORE%"
-node "%SUITE%launcher\peer-links.mjs" || (echo peer links failed: the plugins cannot resolve the core packages or @dsh-suite/kit ^(see the JSON above^) && exit /b 1)
+node "%SUITE%launcher\peer-links.mjs" || (echo peer links failed: the plugins cannot resolve the core packages or dsh-cyberworkstation-kit ^(see the JSON above^) && exit /b 1)
 
 rem The in-dsh skills (skin studio, control deck authoring, desktop pet) go into the user skill root.
 if not exist "%DSH_HOME%\skills\skin-studio" mkdir "%DSH_HOME%\skills\skin-studio"

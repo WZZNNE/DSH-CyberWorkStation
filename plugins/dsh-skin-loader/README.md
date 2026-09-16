@@ -12,9 +12,9 @@ skins; this plugin only serves the one that is active.
 - The browser half injects a `<style>` tag with that CSS after the core's own styles, so a skin can override
   the design tokens without touching the core's bundles.
 
-The route is read-only and refuses a foreign `Host` (DNS rebinding) through `@dsh-suite/kit/fence`.
+The route is read-only and refuses a foreign `Host` (DNS rebinding) through `dsh-cyberworkstation-kit/fence`.
 
 ## Related
 
 - **Launcher → 外观皮肤 / Skins**: switch, import, delete, install community skins from npm.
-- `dsh-skin-studio` lets a model design and install a skin from inside a conversation.
+- `dsh-skin-studio-cws` lets a model design and install a skin from inside a conversation.

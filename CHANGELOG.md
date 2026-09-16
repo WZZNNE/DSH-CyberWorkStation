@@ -2,7 +2,13 @@
 
 All notable changes to DSH CyberWorkStation. The vendored core (`core/`) tracks the upstream [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) release named in each entry.
 
-## Unreleased
+## v1.12.0 — 2026-09-16
+
+The suite packages go to npm. Two renames come with that, both because the names were already taken on the registry:
+
+- **Shared kit renamed**: `@dsh-suite/kit` is now `dsh-cyberworkstation-kit` (the `dsh-suite` npm organisation belongs to another project). Consumers list it as a regular dependency; `launcher/peer-links.mjs` links any `_`-prefixed package under `plugins/` by its name, scoped or not. Existing installs need no action: the kit never enters a profile.
+- **Three plugins renamed**: `dsh-desktop-pet` → `dsh-desktop-pet-cws`, `dsh-temp-chat` → `dsh-temp-chat-cws`, `dsh-skin-studio` → `dsh-skin-studio-cws` (directories, routes and data files unchanged). An existing install must re-register them once: run `setup.cmd` again (it removes the old registrations first), or in the launcher uninstall the three old names and install the directories again. Until then dsh refuses to boot with `failed to apply loader entry` for the old name.
+- Every suite package carries repository / homepage / bugs / keywords / `publishConfig: public` metadata and is published from the repository as-is; `dsh-token-usage-plus` stays unpublished.
 
 - Desktop pet: the settings panel previews the three custom UI drawings; for a pet that has none (the normal case) the route answered 404 and the browser console logged three errors each time the section opened. The two preview routes (`/ui` and `/ui-skin/part`) now answer 204 No Content for a missing drawing; an unknown part name is still 404.
 - setup.cmd: the fallback clone tag, used only when `core/` is absent, names the vendored core (dsh-v0.1.5-rc.2); it still said 0.1.1-rc.2.

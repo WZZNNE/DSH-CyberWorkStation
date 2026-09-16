@@ -1,5 +1,5 @@
 /**
- * dsh-skin-studio pure layer: argument validation, image inlining, CSS assembly.
+ * dsh-skin-studio-cws pure layer: argument validation, image inlining, CSS assembly.
  * Decoupled from the host (ctx / fetch) so it is unit-testable.
  */
 import { readFileSync } from 'node:fs'

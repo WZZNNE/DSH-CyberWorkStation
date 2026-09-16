@@ -12,7 +12,7 @@ output price in USD per 1M tokens.
 - The browser half fetches that map at boot and every 30 s, and re-annotates the picker's entries (a `title`
   attribute) whenever the picker's DOM changes.
 
-The route is GET-only and refuses a foreign `Host` (DNS rebinding) through `@dsh-suite/kit/fence`.
+The route is GET-only and refuses a foreign `Host` (DNS rebinding) through `dsh-cyberworkstation-kit/fence`.
 
 ## Requirements
 
