@@ -67,9 +67,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Han-1413141/dsh-cost-meter.git"
+    "url": "git+https://github.com/WZZNNE/DSH-CyberWorkStation.git",
+    "directory": "plugins/dsh-cost-meter-plus"
   },
-  "homepage": "https://github.com/Han-1413141/dsh-cost-meter#readme",
+  "homepage": "https://github.com/WZZNNE/DSH-CyberWorkStation#readme",
   "keywords": [
     "deepseek",
     "deepseek-harness",
@@ -84,7 +85,14 @@
     "bilingual",
     "zh",
     "en",
-    "language"
+    "language",
+    "dsh-cyberworkstation"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/WZZNNE/DSH-CyberWorkStation/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

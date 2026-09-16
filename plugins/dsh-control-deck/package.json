@@ -35,5 +35,23 @@
     "@deepseek-ai/dsh-llm": {
       "optional": true
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WZZNNE/DSH-CyberWorkStation.git",
+    "directory": "plugins/dsh-control-deck"
+  },
+  "homepage": "https://github.com/WZZNNE/DSH-CyberWorkStation#readme",
+  "bugs": {
+    "url": "https://github.com/WZZNNE/DSH-CyberWorkStation/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "dsh-cyberworkstation"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

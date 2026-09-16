@@ -1,0 +1,25 @@
+{
+  "name": "dsh-memory-hub",
+  "version": "0.1.2",
+  "suiteDefault": false,
+  "description": "Local shared memory service, DSH plugin and MCP server with a reusable SQLite core. Experimental release.",
+  "type": "module",
+  "main": "./lib/dsh.js",
+  "exports": {
+    ".": "./lib/dsh.js",
+    "./core": "./lib/core.js",
+    "./client": "./lib/client.js",
+    "./service": "./lib/service.js",
+    "./mcp": "./lib/mcp.js",
+    "./package.json": "./package.json"
+  },
+  "bin": { "dsh-memory": "./bin/dsh-memory.js" },
+  "files": ["lib", "bin", "web", "README.md", "ARCHITECTURE.md", "VALIDATION.md", "EVALUATION.md", "BILINGUAL.md", "CHANGELOG.md", "LICENSE", "cordis.patch.yml"],
+  "engines": { "node": ">=24.15.0" },
+  "scripts": { "test": "node --test test/*.test.mjs", "start": "node bin/dsh-memory.js serve" },
+  "dependencies": { "@modelcontextprotocol/sdk": "1.30.0", "zod": "4.6.5" },
+  "peerDependencies": { "@deepseek-ai/dsh-tools": "*" },
+  "peerDependenciesMeta": { "@deepseek-ai/dsh-tools": { "optional": true } },
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } },
+  "license": "MIT"
+}

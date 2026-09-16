@@ -61,6 +61,7 @@ export function renderMarkdown(doc) {
   out.push('');
   out.push(meta.badges.map(([k, v]) => `\`${k}: ${v}\``).join(' · '));
   out.push('');
+  if (meta.starLine) { out.push(meta.starLine); out.push(''); }
   out.push(`![仪表盘](${meta.shotDir}/01-launcher-dashboard.webp)`);
   out.push('');
   out.push('## 目录');

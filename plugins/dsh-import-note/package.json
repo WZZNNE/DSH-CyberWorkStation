@@ -33,5 +33,23 @@
   "license": "MIT",
   "peerDependencies": {
     "@deepseek-ai/schemastery": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WZZNNE/DSH-CyberWorkStation.git",
+    "directory": "plugins/dsh-import-note"
+  },
+  "homepage": "https://github.com/WZZNNE/DSH-CyberWorkStation#readme",
+  "bugs": {
+    "url": "https://github.com/WZZNNE/DSH-CyberWorkStation/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "dsh-cyberworkstation"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

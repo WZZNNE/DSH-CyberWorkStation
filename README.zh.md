@@ -10,6 +10,8 @@ DSH CyberWorkStation 是给 [DeepSeek Harness（dsh）](https://github.com/deeps
 
 `core: 0.1.5-rc.2` · `plugins: 22` · `skills: 10` · `license: MIT`
 
+觉得有用的话点个 star，方便更多 dsh 用户看到。
+
 ![仪表盘](docs/screenshots/2026-09/01-launcher-dashboard.webp)
 
 ## 目录

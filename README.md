@@ -8,6 +8,8 @@ Vendored core: dsh 0.1.5-rc.2 (upstream tag `dsh-v0.1.5-rc.2`).
 
 `core: 0.1.5-rc.2` · `plugins: 22` · `skills: 10` · `license: MIT`
 
+If this is useful to you, a star helps other dsh users find it.
+
 ![Dashboard](docs/screenshots/2026-09/01-launcher-dashboard.webp)
 
 ## Contents

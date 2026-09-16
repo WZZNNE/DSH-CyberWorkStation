@@ -7,7 +7,7 @@
     "url": "git+https://github.com/WZZNNE/DSH-CyberWorkStation.git",
     "directory": "plugins/dsh-vision-bridge-zh"
   },
-  "homepage": "https://github.com/WZZNNE/DSH-CyberWorkStation/tree/main/plugins/dsh-vision-bridge-zh",
+  "homepage": "https://github.com/WZZNNE/DSH-CyberWorkStation#readme",
   "bugs": {
     "url": "https://github.com/WZZNNE/DSH-CyberWorkStation/issues"
   },
@@ -35,7 +35,8 @@
     "vision-model",
     "image",
     "multimodal",
-    "text-to-image"
+    "text-to-image",
+    "dsh-cyberworkstation"
   ],
   "engines": {
     "node": ">=20"
@@ -61,5 +62,8 @@
     "@deepseek-ai/dsh-agent": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-host-webserver": "^0.1.0-rc.6",
     "@deepseek-ai/schemastery": "^3.18.1"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

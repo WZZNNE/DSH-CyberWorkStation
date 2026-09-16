@@ -43,5 +43,23 @@
       "platform": "web"
     }
   },
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WZZNNE/DSH-CyberWorkStation.git",
+    "directory": "plugins/dsh-desktop-pet"
+  },
+  "homepage": "https://github.com/WZZNNE/DSH-CyberWorkStation#readme",
+  "bugs": {
+    "url": "https://github.com/WZZNNE/DSH-CyberWorkStation/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "dsh-cyberworkstation"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

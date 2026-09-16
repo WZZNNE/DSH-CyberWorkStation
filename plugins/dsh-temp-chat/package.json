@@ -31,5 +31,23 @@
   "peerDependencies": {
     "@deepseek-ai/dsh-home-paths": "*",
     "@dsh-suite/kit": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WZZNNE/DSH-CyberWorkStation.git",
+    "directory": "plugins/dsh-temp-chat"
+  },
+  "homepage": "https://github.com/WZZNNE/DSH-CyberWorkStation#readme",
+  "bugs": {
+    "url": "https://github.com/WZZNNE/DSH-CyberWorkStation/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "dsh-cyberworkstation"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }
