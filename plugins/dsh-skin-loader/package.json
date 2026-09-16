@@ -1,7 +1,7 @@
 {
   "name": "dsh-skin-loader",
   "version": "0.1.0",
-  "description": "Load a user frontend skin ($DSH_HOME/frontend-skin.css) into the dsh Web UI as a token-override style tag. Managed by DSH Launcher.",
+  "description": "Loads a user frontend skin ($DSH_HOME/frontend-skin.css) into the dsh Web UI as a token-override style tag. The DSH Launcher Skins page writes that file; any CSS placed there works.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {

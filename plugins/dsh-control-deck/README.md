@@ -15,7 +15,7 @@ dsh plugin --profile web add dsh-control-deck
 
 Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
 
-The editor for the deck (prompts, regex, World Info, sampling, tool switches, presets) is the DSH Launcher's Control Deck page. Without the launcher the plugin still runs everything in `~/.dsh/control-deck.json` (the same JSON the launcher exports and imports; take an exported deck as a template) and reloads it live.
+The editor for the deck (prompts, regex, World Info, sampling, tool switches, presets) is the DSH Launcher's Control Deck page. Without the launcher the plugin still runs everything in `~/.dsh/control-deck.json` (the same JSON the launcher exports and imports; top-level keys: `disabledTools`, `lorebook`, `presetName`, `prompts`, `regex`, `sampling`, `scanDepth`, `settings`; every key is optional and normalised on load, so an object with just `prompts` is a valid deck) and reloads it live.
 
 ## Where it shows up
 

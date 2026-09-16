@@ -273,7 +273,7 @@ export function apply(ctx) {
     const text = blocks.join('\n\n')
     await llmReady
     if (createUserMessage === null) {
-      if (!fallbackWarned) { fallbackWarned = true; console.warn('[control-deck] @deepseek-ai/dsh-llm not resolvable: injecting into the user text instead of a separate context message (run launcher/peer-links.mjs)') }
+      if (!fallbackWarned) { fallbackWarned = true; console.warn('[control-deck] @deepseek-ai/dsh-llm not resolvable: injecting into the user text instead of a separate context message (reinstall the plugin; from the DSH CyberWorkStation checkout run `npm run peer-links`)') }
       // dsh-llm not resolvable (no peer link): fall back to prefixing the user's text so the feature still works.
       const target = messages[at]
       const idx = target.content.findIndex(b => b.type === 'text')

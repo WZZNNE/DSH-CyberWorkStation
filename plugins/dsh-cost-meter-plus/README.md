@@ -34,7 +34,7 @@ Multi-vendor balances (DeepSeek, OpenRouter credits, local endpoints, OpenAI), a
 
 ## 版本 / Versions
 
-分支从 1.6.0 起自行编号（基于上游 1.5.19）。The fork numbers its own releases from 1.6.0 (based on upstream 1.5.19).
+分支从 1.6.0 起自行编号（基于上游 1.5.19），与上游后续版本号无关，不能按数字比较新旧。The fork numbers its own releases from 1.6.0 (based on upstream 1.5.19); the numbers are unrelated to later upstream versions.
 
 ## License
 

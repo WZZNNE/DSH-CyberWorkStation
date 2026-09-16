@@ -168,7 +168,7 @@ export function apply(ctx) {
    */
   async function replaceRange(id, start, end, content, meta, expectedNodes) {
     await ready
-    if (!peers.llm?.createUserMessage) throw fail(503, 'editing needs @deepseek-ai/dsh-llm resolvable from the plugin (run launcher/peer-links.mjs)')
+    if (!peers.llm?.createUserMessage) throw fail(503, 'editing needs @deepseek-ai/dsh-llm resolvable from the plugin (reinstall the plugin; from the DSH CyberWorkStation checkout run `npm run peer-links`)')
     const meter = tokenMeter()
     if (!meter) throw fail(503, 'the token meter (ctx.tokenMeter) is not mounted, so the replaced range cannot be priced; the edit is refused rather than recorded with a wrong shadow price')
     const pairing = peers.compaction

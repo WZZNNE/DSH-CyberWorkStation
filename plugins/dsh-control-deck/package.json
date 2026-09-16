@@ -1,7 +1,7 @@
 {
   "name": "dsh-control-deck",
   "version": "0.3.1",
-  "description": "Control Deck for DeepSeek Harness (v3): SillyTavern-grade multi-entry leveled system-prompt injection (roles, intervals, macros), regex scripts (user input / world info / display-only AI output), World Info lorebooks (full field set incl. group scoring, prioritize, minActivations, includeNames, per-entry scanDepth), sampling overrides with a master switch, tool disable switches, presets and SillyTavern JSON import/export. Edited on the DSH Launcher's Control Deck page or in ~/.dsh/control-deck.json, reloaded live via ~/.dsh/control-deck.json (hot reload).",
+  "description": "Control Deck for DeepSeek Harness: leveled system-prompt entries (roles, intervals, macros), regex scripts (user input / world info / display-only AI output), World Info lorebooks with the full SillyTavern field set, sampling overrides with a master switch, tool disable switches, presets and SillyTavern JSON import/export. Edited on the DSH Launcher Control Deck page or in ~/.dsh/control-deck.json; reloaded live.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {

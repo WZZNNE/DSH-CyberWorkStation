@@ -1,7 +1,7 @@
 {
   "name": "dsh-local-reasoning",
   "version": "0.1.1",
-  "description": "Per-model context window, max output and thinking levels for every DeepSeek Harness route (DeepSeek official, OpenRouter, local LM Studio / Ollama …); probes local backends and auto-teaches their levels. Managed from the DSH Launcher \"Model parameters\" page; OpenRouter :online web-search variants on the Model parameters page.",
+  "description": "Per-model context window, max output and thinking levels for every DeepSeek Harness route (DeepSeek official, OpenRouter, local LM Studio / Ollama); probes local backends and teaches their levels; OpenRouter :online web-search variants. Edited on the DSH Launcher Model parameters page or through its routes and ~/.dsh/local-reasoning.json.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {

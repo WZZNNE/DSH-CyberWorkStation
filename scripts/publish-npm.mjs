@@ -45,10 +45,18 @@ if (!whoami && !dryRun) { console.error('npm: not logged in. Run `npm login` fir
 console.log(dryRun ? 'dry run' : `publishing as ${whoami}`)
 
 const done = [], skipped = [], failed = []
+if (only.length > 0) {
+  const known = new Set(order.flatMap(dir => { const m = manifest(dir); return m ? [m.name, path.basename(dir)] : [] }))
+  const unknown = only.filter(n => !known.has(n))
+  if (unknown.length > 0) { console.error('--only names nothing publishable:', unknown.join(', ')); process.exit(2) }
+}
 for (const dir of order) {
   const pkg = manifest(dir)
   if (!pkg || (only.length > 0 && !only.includes(pkg.name) && !only.includes(path.basename(dir)))) continue
-  if (!dryRun && !allowDirty && dirty(dir)) { failed.push(`${pkg.name} (uncommitted changes; commit first or pass --allow-dirty)`); continue }
+  if (!allowDirty && dirty(dir)) {
+    if (!dryRun) { failed.push(`${pkg.name} (uncommitted changes; commit first or pass --allow-dirty)`); continue }
+    console.warn(`warning: ${pkg.name} has uncommitted changes`)
+  }
   if (pkg.private) { skipped.push(`${pkg.name} (private)`); continue }
   const tag = `${pkg.name}@${pkg.version}`
   if (!dryRun && published(pkg.name, pkg.version)) { skipped.push(`${tag} (already on the registry)`); continue }

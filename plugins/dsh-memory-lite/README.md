@@ -57,7 +57,7 @@ The launcher proxies them under `/api/memory/*` and renders the **Memory & conte
 
 ## Peers
 
-`@deepseek-ai/dsh-llm` (createUserMessage, BlockAssembler), `dsh-compaction` (compactCheckpointSource), `dsh-session` (foldSurface, foldRequestHeader, deriveEventMessage), `dsh-tools` (defineTool), `dsh-credentials` (credentialRef) — all optional; preset resolution / mount go through the `agentPresets` service (the `resolveSessionPreset` rule is re-implemented locally), resolved through the suite's `launcher/peer-links.mjs`; without them the matching feature reports a clear 503 / skips.
+`@deepseek-ai/dsh-llm` (createUserMessage, BlockAssembler), `dsh-compaction` (compactCheckpointSource), `dsh-session` (foldSurface, foldRequestHeader, deriveEventMessage), `dsh-tools` (defineTool), `dsh-credentials` (credentialRef) — all optional; preset resolution / mount go through the `agentPresets` service (the `resolveSessionPreset` rule is re-implemented locally), resolved from the dsh profile (an npm install) or through the suite's peer links (a repository checkout); without them the matching feature reports a clear 503 / skips.
 
 ## Boundaries
 
