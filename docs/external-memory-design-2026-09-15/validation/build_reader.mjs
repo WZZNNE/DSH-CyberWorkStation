@@ -1,10 +1,11 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const deps = createRequire('C:/Users/Admin/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/');
+const deps = createRequire(process.env.CODEX_RUNTIME_NODE_MODULES || path.join(os.homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/'));
 const { marked } = await import(pathToFileURL(deps.resolve('marked')).href);
 const read = p => fs.readFileSync(path.join(root, p), 'utf8').replace(/^\uFEFF/, '');
 const projects = JSON.parse(read('research/projects.json'));
