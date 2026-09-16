@@ -1,6 +1,0 @@
-{
-  "private": true,
-  "dependencies": {
-    "js-tiktoken": "1.0.21"
-  }
-}
