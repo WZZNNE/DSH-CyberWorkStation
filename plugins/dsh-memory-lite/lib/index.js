@@ -616,7 +616,7 @@ export function apply(ctx) {
 
   async function editSummary(id, checkpointSeq, summary) {
     await ready
-    if (!peers.llm?.createUserMessage || !peers.compaction?.compactCheckpointSource) throw fail(503, 'editing needs @deepseek-ai/dsh-llm and @deepseek-ai/dsh-compaction resolvable from the plugin (run launcher/peer-links.mjs)')
+    if (!peers.llm?.createUserMessage || !peers.compaction?.compactCheckpointSource) throw fail(503, 'editing needs @deepseek-ai/dsh-llm and @deepseek-ai/dsh-compaction resolvable from the plugin (reinstall the plugin; from the DSH CyberWorkStation checkout run `npm run peer-links`)')
     if (typeof summary !== 'string' || summary.trim().length === 0) throw fail(400, 'summary must be a non-empty string')
     if (summary.length > MAX_SUMMARY_CHARS) throw fail(400, `summary longer than ${MAX_SUMMARY_CHARS} characters`)
     return withAgent(id, (agent, resumed, flush) => runMaintenance(agent, async () => {

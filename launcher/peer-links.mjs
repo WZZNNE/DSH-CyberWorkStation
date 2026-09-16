@@ -80,7 +80,7 @@ function wantedNames(pluginsDir, suite) {
   let dirs = []
   try { dirs = fs.readdirSync(pluginsDir, { withFileTypes: true }) } catch { return names }
   for (const d of dirs) {
-    if (!d.isDirectory() || d.name === 'node_modules' || d.name.startsWith('_')) continue
+    if (!d.isDirectory() || d.name === 'node_modules') continue
     try {
       const pkg = JSON.parse(fs.readFileSync(path.join(pluginsDir, d.name, 'package.json'), 'utf8'))
       for (const field of ['peerDependencies', 'dependencies']) {

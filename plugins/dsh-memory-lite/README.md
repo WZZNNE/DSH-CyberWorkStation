@@ -2,6 +2,16 @@
 
 Lightweight memory for DeepSeek Harness — across compaction and across sessions — plus a per-session view of the **active compaction summary that you can edit**.
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-memory-lite
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
+Its pages (session context, long-term memory, settings) live in the DSH Launcher. Without the launcher the plugin still stores summaries and facts, injects them and serves the `memory_recall` / `memory_note` tools; settings are read from `~/.dsh/memory-lite.json` (documented below).
+
 dsh never drops history to fit a cap: at `contextWindow × thresholdRatio` (0.8 by default) the shipped presets' `compaction-basic` replaces the oldest surface span with one model-written `<compacted-summary>` checkpoint (`/compact` does the same on demand). This plugin makes that checkpoint visible and editable, stores it as memory, and adds a small long-term memory the next session can use.
 
 ## What it does

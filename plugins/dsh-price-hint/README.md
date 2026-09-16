@@ -3,6 +3,14 @@
 Hover price hints on the dsh model picker: every model entry gets a native tooltip with its input and
 output price in USD per 1M tokens.
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-price-hint
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
 ## How it works
 
 - The host half exposes `GET /dsh-price-hint/prices.json`, a map from the model's display name to its price

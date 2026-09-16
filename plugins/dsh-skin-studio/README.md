@@ -3,6 +3,14 @@
 Lets a model design and install a launcher or frontend skin from inside a conversation, on the user's
 request, through the model-facing `skin_studio` tool.
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-skin-studio-cws
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
 ## Flow
 
 1. A system-prompt section constrains the interaction: ask for requirements first; when the user gave no

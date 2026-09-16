@@ -6,6 +6,16 @@ so clicking it does nothing — a session must belong to a workspace by design. 
 touch the core; it adds a side door: the DSH Launcher POSTs an absolute path, the workspace is
 created, and a page refresh lets you pick it and start chatting.
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-quick-workspace
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
+The DSH Launcher's dashboard is its only user interface; without the launcher it only exposes the routes below.
+
 ## Routes
 
 | Route | What it does |

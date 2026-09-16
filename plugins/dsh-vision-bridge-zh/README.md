@@ -18,11 +18,11 @@ Plus, **multi-channel endpoints**: chain `dsh-catalog`, `openai-compatible`, `ol
 
 ## Install
 
-```bash
-# this fork is installed by the launcher (Plugins page) or by hand as a link dependency;
-# do NOT add the upstream package beside it: both register the same plugin id.
-dsh plugin --profile web add link:<repo>/plugins/dsh-vision-bridge-zh
+```sh
+dsh plugin --profile web add dsh-vision-bridge-zh
 ```
+
+Restart dsh afterwards. Do not add the upstream `@goodandready/dsh-vision-bridge` beside it: both register the same plugin id. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd`.
 
 Restart the Web UI, open **Plugins → Settings → vision-bridge** (collapsible card).
 
@@ -186,7 +186,7 @@ Content-safety rejections (provider-side moderation) are mapped to an explicit
 
 ## Skill
 
-The bundled `vision-skills` Skill (5 playbooks: long-screenshot OCR, restore UI/graphic/structure, GUI ops) is registered via `ctx.skills.registerProvider` — the model loads the matching playbook when a visual task starts.
+Upstream bundles a `vision-skills` Skill folder. This fork does not register a Skill provider and does not ship the folder; the tools above are the whole surface.
 
 ## Structure
 
@@ -200,9 +200,6 @@ dsh-vision-bridge/
 ├── lib/evidence.js         # persistent description store
 ├── lib/journal.js          # vision journal — audit trail (#108)
 ├── lib/client.js           # browser: Plugins-tab collapsible card
-├── skills/vision-skills/   # bundled Skill (5 playbooks)
-├── test/regression.test.js # 32 regression tests
-├── test/eval.test.js       # 6 eval tests
 ├── README.md
 └── LICENSE                 # MIT
 ```

@@ -70,3 +70,36 @@ export function assertPluginRemovable(name, { profile, repo }) {
     throw new Error(`${name} is still referenced by ${file}. Stop dsh and adjust that patch first; for keyring, migrate your stored credentials before restoring the stock provider. See launcher/README.md: Removing patch-layer plugins. / 此插件仍被 profile 补丁引用，已取消卸载；请先停止 dsh 并调整补丁，钥匙串插件还需先迁移凭据。操作步骤见 launcher/README.md。`)
   }
 }
+
+/** Two spellings of one directory (drive-letter case, junctions) compare equal. */
+function sameDir(a, b) {
+  const real = p => { try { return fs.realpathSync.native(p) } catch { return path.resolve(p) } }
+  const x = real(a), y = real(b)
+  return process.platform === 'win32' ? x.toLowerCase() === y.toLowerCase() : x === y
+}
+
+/**
+ * `link:` dependencies of the web profile whose key is not the linked package's current name: a plugin
+ * that was renamed after it was registered (dsh-desktop-pet → dsh-desktop-pet-cws). Such an entry still
+ * boots through the core's module fallback, but adding the directory again under its new name would put
+ * two bundle rows on one plugin id and dsh would refuse to boot. Callers remove the stale key first.
+ * @returns {{ key: string, name: string, dir: string }[]}
+ */
+export function staleLinkAliases({ profile }) {
+  let manifest
+  try { manifest = JSON.parse(fs.readFileSync(path.join(profile, 'package.json'), 'utf8')) } catch { return [] }
+  const out = []
+  for (const [key, spec] of Object.entries(manifest?.dependencies ?? {})) {
+    if (typeof spec !== 'string' || !spec.startsWith('link:')) continue
+    const dir = path.resolve(profile, spec.slice('link:'.length))
+    let name
+    try { name = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')).name } catch { continue }
+    if (typeof name === 'string' && name !== key) out.push({ key, name, dir })
+  }
+  return out
+}
+
+/** The stale aliases that point at `dir` (used before `dsh plugin add link:<dir>`). */
+export function staleAliasesFor(dir, { profile }) {
+  return staleLinkAliases({ profile }).filter(s => sameDir(s.dir, dir))
+}

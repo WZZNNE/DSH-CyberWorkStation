@@ -12,14 +12,21 @@ const PLUGINS = path.join(ROOT, 'plugins')
 const args = process.argv.slice(2)
 const dryRun = args.includes('--dry-run')
 const onlyAt = args.indexOf('--only')
-const only = onlyAt >= 0 ? (args[onlyAt + 1] ?? '').split(',').filter(Boolean) : []
+const only = onlyAt >= 0 ? (args[onlyAt + 1] ?? '').split(',').filter(x => x && !x.startsWith('--')) : []
+const allowDirty = args.includes('--allow-dirty')
+if (onlyAt >= 0 && only.length === 0) { console.error('--only needs a comma-separated list of package or directory names'); process.exit(2) }
 const SKIP = new Set(['dsh-memory-hub', 'dsh-token-usage-plus'])
 
 function manifest(dir) {
   try { return JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')) } catch { return null }
 }
 function published(name, version) {
-  const r = spawnSync('npm', ['view', `${name}@${version}`, 'version', '--json'], { encoding: 'utf8', shell: true })
+  const r = spawnSync(`npm view ${name}@${version} version --json`, { encoding: 'utf8', shell: true })
+  return r.status === 0 && r.stdout.trim() !== ''
+}
+/** Uncommitted changes under the package directory: what npm would pack is not what the repository records. */
+function dirty(dir) {
+  const r = spawnSync(`git status --porcelain -- "${dir}"`, { cwd: ROOT, encoding: 'utf8', shell: true })
   return r.status === 0 && r.stdout.trim() !== ''
 }
 
@@ -40,16 +47,16 @@ console.log(dryRun ? 'dry run' : `publishing as ${whoami}`)
 const done = [], skipped = [], failed = []
 for (const dir of order) {
   const pkg = manifest(dir)
-  if (!pkg || (only.length > 0 && !only.includes(pkg.name))) continue
+  if (!pkg || (only.length > 0 && !only.includes(pkg.name) && !only.includes(path.basename(dir)))) continue
+  if (!dryRun && !allowDirty && dirty(dir)) { failed.push(`${pkg.name} (uncommitted changes; commit first or pass --allow-dirty)`); continue }
   if (pkg.private) { skipped.push(`${pkg.name} (private)`); continue }
   const tag = `${pkg.name}@${pkg.version}`
   if (!dryRun && published(pkg.name, pkg.version)) { skipped.push(`${tag} (already on the registry)`); continue }
-  const npmArgs = dryRun ? ['publish', '--dry-run', '--access', 'public'] : ['publish', '--access', 'public']
-  // The forks carry suffixed versions (1.5.19-plus.4); npm treats those as prereleases and insists on an explicit tag.
-  if (pkg.version.includes('-')) npmArgs.push('--tag', 'latest')
-  const r = spawnSync('npm', npmArgs, { cwd: dir, stdio: 'inherit', shell: true })
+  // A prerelease-style version (x.y.z-suffix) needs an explicit dist-tag; the suite publishes release versions only.
+  const cmd = `npm publish${dryRun ? ' --dry-run' : ''} --access public${pkg.version.includes('-') ? ' --tag latest' : ''}`
+  const r = spawnSync(cmd, { cwd: dir, stdio: 'inherit', shell: true })
   if (r.status === 0) done.push(tag); else failed.push(tag)
 }
-console.log('\npublished:', done.length, done.join(' '))
+console.log(dryRun ? '\npacked:' : '\npublished:', done.length, done.join(' '))
 console.log('skipped:', skipped.length, skipped.join(' '))
 if (failed.length > 0) { console.error('failed:', failed.join(' ')); process.exit(1) }

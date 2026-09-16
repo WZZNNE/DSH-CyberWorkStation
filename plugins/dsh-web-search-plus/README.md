@@ -4,6 +4,14 @@ SillyTavern-style web search for DeepSeek Harness — configured **once for the 
 either in dsh Settings → **联网搜索(全局)** or on the launcher's Control Deck → Web search tab.
 Both write the same file (`$DSH_HOME/web-search.json`), which the plugin hot-reloads within 1.5 s.
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-web-search-plus
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
 ## Modes
 
 | Mode | What happens |

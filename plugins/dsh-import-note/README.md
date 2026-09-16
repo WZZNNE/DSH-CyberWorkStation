@@ -2,6 +2,14 @@
 
 **中文** | English below
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-import-note
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
 设置 → 插件 → 插件配置 里的一张说明卡:社区插件 dsh-chat-import(侧栏「导入会话」)对源记录系统提示词的处理。
 
 - 默认丢弃源记录里的 system / developer 提示词(`lib/import-prefs.mjs`,开关 `importSystemPrompt` 默认 false)。

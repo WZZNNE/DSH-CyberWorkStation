@@ -46,7 +46,7 @@ export const contributors = {
     { type: 'md', md: `
 套件插件就是 \`plugins/dsh-*\` 这些目录，纯 ES 模块包，没有构建步骤。\`plugins/_shared\` 是共享包 \`dsh-cyberworkstation-kit\`，里面是套件各接口共用的会话读取和只允许本机写入的围栏；\`launcher/peer-links.mjs\` 把它和本体的包一起链接到插件旁边，插件才能直接 import。启动器在 \`launcher/\`，\`server.mjs\` 在最上层，各部分在 \`lib/\` 下。\`core/\` 里原样内置的本体从不手改。
 
-仓库根目录下的常用命令：\`npm run lint\`（ESLint，flat config）、\`npm run peer-links\`（重建插件链接）、\`npm run readme:zh\`（本文由 \`docs/showcase-src/content\` 生成）、\`npm run repair:preview\` / \`npm run repair\`（修复旧会话日志的脚本，需要先停 dsh）。
+仓库根目录下的常用命令：\`npm run lint\`（ESLint，flat config）、\`npm run peer-links\`（重建插件链接）、\`npm run readme:zh\`（本文由 \`docs/showcase-src/content\` 生成）、\`npm run repair:preview\` / \`npm run repair\`（修复旧会话日志的脚本，需要先停 dsh）、\`npm run publish:npm\`（维护者发 npm 用，先 \`npm login\`；\`publish:npm:dry\` 只打包不发布）。
 
 注释用英文。套件文件统一 LF，由 \`.gitattributes\` 保证；内置本体保留它自己的规则。
 `},

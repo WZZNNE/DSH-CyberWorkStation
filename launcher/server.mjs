@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url'
 import { ensurePeerLinks } from './peer-links.mjs'
 import { serverPorts } from './runtime-config.mjs'
 import { normalizeDshHome } from './home-paths.mjs'
-import { assertPluginRemovable, readProfilePatchStatus } from './profile-patches.mjs'
+import { assertPluginRemovable, readProfilePatchStatus, staleLinkAliases, staleAliasesFor } from './profile-patches.mjs'
 import { isDshWebProcess, sameProcess } from './process-identity.mjs'
 import { mergeWebSearchPatch } from './websearch-patch.mjs'
 import { parseBootLog } from './boot-probe.mjs'
@@ -350,7 +350,7 @@ async function selfCheck() {
     core: { path: REPO, version: coreVersion, builtCli: exists(BUILT_CLI), launchMode: dshCommand([]).mode, gitRoot: exists(path.join(REPO, '.git')) ? REPO : SUITE },
     pnpmOnPath: pnpm,
     peerLinks: links,
-    profile: { path: PROFILE, bundles, patched, patchError, missing: expected === null || patchError ? [] : expected.filter(n => !present.has(n)), rosterReadable: expected !== null, outdated: communityBelowFloor() },
+    profile: { path: PROFILE, bundles, patched, patchError, missing: expected === null || patchError ? [] : expected.filter(n => !present.has(n)), rosterReadable: expected !== null, outdated: communityBelowFloor(), stale: staleLinkAliases({ profile: PROFILE }).map(s => ({ key: s.key, name: s.name })) },
     ports: { launcher: PORT, dsh: DSH_PORT, dshRunning: await checkPort(DSH_PORT) },
     files: { deck: exists(DECK_FILE), webSearch: exists(WEBSEARCH_FILE), safeGuard: exists(SAFEGUARD_FILE), frontendSkin: exists(FRONTEND_SKIN_TARGET) },
   }
@@ -476,9 +476,20 @@ async function api(req, res, url) {
       }
     }
     log('INFO', 'plugin op', { op, spec: safe })
+    // A renamed plugin directory that is still registered under its old name must lose that entry first,
+    // otherwise the profile carries two bundle rows for one plugin id and dsh refuses to boot.
+    let removed = []
+    if (op === 'add' && safe.startsWith('link:')) {
+      for (const stale of staleAliasesFor(safe.slice('link:'.length), { profile: PROFILE })) {
+        const rr = await runDsh(['plugin', '--profile', 'web', 'remove', stale.key], { timeout: 300000 })
+        log(rr.ok ? 'INFO' : 'ERROR', 'stale alias removed before add', { key: stale.key, name: stale.name, ok: rr.ok })
+        if (rr.ok) removed.push(stale.key)
+      }
+    }
     const r = await runDsh(['plugin', '--profile', 'web', op, safe], { timeout: 300000 })
     log(r.ok ? 'INFO' : 'ERROR', 'plugin op done', { op, ok: r.ok })
-    return send(200, { ok: r.ok, message: (r.stdout + r.stderr).split('\n').slice(-6).join('\n') })
+    const note = removed.length ? pick(lang, `已先卸载旧名注册:${removed.join(', ')}\n`, `Removed the old-name registration first: ${removed.join(', ')}\n`) : ''
+    return send(200, { ok: r.ok, message: note + (r.stdout + r.stderr).split('\n').slice(-6).join('\n') })
   }
 
   if (p === '/api/skills') {

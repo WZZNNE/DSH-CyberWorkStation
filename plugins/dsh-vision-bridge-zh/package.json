@@ -1,6 +1,6 @@
 {
   "name": "dsh-vision-bridge-zh",
-  "version": "0.4.5-zh.2",
+  "version": "0.4.6",
   "description": "图片理解桥接(dsh-vision-bridge 的中文界面分支):聊天里的图片交给你选定的视觉模型描述,非视觉模型也能\"看图\"。Fork of @goodandready/dsh-vision-bridge 0.4.5 (MIT) with a Chinese UI; the wire, routes and config file are unchanged.",
   "repository": {
     "type": "git",
@@ -23,8 +23,7 @@
     "lib/",
     "cordis.patch.yml",
     "README.md",
-    "LICENSE",
-    "skills/"
+    "LICENSE"
   ],
   "license": "MIT",
   "keywords": [
@@ -56,11 +55,11 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-llm": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-attachment": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-agent": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-host-webserver": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-tools": ">=0.1.0-rc.6",
+    "@deepseek-ai/dsh-llm": ">=0.1.0-rc.6",
+    "@deepseek-ai/dsh-attachment": ">=0.1.0-rc.6",
+    "@deepseek-ai/dsh-agent": ">=0.1.0-rc.6",
+    "@deepseek-ai/dsh-host-webserver": ">=0.1.0-rc.6",
     "@deepseek-ai/schemastery": "^3.18.1"
   },
   "publishConfig": {

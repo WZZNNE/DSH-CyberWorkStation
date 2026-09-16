@@ -34,9 +34,9 @@ export default {
         { name: 'dsh-import-note', ver: '0.1.0', origin: 'original', role: '一张说明卡：会话导入不会覆盖系统提示词。', where: 'dsh 设置 → 插件' },
       ]},
       { key: 'fork', label: '套件插件 · 二改', badge: '二改', desc: '3 个，均基于 MIT 项目，保留上游许可。', items: [
-        { name: 'dsh-cost-meter-plus', ver: '1.5.19-plus.4', origin: 'fork', upstream: 'Han-1413141/dsh-cost-meter 1.5.19 · MIT', role: '上游：会话 / 当日 / 历史费用、官方价格同步、90+ 模型价格目录、7 家 Coding Plan 额度、预算提醒、中英双语。这里加的：多厂商余额、OpenRouter 价格自动同步、缓存命中条、会话行 token 拆分、本地路由免费、设置页把余额和费用放在最上面。', where: 'dsh 设置「用量与费用」、侧栏' },
+        { name: 'dsh-cost-meter-plus', ver: '1.6.0', origin: 'fork', upstream: 'Han-1413141/dsh-cost-meter 1.5.19 · MIT', role: '上游：会话 / 当日 / 历史费用、官方价格同步、90+ 模型价格目录、7 家 Coding Plan 额度、预算提醒、中英双语。这里加的：多厂商余额、OpenRouter 价格自动同步、缓存命中条、会话行 token 拆分、本地路由免费、设置页把余额和费用放在最上面。', where: 'dsh 设置「用量与费用」、侧栏' },
         { name: 'dsh-token-usage-plus', ver: '2.1.0-plus.1', origin: 'fork', upstream: 'Tastelessor/dsh-usage-stats 2.1.0 · MIT', role: '上游：用量统计卡 + 热力图 + 官方峰谷价换算。这里加的：去掉峰谷价显示、从费用账本补 OpenRouter 价格。默认不挂载，费用页已经覆盖它的功能；留给想单独看用量页的人。', where: '（默认不挂载）' },
-        { name: 'dsh-vision-bridge-zh', ver: '0.4.5-zh.2', origin: 'fork', upstream: '@goodandready/dsh-vision-bridge 0.4.5 · MIT', role: '上游：让纯文本模型「看图」（自动改写 + 26 个视觉工具：描述、OCR、定位、裁剪、长截图、PDF、视频等）。这里加的：中文界面，多图比较和目录处理更可靠。', where: 'dsh 设置 → 插件「图片理解」' },
+        { name: 'dsh-vision-bridge-zh', ver: '0.4.6', origin: 'fork', upstream: '@goodandready/dsh-vision-bridge 0.4.5 · MIT', role: '上游：让纯文本模型「看图」（自动改写 + 26 个视觉工具：描述、OCR、定位、裁剪、长截图、PDF、视频等）。这里加的：中文界面，多图比较和目录处理更可靠。', where: 'dsh 设置 → 插件「图片理解」' },
       ]},
       { key: 'adopted', label: '社区插件 · 照搬', badge: '照搬', desc: '8 个 + 1 个 MCP 服务器，在启动器插件市场里装，原样使用。另有两个 npm 上能看到的插件不建议与当前本体搭配：`dsh-auto-approval`（与当前本体不兼容）、`dsh-filesnap`（卸载后录过的会话打不开）。', items: [
         { name: 'dsh-context', ver: '0.52.2', origin: 'adopted', upstream: 'bowenliang123 · Apache-2.0', role: '上下文仪表盘（构成、趋势、事件、浏览器、文件活动）与 `/context` 命令。需要 0.40 以上。', where: '会话「上下文」分页' },

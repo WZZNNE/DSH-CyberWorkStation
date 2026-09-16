@@ -2,6 +2,14 @@
 
 **中文** | English below
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-drop-files
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
 把任意文件拖进 dsh 对话(文件落到工作区;智能体用文件工具读取——它只能读文本,PDF / Office / 压缩包会落盘但读不出内容,拖入时会提示)。
 
 - core 的拖放只收图片(附件栏)。这个插件在 capture 阶段接管带有非图片文件的拖放:文件保存到**当前会话工作区**的 `.dsh-uploads/` 目录(同名自动 `-2 / -3`,单个 ≤ 25 MB),然后在输入框里写入 `@.dsh-uploads/<文件名>`,智能体用它本来就有权限的文件工具读取。

@@ -1,5 +1,5 @@
 /**
- * dsh-temp-chat host plugin — conversations that belong to no project.
+ * dsh-temp-chat-cws host plugin — conversations that belong to no project.
  *
  * A dsh session always has a working directory (the core falls back to the launch cwd),
  * so a "temporary chat" is a session whose directory is a scratch folder under

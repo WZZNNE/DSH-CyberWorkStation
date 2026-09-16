@@ -2,6 +2,16 @@
 
 Per-model **context window / max output / thinking levels for every route** in DeepSeek Harness — DeepSeek official, OpenRouter and other catalog routes, and locally served models (LM Studio, Ollama, other local OpenAI-compatible gateways), which also get backend probing, recommended levels and automatic teaching. Managed from the DSH Launcher **Model parameters** page; no core code is patched.
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-local-reasoning
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
+Its settings page is the DSH Launcher's Model parameters page. Without the launcher, the routes below and the file `~/.dsh/local-reasoning.json` drive it.
+
 ## Any route
 
 `GET /status` lists every registered route (`ctx.llm.listProviders`), its models (`ctx.llm.listModels`) and the effective values the core resolved (`ctx.llm.resolveModelInfo`: `context.contextWindow`, `defaultMaxTokens`, `reasoning.efforts`). `POST /apply {route, modelId, changes}` writes `contextWindow` / `maxTokens` / `reasoningEfforts` / `compat.supportsReasoningEffort`: a route whose user profile carries a `models` list gets the entry edited; a catalog route gets `modelOverrides.<id>` (llm-pi-ai README: reshapes one catalog model, the rest keeps serving); the official DeepSeek route (`llm-deepseek` adapter) gets its `models` list rewritten with the numbers (image limits / modalities copied, levels are adapter-owned — the UI shows them locked), and when no number is left the list is unset so the adapter defaults return. Every write carries the descriptor revision and is retried on `SETTINGS_CONFLICT`.

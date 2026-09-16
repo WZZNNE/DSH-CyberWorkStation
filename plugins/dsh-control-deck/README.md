@@ -7,6 +7,16 @@ Everything goes through documented extension points (`systemPrompt.section`, `ag
 `agent/request`, `tools/pre-execute`, `webServer.register`); no core behaviour is patched. The usage follows
 SillyTavern; none of its code is used.
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-control-deck
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
+The editor for the deck (prompts, regex, World Info, sampling, tool switches, presets) is the DSH Launcher's Control Deck page. Without the launcher the plugin still runs everything in `~/.dsh/control-deck.json` (the same JSON the launcher exports and imports; take an exported deck as a template) and reloads it live.
+
 ## Where it shows up
 
 - **Launcher → 控制甲板 / Control Deck**: the editor for prompts, regex, lorebook, sampling, tools and presets.

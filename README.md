@@ -499,9 +499,9 @@ Standalone program, not a dsh plugin.
 
 | Plugin | Version | Provenance | Upstream / license | Role | Where |
 |---|---|---|---|---|---|
-| `dsh-cost-meter-plus` | 1.5.19-plus.4 | fork | Han-1413141/dsh-cost-meter 1.5.19 · MIT | Upstream: per-session, daily and historical cost, official price sync, a 90-odd model price catalog, 7 Coding Plan quotas, budget alerts, zh / en. Added here: multi-vendor balances, automatic OpenRouter price sync, cache-hit bar, per-session token split, free local routes, balance and cost moved to the top of the settings page. | dsh Settings → Usage & cost, sidebar |
+| `dsh-cost-meter-plus` | 1.6.0 | fork | Han-1413141/dsh-cost-meter 1.5.19 · MIT | Upstream: per-session, daily and historical cost, official price sync, a 90-odd model price catalog, 7 Coding Plan quotas, budget alerts, zh / en. Added here: multi-vendor balances, automatic OpenRouter price sync, cache-hit bar, per-session token split, free local routes, balance and cost moved to the top of the settings page. | dsh Settings → Usage & cost, sidebar |
 | `dsh-token-usage-plus` | 2.1.0-plus.1 | fork | Tastelessor/dsh-usage-stats 2.1.0 · MIT | Upstream: usage cards, heat map, official peak/off-peak pricing. Added here: peak/off-peak display removed, OpenRouter prices filled from the cost ledger. Not mounted by default, since the cost page covers it; kept for anyone who wants the separate usage page. | (not mounted by default) |
-| `dsh-vision-bridge-zh` | 0.4.5-zh.2 | fork | @goodandready/dsh-vision-bridge 0.4.5 · MIT | Upstream: vision for text-only models (automatic rewriting and 26 vision tools: describe, OCR, grounding, crop, long screenshots, PDF, video). Added here: Chinese UI; more reliable multi-image comparison and directory handling. | dsh Settings → Plugins → Image understanding |
+| `dsh-vision-bridge-zh` | 0.4.6 | fork | @goodandready/dsh-vision-bridge 0.4.5 · MIT | Upstream: vision for text-only models (automatic rewriting and 26 vision tools: describe, OCR, grounding, crop, long screenshots, PDF, video). Added here: Chinese UI; more reliable multi-image comparison and directory handling. | dsh Settings → Plugins → Image understanding |
 
 ### Community plugins · adopted
 
@@ -586,7 +586,7 @@ The core ships 12 development-process skills (code review, documentation standar
 
 The suite plugins are the `plugins/dsh-*` folders: plain ES-module packages with no build step. `plugins/_shared` is the shared kit `dsh-cyberworkstation-kit`, which holds the stored-session reader and the loopback write fence that the suite's routers use; `launcher/peer-links.mjs` links it next to the core's packages so that plugins can import it. The launcher itself is `launcher/`, with `server.mjs` on top and the pieces under `lib/`. The vendored core under `core/` is never edited by hand.
 
-Useful commands from the repository root: `npm run lint` (ESLint, flat config), `npm run peer-links` (recreate the plugin links), `npm run readme:zh` (README.zh.md is generated from `docs/showcase-src/content`), and `npm run repair:preview` / `npm run repair` (the session-log repair script; dsh must be stopped).
+Useful commands from the repository root: `npm run lint` (ESLint, flat config), `npm run peer-links` (recreate the plugin links), `npm run readme:zh` (README.zh.md is generated from `docs/showcase-src/content`), `npm run repair:preview` / `npm run repair` (the session-log repair script; dsh must be stopped), and `npm run publish:npm` (maintainer only; `npm login` first, `publish:npm:dry` packs without publishing).
 
 Comments are written in English. Suite files are LF, enforced by `.gitattributes`; the vendored core keeps its own rules.
 

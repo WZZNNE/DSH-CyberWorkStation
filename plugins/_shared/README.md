@@ -1,7 +1,9 @@
 # dsh-cyberworkstation-kit
 
-The code every suite plugin shares, in one place instead of a copy per plugin. It is not a plugin: the
-launcher's roster only counts `plugins/dsh-*`, and `setup.cmd` registers plugins by name.
+Shared helpers for the [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) plugins: the loopback write fence every
+suite router uses and the stored-session reader. It is not a dsh plugin and is never registered in a profile:
+plugins installed from npm pull it in as a regular dependency, nothing to do by hand. In the repository it
+is `plugins/_shared`, and `launcher/peer-links.mjs` links it next to the plugins so `link:` installs resolve it.
 
 | Module | What it holds | Used by |
 |---|---|---|
@@ -14,7 +16,7 @@ Plugins are linked into the dsh profile from this directory, so Node resolves th
 `plugins/<name>/lib/`, walking up to `plugins/node_modules/`. `launcher/peer-links.mjs` creates a junction
 `plugins/node_modules/dsh-cyberworkstation-kit → plugins/_shared` there, the same way it links the core's own
 `@deepseek-ai/*` packages. The launcher runs it before every dsh start and `setup.cmd` runs it once; a plugin
-that names `dsh-cyberworkstation-kit` in its `peerDependencies` gets the link.
+that names `dsh-cyberworkstation-kit` in its `dependencies` (a `link:` install never fetches it, so the junction stands in; an npm install fetches it) gets the link.
 
 ## Rules
 

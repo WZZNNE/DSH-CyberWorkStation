@@ -2,13 +2,15 @@
 
 Deny destructive shell commands at the dsh `tools/pre-execute` waterfall before they run: `rm -rf /`-class deletions, `git push --force` (without `--force-with-lease`), raw block-device writes, `mkfs`, Windows drive-root wipes/formats, `chmod -R 777 /`, fork bombs, plus configurable extra patterns.
 
-Second development of the official permission-gate shape (`docs/cookbook/extension-cookbook.md` § "A hook plugin") in the deepseek-harness repo, with the pure-rules/injection-point split recommended by dsh-handbook ch.4.
-
 ## Install
 
 ```sh
-dsh plugin --profile web add link:<suite-root>/plugins/dsh-safe-guard
+dsh plugin --profile web add dsh-safe-guard
 ```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
+Second development of the official permission-gate shape (`docs/cookbook/extension-cookbook.md` § "A hook plugin") in the deepseek-harness repo, with the pure-rules/injection-point split recommended by dsh-handbook ch.4.
 
 The `dsh.bundle` manifest appends this package to the profile's bundle list; its patch mounts one host row (`id: safe-guard`).
 

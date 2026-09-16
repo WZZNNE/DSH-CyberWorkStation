@@ -2077,6 +2077,6 @@ export function apply(ctx) {
     for (const entry of pending.values()) { clearTimeout(entry.timer); entry.resolve({ allowed: false, reason: 'dsh is shutting down' }) }
     pending.clear()
     try { personaDisposer?.() } catch { /* noop */ }
-  }, 'dsh-desktop-pet: timers')
-  ctx.effect(() => ctx.webServer.register({ kind: 'prefix', path: '/dsh-desktop-pet', handler: route }), 'dsh-desktop-pet: routes')
+  }, 'dsh-desktop-pet-cws: timers')
+  ctx.effect(() => ctx.webServer.register({ kind: 'prefix', path: '/dsh-desktop-pet', handler: route }), 'dsh-desktop-pet-cws: routes')
 }

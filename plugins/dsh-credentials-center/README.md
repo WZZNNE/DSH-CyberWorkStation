@@ -2,6 +2,14 @@
 
 **中文** | English below
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-credentials-center
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
 把 dsh 本体和套件插件用到的所有 API 凭据放到一个页面里看和管:设置页「凭据中心」+ 启动器「凭据中心」页。
 
 - **列什么**:每一个凭据引用(环境变量名,如 `OPENROUTER_API_KEY`),来源:`llm-pi-ai` 各路由的 `apiKeyEnv`、DeepSeek 官方路由、多媒体 API 各类(含"借用 DSH 路由"的情况)、联网搜索各来源、桌宠各宠物的模型来源、记忆向量;再加上你自己起过别名的引用。

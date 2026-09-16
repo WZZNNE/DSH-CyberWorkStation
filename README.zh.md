@@ -509,9 +509,9 @@ flowchart TB
 
 | 插件 / 程序 | 版本 | 归属 | 上游 / 许可 | 职责 | 界面位置 |
 |---|---|---|---|---|---|
-| `dsh-cost-meter-plus` | 1.5.19-plus.4 | 二改 | Han-1413141/dsh-cost-meter 1.5.19 · MIT | 上游：会话 / 当日 / 历史费用、官方价格同步、90+ 模型价格目录、7 家 Coding Plan 额度、预算提醒、中英双语。这里加的：多厂商余额、OpenRouter 价格自动同步、缓存命中条、会话行 token 拆分、本地路由免费、设置页把余额和费用放在最上面。 | dsh 设置「用量与费用」、侧栏 |
+| `dsh-cost-meter-plus` | 1.6.0 | 二改 | Han-1413141/dsh-cost-meter 1.5.19 · MIT | 上游：会话 / 当日 / 历史费用、官方价格同步、90+ 模型价格目录、7 家 Coding Plan 额度、预算提醒、中英双语。这里加的：多厂商余额、OpenRouter 价格自动同步、缓存命中条、会话行 token 拆分、本地路由免费、设置页把余额和费用放在最上面。 | dsh 设置「用量与费用」、侧栏 |
 | `dsh-token-usage-plus` | 2.1.0-plus.1 | 二改 | Tastelessor/dsh-usage-stats 2.1.0 · MIT | 上游：用量统计卡 + 热力图 + 官方峰谷价换算。这里加的：去掉峰谷价显示、从费用账本补 OpenRouter 价格。默认不挂载，费用页已经覆盖它的功能；留给想单独看用量页的人。 | （默认不挂载） |
-| `dsh-vision-bridge-zh` | 0.4.5-zh.2 | 二改 | @goodandready/dsh-vision-bridge 0.4.5 · MIT | 上游：让纯文本模型「看图」（自动改写 + 26 个视觉工具：描述、OCR、定位、裁剪、长截图、PDF、视频等）。这里加的：中文界面，多图比较和目录处理更可靠。 | dsh 设置 → 插件「图片理解」 |
+| `dsh-vision-bridge-zh` | 0.4.6 | 二改 | @goodandready/dsh-vision-bridge 0.4.5 · MIT | 上游：让纯文本模型「看图」（自动改写 + 26 个视觉工具：描述、OCR、定位、裁剪、长截图、PDF、视频等）。这里加的：中文界面，多图比较和目录处理更可靠。 | dsh 设置 → 插件「图片理解」 |
 
 ### 社区插件 · 照搬
 
@@ -596,7 +596,7 @@ Skill 分两类。工程 Skill 给 Claude Code 用，放在 `skills/`，复制�
 
 套件插件就是 `plugins/dsh-*` 这些目录，纯 ES 模块包，没有构建步骤。`plugins/_shared` 是共享包 `dsh-cyberworkstation-kit`，里面是套件各接口共用的会话读取和只允许本机写入的围栏；`launcher/peer-links.mjs` 把它和本体的包一起链接到插件旁边，插件才能直接 import。启动器在 `launcher/`，`server.mjs` 在最上层，各部分在 `lib/` 下。`core/` 里原样内置的本体从不手改。
 
-仓库根目录下的常用命令：`npm run lint`（ESLint，flat config）、`npm run peer-links`（重建插件链接）、`npm run readme:zh`（本文由 `docs/showcase-src/content` 生成）、`npm run repair:preview` / `npm run repair`（修复旧会话日志的脚本，需要先停 dsh）。
+仓库根目录下的常用命令：`npm run lint`（ESLint，flat config）、`npm run peer-links`（重建插件链接）、`npm run readme:zh`（本文由 `docs/showcase-src/content` 生成）、`npm run repair:preview` / `npm run repair`（修复旧会话日志的脚本，需要先停 dsh）、`npm run publish:npm`（维护者发 npm 用，先 `npm login`；`publish:npm:dry` 只打包不发布）。
 
 注释用英文。套件文件统一 LF，由 `.gitattributes` 保证；内置本体保留它自己的规则。
 

@@ -3,6 +3,14 @@
 Extra media APIs for DeepSeek Harness — image generation, video generation, text-to-speech and
 transcription — configured **once** in dsh Settings → 多媒体 API, and handed to the model as tools.
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-media-lab
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
 Zero core rewrites: the plugin registers tools (`ctx.tools.register`), a system-prompt section and
 its own HTTP routes (`ctx.webServer.register`), and stores keys in the dsh credential store.
 

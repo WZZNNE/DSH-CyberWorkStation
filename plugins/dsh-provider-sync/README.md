@@ -2,6 +2,14 @@
 
 **中文** | English below
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-provider-sync
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
 让 OpenRouter 路由的模型清单自己保持最新,并给支持推理的模型写好思考强度档位。
 
 ## 它解决什么

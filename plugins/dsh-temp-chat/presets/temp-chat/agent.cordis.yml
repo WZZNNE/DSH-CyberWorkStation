@@ -1,4 +1,4 @@
-# The `temp-chat` agent preset shipped by dsh-temp-chat: a conversation that touches no
+# The `temp-chat` agent preset shipped by dsh-temp-chat-cws: a conversation that touches no
 # project. It keeps the ordinary chat machinery — persona, project instructions, skills,
 # todo / ask-user, the web tool and context compaction — and mounts NO file, shell, job,
 # subagent or workflow tools, so a temp session cannot edit or run anything on the machine.

@@ -2,6 +2,14 @@
 
 Temporary conversations that belong to no project.
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-temp-chat-cws
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
 Stock dsh always opens a session inside a workspace directory. A quick question ("what does this
 error mean?") then either pollutes a real project's history or needs a throwaway folder made by
 hand. This plugin adds a one-click temp chat:

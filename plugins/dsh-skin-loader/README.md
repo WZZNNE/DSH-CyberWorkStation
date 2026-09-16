@@ -3,6 +3,16 @@
 Loads the active frontend skin into the dsh Web UI as a token-override style tag. The launcher manages the
 skins; this plugin only serves the one that is active.
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-skin-loader
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
+It applies the frontend skin the DSH Launcher's Skins page selects. Without the launcher, write your CSS to `~/.dsh/frontend-skin.css` and refresh the dsh page.
+
 ## How it works
 
 - The host half serves `GET` / `HEAD /dsh-skin-loader/active.css` from `~/.dsh/frontend-skin.css`: the file's

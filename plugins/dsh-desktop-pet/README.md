@@ -5,6 +5,14 @@ lorebook and its own conversations; it knows what the harness is working on, can
 remind you, can speak and listen, and — only with permission — can look at the screen or drive the
 mouse and keyboard.
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-desktop-pet-cws
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
 Zero core rewrites: a system-prompt section, an `agent/status` listener, a `session/event` listener
 and its own HTTP routes. The desktop window is a small C# host compiled on demand with the .NET
 Framework compiler that ships with Windows (no SDK, no NuGet).

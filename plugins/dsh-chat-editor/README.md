@@ -2,6 +2,14 @@
 
 Edit and delete chat messages — yours and the assistant's — from inside the dsh conversation view.
 
+## Install
+
+```sh
+dsh plugin --profile web add dsh-chat-editor
+```
+
+Restart dsh afterwards. As part of [DSH CyberWorkStation](https://github.com/WZZNNE/DSH-CyberWorkStation) the plugin is registered by `setup.cmd` from the repository checkout instead.
+
 Zero core rewrites, and no rewriting of history: the dsh session log is append-only and its
 invariants are enforced by the core (`core/packages/core/session/src/invariant.ts`). This plugin
 therefore offers five honest operations instead of pretending to mutate the past.

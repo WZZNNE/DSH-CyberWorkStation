@@ -195,7 +195,7 @@ function renderSelfCheck(c) {
     item(c.core.builtCli, T('sc_built'), c.core.launchMode),
     item(c.pnpmOnPath, 'pnpm on PATH', c.pnpmOnPath ? '' : T('sc_pnpm_hint')),
     item(c.peerLinks.failed.length === 0 && c.peerLinks.missing.length === 0, T('sc_peers'), (c.peerLinks.kept.length + c.peerLinks.linked.length) + ' links' + (c.peerLinks.missing.length ? ' · missing ' + c.peerLinks.missing.join(',') : '')),
-    item(!c.profile.patchError && c.profile.rosterReadable !== false && c.profile.missing.length === 0, T('sc_profile'), c.profile.patchError || (c.profile.rosterReadable === false ? T('sc_roster_unreadable') : c.profile.missing.length ? T('sc_missing') + ' ' + c.profile.missing.join(', ') : c.profile.bundles.length + ' bundles')),
+    item(!c.profile.patchError && c.profile.rosterReadable !== false && c.profile.missing.length === 0 && !(c.profile.stale ?? []).length, T('sc_profile'), c.profile.patchError || (c.profile.rosterReadable === false ? T('sc_roster_unreadable') : (c.profile.stale ?? []).length ? T('sc_stale', { l: c.profile.stale.map(s => s.key + ' → ' + s.name).join(', ') }) : c.profile.missing.length ? T('sc_missing') + ' ' + c.profile.missing.join(', ') : c.profile.bundles.length + ' bundles')),
     ...((c.profile.outdated ?? []).length ? [item(false, T('sc_outdated'), (c.profile.outdated ?? []).map(p => T('sc_outdated_row', { n: p.name, v: p.installed, f: p.floor })).join('; '))] : []),
     item(true, T('sc_ports'), 'launcher ' + c.ports.launcher + ' · dsh ' + c.ports.dsh + (c.ports.dshRunning ? ' (running)' : ' (offline)')),
     item(true, T('sc_files'), ['deck', 'webSearch', 'safeGuard', 'frontendSkin'].filter(k => c.files[k]).join(', ') || '—'),
